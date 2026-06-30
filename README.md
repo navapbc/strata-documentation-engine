@@ -1,0 +1,1 @@
+# strata-documentation-engine
