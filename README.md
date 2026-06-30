@@ -5,7 +5,7 @@ sources, producing a linked, agent-queryable knowledge base.
 
 ## How it works
 
-1. `sources.md` lists each source (`id`, `type`, `repo`, `ref`, optional `subpaths`) —
+1. `sources.md` lists each source (`id`, `type`, `repo`, `ref`, optional `subpaths`):
    the SDK, the Rails app template, SDK-consuming apps like OSCER, the `template-infra`
    infrastructure template, and the `platform-cli` (`nava-platform`) tool.
 2. The `generate-strata-docs` skill documents each source (one agent per source) using the
@@ -39,3 +39,9 @@ python -m scripts.lint_docs
 ```
 
 See `docs/superpowers/specs/2026-06-18-strata-documentation-engine-design.md` for the design.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow, branch naming, commit
+conventions, and the issue and PR templates. `AGENTS.md` is the canonical guide for both human
+contributors and AI agents.

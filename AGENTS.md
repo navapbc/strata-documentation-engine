@@ -71,7 +71,8 @@ jeffhorn/oscer-42-short-description
 
 Open all PRs as drafts. Mark ready for review only after self-review is complete.
 
-Use `.github/PULL_REQUEST_TEMPLATE.md`. GitHub pre-populates it automatically.
+Use `.github/PULL_REQUEST_TEMPLATE.md`. GitHub pre-populates it automatically. The `create-pr` skill
+guides branch naming, filling the template, reviewing the description, and opening the PR as a draft.
 
 ### Commits
 
@@ -107,6 +108,9 @@ Use the template that best fits the work. GitHub surfaces these when you open a 
 
 For `technical-task.md` specifically: fill in the "Starting point" and "Constraints and gotchas"
 sections thoroughly. These are the fields an agent or new developer needs most to pick up work cold.
+
+The `create-issue` skill guides choosing the right template, wording it for its audience, applying
+the matching label, reviewing it, and filing.
 
 ## Architecture
 

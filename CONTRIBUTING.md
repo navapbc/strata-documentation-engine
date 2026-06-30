@@ -1,5 +1,24 @@
 # Contributing
 
+## Contribution workflow
+
+The short version of how a change moves through this repo:
+
+1. **Start from an issue.** File one with the template that fits the work (epic, story, bug,
+   technical-task, spike, or chore). The `create-issue` skill walks you through choosing a template,
+   wording it for its audience, reviewing it, labeling it, and filing it.
+2. **Branch.** Use the naming shape in [Branching](#branching) below.
+3. **Make your changes.** Keep commits terse and explain why, not what. Wire up the commit template
+   (see [Commit message template](#commit-message-template)).
+4. **Review, then open a draft PR.** Run the `review-draft` skill on the PR description, then open
+   the PR as a draft and fill in the template (see [Opening pull requests](#opening-pull-requests)).
+   The `create-pr` skill walks you through branch naming, the review, and opening the PR.
+5. **Mark ready.** Move the PR out of draft once it is self-reviewed and CI passes.
+
+Run `review-draft` before any durable artifact goes up: an issue, a PR description, or a commit
+message set. It checks quality, template adherence, voice, punctuation, and house style. The rest of
+this document covers each step in detail.
+
 ## Local setup
 
 ### Python
