@@ -1,0 +1,47 @@
+name: Generate Strata Docs
+# Full regeneration is a deliberate, maintainer-run action — manual dispatch only.
+# Routine drift refresh + new-source pickup lives in update-docs.yml (cron + manual).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install -r scripts/requirements.txt
+      - name: Configure git
+        run: |
+          git config user.name "strata-docs-bot"
+          git config user.email "strata-docs-bot@users.noreply.github.com"
+      - name: Generate docs with Claude
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.SOURCES_READ_TOKEN }}   # read access to the source repos
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: "--allowedTools 'Skill Workflow Agent Task Read Write Edit Bash' --max-turns 120"
+          prompt: |
+            Invoke the generate-strata-docs skill in full mode (the default) to regenerate and
+            verify documentation for every source in sources.md. Follow the skill exactly.
+            Do not commit or push.
+      - name: Open or update PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: docs/full-regen
+          title: "docs: full regeneration of Strata documentation"
+          commit-message: "docs: full regeneration of Strata documentation"
+          body: |
+            Full regeneration by the Strata Documentation Engine.
+            Review skipped sources, any docs marked `verified: needs-review`
+            (see `docs/.verification/`), feature-key and platform-component gaps, and the curator's
+            process notes (`docs/.curation/improvements.md`).
+          add-paths: |
+            docs/**

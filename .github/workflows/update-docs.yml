@@ -1,0 +1,49 @@
+name: Update Strata Docs
+# Manually-triggered drift refresh: re-document only sources whose upstream changed since they were
+# last documented, and full-generate any source newly added to sources.md. Full regeneration of
+# everything is a separate, manual-only workflow (generate-docs.yml).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install -r scripts/requirements.txt
+      - name: Configure git
+        run: |
+          git config user.name "strata-docs-bot"
+          git config user.email "strata-docs-bot@users.noreply.github.com"
+      - name: Update docs with Claude
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.SOURCES_READ_TOKEN }}   # read access to the source repos
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: "--allowedTools 'Skill Workflow Agent Task Read Write Edit Bash' --max-turns 120"
+          prompt: |
+            Invoke the generate-strata-docs skill in update mode. It must re-document and
+            re-verify only the sources whose upstream changed since they were last documented,
+            full-generate any brand-new sources in sources.md, and skip unchanged sources.
+            Follow the skill exactly. Do not commit or push.
+      - name: Open or update PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: docs/auto-update
+          title: "docs: update Strata documentation"
+          commit-message: "docs: update Strata documentation"
+          body: |
+            Incremental update by the Strata Documentation Engine (changed + new sources only).
+            Review skipped (unchanged) sources, any docs marked `verified: needs-review`
+            (see `docs/.verification/`), feature-key and platform-component gaps, orphaned
+            sources, and the curator's process notes (`docs/.curation/improvements.md`).
+          add-paths: |
+            docs/**

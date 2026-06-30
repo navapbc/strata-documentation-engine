@@ -1,0 +1,2276 @@
+{
+  "nodes": [
+    {
+      "id": "app-template-setting-up-a-new-rails-project",
+      "title": "Setting up a new Rails project",
+      "source": "app-template",
+      "doc_type": "example",
+      "tags": [
+        "bootstrap",
+        "getting-started",
+        "local-development",
+        "rails",
+        "walkthrough"
+      ],
+      "path": "sources/app-template/setting-up-a-new-rails-project.md"
+    },
+    {
+      "id": "app-template-using-the-rails-template",
+      "title": "Using the Rails application template",
+      "source": "app-template",
+      "doc_type": "guide",
+      "tags": [
+        "copier",
+        "nava-platform",
+        "rails",
+        "scaffold",
+        "template"
+      ],
+      "path": "sources/app-template/using-the-rails-template.md"
+    },
+    {
+      "id": "documentai-api-new-project-example",
+      "title": "Example: scaffolding a new DocumentAI API project",
+      "source": "documentai-api",
+      "doc_type": "example",
+      "tags": [
+        "copier",
+        "documentai",
+        "example",
+        "nava-platform",
+        "scaffold"
+      ],
+      "path": "sources/documentai-api/new-project-example.md"
+    },
+    {
+      "id": "documentai-api-overview",
+      "title": "DocumentAI API capability overview",
+      "source": "documentai-api",
+      "doc_type": "guide",
+      "tags": [
+        "aws",
+        "bedrock",
+        "capability",
+        "document-processing",
+        "documentai",
+        "sidecar"
+      ],
+      "path": "sources/documentai-api/overview.md"
+    },
+    {
+      "id": "documentai-api-using-the-template",
+      "title": "Using and deploying the DocumentAI template",
+      "source": "documentai-api",
+      "doc_type": "guide",
+      "tags": [
+        "aws",
+        "copier",
+        "deployment",
+        "docker",
+        "documentai",
+        "fastapi",
+        "nava-platform"
+      ],
+      "path": "sources/documentai-api/using-the-template.md"
+    },
+    {
+      "id": "example-oscer-api-authentication",
+      "title": "OSCER \u2014 HMAC API authentication",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "api",
+        "auth",
+        "example-app",
+        "hmac",
+        "oscer"
+      ],
+      "path": "sources/oscer/api-authentication.md"
+    },
+    {
+      "id": "example-oscer-application-forms",
+      "title": "OSCER \u2014 application forms",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "application-form",
+        "example-app",
+        "forms",
+        "oscer",
+        "validation"
+      ],
+      "path": "sources/oscer/application-forms.md"
+    },
+    {
+      "id": "example-oscer-attributes",
+      "title": "OSCER \u2014 typed attributes and attribute types",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "attributes",
+        "dates",
+        "example-app",
+        "money",
+        "oscer",
+        "strata-attribute",
+        "types"
+      ],
+      "path": "sources/oscer/attributes.md"
+    },
+    {
+      "id": "example-oscer-audit-log-and-actors",
+      "title": "OSCER \u2014 audit log and virtual actors",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "audit-log",
+        "events",
+        "example-app",
+        "oscer",
+        "virtual-actor"
+      ],
+      "path": "sources/oscer/audit-log-and-actors.md"
+    },
+    {
+      "id": "example-oscer-authorization",
+      "title": "OSCER \u2014 authorization policies",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "authorization",
+        "example-app",
+        "oscer",
+        "policies",
+        "pundit",
+        "region-scoping"
+      ],
+      "path": "sources/oscer/authorization.md"
+    },
+    {
+      "id": "example-oscer-business-process",
+      "title": "OSCER \u2014 certification business process and case",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "business-process",
+        "case",
+        "events",
+        "example-app",
+        "oscer",
+        "state-machine"
+      ],
+      "path": "sources/oscer/business-process.md"
+    },
+    {
+      "id": "example-oscer-determinations",
+      "title": "OSCER \u2014 determinations and the Determinable concern",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "audit-log",
+        "compliance",
+        "determinable",
+        "determination",
+        "example-app",
+        "oscer"
+      ],
+      "path": "sources/oscer/determinations.md"
+    },
+    {
+      "id": "example-oscer-overview",
+      "title": "OSCER \u2014 overview",
+      "source": "oscer",
+      "doc_type": "guide",
+      "tags": [
+        "community-engagement",
+        "example-app",
+        "medicaid",
+        "oscer",
+        "overview",
+        "rails"
+      ],
+      "path": "sources/oscer/overview.md"
+    },
+    {
+      "id": "example-oscer-rules-engine",
+      "title": "OSCER \u2014 rules engine (exemption eligibility)",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "eligibility",
+        "example-app",
+        "exemption",
+        "oscer",
+        "rules-engine"
+      ],
+      "path": "sources/oscer/rules-engine.md"
+    },
+    {
+      "id": "example-oscer-tasks",
+      "title": "OSCER \u2014 tasks (applicant, staff, system)",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "applicant-task",
+        "example-app",
+        "oscer",
+        "staff-task",
+        "system-process",
+        "task"
+      ],
+      "path": "sources/oscer/tasks.md"
+    },
+    {
+      "id": "example-oscer-value-objects",
+      "title": "OSCER \u2014 value objects",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "equality",
+        "example-app",
+        "immutable",
+        "oscer",
+        "value-object"
+      ],
+      "path": "sources/oscer/value-objects.md"
+    },
+    {
+      "id": "example-strata-unemployment-application-form",
+      "title": "Unemployment benefits application form (Strata::ApplicationForm)",
+      "source": "strata-unemployment",
+      "doc_type": "example",
+      "tags": [
+        "application-form",
+        "example-app",
+        "model",
+        "validations"
+      ],
+      "path": "sources/strata-unemployment/application-form.md"
+    },
+    {
+      "id": "example-strata-unemployment-attributes",
+      "title": "Typed strata_attribute declarations",
+      "source": "strata-unemployment",
+      "doc_type": "example",
+      "tags": [
+        "attribute-types",
+        "attributes",
+        "example-app"
+      ],
+      "path": "sources/strata-unemployment/attributes.md"
+    },
+    {
+      "id": "example-strata-unemployment-components",
+      "title": "SDK ViewComponents and shared templates",
+      "source": "strata-unemployment",
+      "doc_type": "example",
+      "tags": [
+        "components",
+        "example-app",
+        "templates",
+        "viewcomponent"
+      ],
+      "path": "sources/strata-unemployment/components.md"
+    },
+    {
+      "id": "example-strata-unemployment-flow",
+      "title": "Unemployment benefits flow (Strata::Flows::ApplicationFormFlow)",
+      "source": "strata-unemployment",
+      "doc_type": "example",
+      "tags": [
+        "example-app",
+        "flow",
+        "question-pages",
+        "tasks"
+      ],
+      "path": "sources/strata-unemployment/flow.md"
+    },
+    {
+      "id": "example-strata-unemployment-form-builder",
+      "title": "Form-builder field helpers (strata_form_with)",
+      "source": "strata-unemployment",
+      "doc_type": "example",
+      "tags": [
+        "example-app",
+        "form-builder",
+        "uswds",
+        "views"
+      ],
+      "path": "sources/strata-unemployment/form-builder.md"
+    },
+    {
+      "id": "example-strata-unemployment-overview",
+      "title": "Strata Unemployment Portal \u2014 overview",
+      "source": "strata-unemployment",
+      "doc_type": "guide",
+      "tags": [
+        "example-app",
+        "overview",
+        "rails",
+        "unemployment"
+      ],
+      "path": "sources/strata-unemployment/overview.md"
+    },
+    {
+      "id": "infra-azure-access-control-and-operations",
+      "title": "Access control, workspaces, and operations",
+      "source": "template-infra-azure",
+      "doc_type": "guide",
+      "tags": [
+        "access-control",
+        "azure",
+        "compliance",
+        "entra",
+        "infra",
+        "operations",
+        "security",
+        "terraform",
+        "workspaces"
+      ],
+      "path": "sources/template-infra-azure/infra-access-control-and-operations.md"
+    },
+    {
+      "id": "infra-azure-domains-and-https",
+      "title": "Custom domains and HTTPS for the Azure infra template",
+      "source": "template-infra-azure",
+      "doc_type": "guide",
+      "tags": [
+        "azure",
+        "certificates",
+        "dns",
+        "domains",
+        "https",
+        "infra",
+        "key-vault",
+        "terraform",
+        "tls"
+      ],
+      "path": "sources/template-infra-azure/infra-domains-and-https.md"
+    },
+    {
+      "id": "infra-azure-overview",
+      "title": "Azure infra template overview",
+      "source": "template-infra-azure",
+      "doc_type": "guide",
+      "tags": [
+        "architecture",
+        "azure",
+        "infra",
+        "template",
+        "terraform"
+      ],
+      "path": "sources/template-infra-azure/infra-overview.md"
+    },
+    {
+      "id": "infra-azure-set-up-account-and-network",
+      "title": "Set up the Azure account and network",
+      "source": "template-infra-azure",
+      "doc_type": "guide",
+      "tags": [
+        "account",
+        "azure",
+        "github",
+        "infra",
+        "network",
+        "oidc",
+        "setup",
+        "terraform"
+      ],
+      "path": "sources/template-infra-azure/infra-set-up-account-and-network.md"
+    },
+    {
+      "id": "infra-azure-set-up-database-and-service",
+      "title": "Set up the application database and service",
+      "source": "template-infra-azure",
+      "doc_type": "guide",
+      "tags": [
+        "azure",
+        "background-jobs",
+        "container-apps",
+        "database",
+        "infra",
+        "postgres",
+        "secrets",
+        "service",
+        "terraform"
+      ],
+      "path": "sources/template-infra-azure/infra-set-up-database-and-service.md"
+    },
+    {
+      "id": "infra-capabilities",
+      "title": "Application Capabilities \u2014 Notifications, Identity, Jobs, Monitoring, Service Exec",
+      "source": "template-infra",
+      "doc_type": "guide",
+      "tags": [
+        "background-jobs",
+        "bedrock",
+        "cognito",
+        "ecs-exec",
+        "identity-provider",
+        "infra",
+        "monitoring",
+        "notifications",
+        "ses",
+        "sms"
+      ],
+      "path": "sources/template-infra/infra-capabilities.md"
+    },
+    {
+      "id": "infra-configuration",
+      "title": "Configuration \u2014 Project Config, App Config, Env Vars, and Secrets",
+      "source": "template-infra",
+      "doc_type": "guide",
+      "tags": [
+        "configuration",
+        "environment-variables",
+        "infra",
+        "secrets",
+        "terraform"
+      ],
+      "path": "sources/template-infra/infra-configuration.md"
+    },
+    {
+      "id": "infra-database",
+      "title": "Database \u2014 Aurora, the Role Manager, and Access Control",
+      "source": "template-infra",
+      "doc_type": "guide",
+      "tags": [
+        "aurora",
+        "database",
+        "iam",
+        "infra",
+        "lambda",
+        "postgres",
+        "rds",
+        "terraform"
+      ],
+      "path": "sources/template-infra/infra-database.md"
+    },
+    {
+      "id": "infra-environments-and-workspaces",
+      "title": "Environments, Workspaces, and Temporary Environments",
+      "source": "template-infra",
+      "doc_type": "guide",
+      "tags": [
+        "deployment",
+        "environments",
+        "infra",
+        "pull-request-environments",
+        "terraform",
+        "workspaces"
+      ],
+      "path": "sources/template-infra/infra-environments-and-workspaces.md"
+    },
+    {
+      "id": "infra-getting-started",
+      "title": "Getting Started \u2014 Standing Up Infrastructure",
+      "source": "template-infra",
+      "doc_type": "guide",
+      "tags": [
+        "aws",
+        "deployment",
+        "getting-started",
+        "infra",
+        "setup",
+        "terraform"
+      ],
+      "path": "sources/template-infra/infra-getting-started.md"
+    },
+    {
+      "id": "infra-module-architecture",
+      "title": "Terraform Module Architecture and Layers",
+      "source": "template-infra",
+      "doc_type": "guide",
+      "tags": [
+        "adr",
+        "architecture",
+        "infra",
+        "layers",
+        "modules",
+        "terraform"
+      ],
+      "path": "sources/template-infra/infra-module-architecture.md"
+    },
+    {
+      "id": "infra-overview",
+      "title": "template-infra Overview",
+      "source": "template-infra",
+      "doc_type": "guide",
+      "tags": [
+        "aws",
+        "configuration",
+        "environments",
+        "infra",
+        "layers",
+        "template",
+        "terraform"
+      ],
+      "path": "sources/template-infra/infra-overview.md"
+    },
+    {
+      "id": "infra-security-and-access",
+      "title": "Security and Access \u2014 IAM/OIDC, WAF, HTTPS, and Custom Domains",
+      "source": "template-infra",
+      "doc_type": "guide",
+      "tags": [
+        "dns",
+        "github-actions",
+        "https",
+        "iam",
+        "infra",
+        "oidc",
+        "route53",
+        "security",
+        "waf"
+      ],
+      "path": "sources/template-infra/infra-security-and-access.md"
+    },
+    {
+      "id": "platform-cli-app-commands",
+      "title": "nava-platform app command reference",
+      "source": "platform-cli",
+      "doc_type": "guide",
+      "tags": [
+        "app",
+        "application-template",
+        "cli",
+        "commands",
+        "platform-cli"
+      ],
+      "path": "sources/platform-cli/platform-cli-app-commands.md"
+    },
+    {
+      "id": "platform-cli-infra-commands",
+      "title": "nava-platform infra command reference",
+      "source": "platform-cli",
+      "doc_type": "guide",
+      "tags": [
+        "cli",
+        "commands",
+        "infra",
+        "platform-cli",
+        "template-infra"
+      ],
+      "path": "sources/platform-cli/platform-cli-infra-commands.md"
+    },
+    {
+      "id": "platform-cli-mechanism",
+      "title": "How install and update work (Copier wrapper)",
+      "source": "platform-cli",
+      "doc_type": "guide",
+      "tags": [
+        "answers-file",
+        "copier",
+        "mechanism",
+        "platform-cli",
+        "update"
+      ],
+      "path": "sources/platform-cli/platform-cli-mechanism.md"
+    },
+    {
+      "id": "platform-cli-overview",
+      "title": "nava-platform CLI overview",
+      "source": "platform-cli",
+      "doc_type": "guide",
+      "tags": [
+        "cli",
+        "copier",
+        "installation",
+        "platform-cli",
+        "strata"
+      ],
+      "path": "sources/platform-cli/platform-cli-overview.md"
+    },
+    {
+      "id": "rules-engine-catala-new-project-example",
+      "title": "Example: scaffolding a new Catala rules-engine project",
+      "source": "strata-template-rules-engine-catala",
+      "doc_type": "example",
+      "tags": [
+        "catala",
+        "copier",
+        "example",
+        "fastapi",
+        "nava-platform",
+        "paidleave",
+        "scaffold"
+      ],
+      "path": "sources/strata-template-rules-engine-catala/new-project-example.md"
+    },
+    {
+      "id": "rules-engine-catala-overview",
+      "title": "Catala rules-engine template capability overview",
+      "source": "strata-template-rules-engine-catala",
+      "doc_type": "guide",
+      "tags": [
+        "capability",
+        "catala",
+        "fastapi",
+        "legislative",
+        "python",
+        "rules-engine"
+      ],
+      "path": "sources/strata-template-rules-engine-catala/overview.md"
+    },
+    {
+      "id": "rules-engine-catala-using-the-template",
+      "title": "Using and deploying the Catala rules-engine template",
+      "source": "strata-template-rules-engine-catala",
+      "doc_type": "guide",
+      "tags": [
+        "catala",
+        "copier",
+        "docker",
+        "fastapi",
+        "nava-platform",
+        "poetry",
+        "rules-engine"
+      ],
+      "path": "sources/strata-template-rules-engine-catala/using-the-template.md"
+    },
+    {
+      "id": "source:app-template",
+      "title": "app-template",
+      "source": "app-template",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
+      "id": "source:documentai-api",
+      "title": "documentai-api",
+      "source": "documentai-api",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
+      "id": "source:oscer",
+      "title": "oscer",
+      "source": "oscer",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
+      "id": "source:platform-cli",
+      "title": "platform-cli",
+      "source": "platform-cli",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
+      "id": "source:strata-sdk",
+      "title": "strata-sdk",
+      "source": "strata-sdk",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
+      "id": "source:strata-template-rules-engine-catala",
+      "title": "strata-template-rules-engine-catala",
+      "source": "strata-template-rules-engine-catala",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
+      "id": "source:strata-unemployment",
+      "title": "strata-unemployment",
+      "source": "strata-unemployment",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
+      "id": "source:template-infra",
+      "title": "template-infra",
+      "source": "template-infra",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
+      "id": "source:template-infra-azure",
+      "title": "template-infra-azure",
+      "source": "template-infra-azure",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
+      "id": "strata-sdk-api-authentication",
+      "title": "API authentication",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "api-authentication",
+        "hmac",
+        "security",
+        "strata-sdk"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-api-authentication.md"
+    },
+    {
+      "id": "strata-sdk-application-form",
+      "title": "Application forms",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "application-form",
+        "intake",
+        "strata-sdk",
+        "value-object"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-application-form.md"
+    },
+    {
+      "id": "strata-sdk-attributes",
+      "title": "Strata attributes and attribute types",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "attributes",
+        "data-modeler",
+        "strata-sdk",
+        "value-object"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-attributes.md"
+    },
+    {
+      "id": "strata-sdk-audit-log",
+      "title": "Audit log",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "audit-log",
+        "immutable",
+        "strata-sdk",
+        "transactions",
+        "virtual-actor"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-audit-log.md"
+    },
+    {
+      "id": "strata-sdk-authorization",
+      "title": "Authorization policies",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "authorization",
+        "policies",
+        "pundit",
+        "strata-sdk"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-authorization.md"
+    },
+    {
+      "id": "strata-sdk-business-process",
+      "title": "Business processes",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "business-process",
+        "events",
+        "strata-sdk",
+        "workflow"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-business-process.md"
+    },
+    {
+      "id": "strata-sdk-case",
+      "title": "Cases",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "case",
+        "case-management",
+        "strata-sdk",
+        "workflow"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-case.md"
+    },
+    {
+      "id": "strata-sdk-determination",
+      "title": "Determinations",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "concerns",
+        "decisions",
+        "determination",
+        "strata-sdk"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-determination.md"
+    },
+    {
+      "id": "strata-sdk-form-builder",
+      "title": "Form builder and SDK components",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "components",
+        "form-builder",
+        "strata-sdk",
+        "uswds",
+        "view-helpers"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-form-builder.md"
+    },
+    {
+      "id": "strata-sdk-form-flows",
+      "title": "Multi-page form flows",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "dsl",
+        "form-flow",
+        "multi-page",
+        "routes",
+        "strata-sdk"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-form-flows.md"
+    },
+    {
+      "id": "strata-sdk-generators",
+      "title": "Generators",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "generators",
+        "migrations",
+        "scaffolding",
+        "strata-sdk"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-generators.md"
+    },
+    {
+      "id": "strata-sdk-getting-started",
+      "title": "Getting started with the Strata SDK",
+      "source": "strata-sdk",
+      "doc_type": "guide",
+      "tags": [
+        "getting-started",
+        "installation",
+        "rails-engine",
+        "strata-sdk"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-getting-started.md"
+    },
+    {
+      "id": "strata-sdk-rules-engine",
+      "title": "Rules engine",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "facts",
+        "policy-as-code",
+        "rules-engine",
+        "strata-sdk"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-rules-engine.md"
+    },
+    {
+      "id": "strata-sdk-tasks",
+      "title": "Tasks and process steps",
+      "source": "strata-sdk",
+      "doc_type": "feature",
+      "tags": [
+        "business-process",
+        "step",
+        "strata-sdk",
+        "task"
+      ],
+      "path": "sources/strata-sdk/strata-sdk-tasks.md"
+    }
+  ],
+  "edges": [
+    {
+      "from": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
+      "rel": "related-to"
+    },
+    {
+      "from": "app-template-setting-up-a-new-rails-project",
+      "to": "infra-overview",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "app-template-using-the-rails-template",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "related-to"
+    },
+    {
+      "from": "app-template-using-the-rails-template",
+      "to": "infra-overview",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "documentai-api-new-project-example",
+      "to": "documentai-api-using-the-template",
+      "rel": "related-to"
+    },
+    {
+      "from": "documentai-api-overview",
+      "to": "documentai-api-using-the-template",
+      "rel": "related-to"
+    },
+    {
+      "from": "documentai-api-overview",
+      "to": "infra-overview",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "documentai-api-using-the-template",
+      "to": "documentai-api-new-project-example",
+      "rel": "related-to"
+    },
+    {
+      "from": "documentai-api-using-the-template",
+      "to": "documentai-api-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "documentai-api-using-the-template",
+      "to": "infra-overview",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "example-oscer-api-authentication",
+      "to": "example-oscer-authorization",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-api-authentication",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-api-authentication",
+      "to": "strata-sdk-api-authentication",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-application-forms",
+      "to": "example-oscer-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-application-forms",
+      "to": "example-oscer-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-application-forms",
+      "to": "example-oscer-determinations",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-application-forms",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-application-forms",
+      "to": "strata-sdk-application-form",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-attributes",
+      "to": "example-oscer-application-forms",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-attributes",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-attributes",
+      "to": "example-oscer-value-objects",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-attributes",
+      "to": "strata-sdk-attributes",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-audit-log-and-actors",
+      "to": "example-oscer-determinations",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-audit-log-and-actors",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-audit-log-and-actors",
+      "to": "example-oscer-rules-engine",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-audit-log-and-actors",
+      "to": "example-oscer-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-audit-log-and-actors",
+      "to": "strata-sdk-audit-log",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-authorization",
+      "to": "example-oscer-application-forms",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-authorization",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-authorization",
+      "to": "example-oscer-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-authorization",
+      "to": "strata-sdk-authorization",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-business-process",
+      "to": "example-oscer-determinations",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-business-process",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-business-process",
+      "to": "example-oscer-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-business-process",
+      "to": "strata-sdk-business-process",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-business-process",
+      "to": "strata-sdk-case",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-determinations",
+      "to": "example-oscer-audit-log-and-actors",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-determinations",
+      "to": "example-oscer-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-determinations",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-determinations",
+      "to": "example-oscer-rules-engine",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-determinations",
+      "to": "strata-sdk-determination",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-api-authentication",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-application-forms",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-audit-log-and-actors",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-authorization",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-determinations",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-rules-engine",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-value-objects",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-rules-engine",
+      "to": "example-oscer-audit-log-and-actors",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-rules-engine",
+      "to": "example-oscer-determinations",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-rules-engine",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-rules-engine",
+      "to": "strata-sdk-rules-engine",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-tasks",
+      "to": "example-oscer-authorization",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-tasks",
+      "to": "example-oscer-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-tasks",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-tasks",
+      "to": "strata-sdk-tasks",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-value-objects",
+      "to": "example-oscer-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-value-objects",
+      "to": "example-oscer-determinations",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-value-objects",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-value-objects",
+      "to": "strata-sdk-application-form",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-unemployment-application-form",
+      "to": "example-strata-unemployment-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-application-form",
+      "to": "example-strata-unemployment-flow",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-application-form",
+      "to": "example-strata-unemployment-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-application-form",
+      "to": "strata-sdk-application-form",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-unemployment-attributes",
+      "to": "example-strata-unemployment-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-attributes",
+      "to": "example-strata-unemployment-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-attributes",
+      "to": "example-strata-unemployment-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-attributes",
+      "to": "strata-sdk-attributes",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-unemployment-components",
+      "to": "example-strata-unemployment-flow",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-components",
+      "to": "example-strata-unemployment-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-components",
+      "to": "example-strata-unemployment-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-components",
+      "to": "strata-sdk-form-builder",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-unemployment-flow",
+      "to": "example-strata-unemployment-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-flow",
+      "to": "example-strata-unemployment-components",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-flow",
+      "to": "example-strata-unemployment-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-flow",
+      "to": "strata-sdk-form-flows",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-unemployment-form-builder",
+      "to": "example-strata-unemployment-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-form-builder",
+      "to": "example-strata-unemployment-flow",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-form-builder",
+      "to": "example-strata-unemployment-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-form-builder",
+      "to": "strata-sdk-form-builder",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-unemployment-overview",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "example-strata-unemployment-overview",
+      "to": "example-strata-unemployment-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-overview",
+      "to": "example-strata-unemployment-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-overview",
+      "to": "example-strata-unemployment-components",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-overview",
+      "to": "example-strata-unemployment-flow",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-unemployment-overview",
+      "to": "example-strata-unemployment-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-access-control-and-operations",
+      "to": "infra-azure-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-access-control-and-operations",
+      "to": "infra-azure-set-up-account-and-network",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-access-control-and-operations",
+      "to": "infra-azure-set-up-database-and-service",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-domains-and-https",
+      "to": "infra-azure-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-domains-and-https",
+      "to": "infra-azure-set-up-account-and-network",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-domains-and-https",
+      "to": "infra-azure-set-up-database-and-service",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-overview",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "infra-azure-overview",
+      "to": "infra-azure-access-control-and-operations",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-overview",
+      "to": "infra-azure-domains-and-https",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-overview",
+      "to": "infra-azure-set-up-account-and-network",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-overview",
+      "to": "infra-azure-set-up-database-and-service",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-set-up-account-and-network",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "infra-azure-set-up-account-and-network",
+      "to": "infra-azure-access-control-and-operations",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-set-up-account-and-network",
+      "to": "infra-azure-domains-and-https",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-set-up-account-and-network",
+      "to": "infra-azure-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-set-up-account-and-network",
+      "to": "infra-azure-set-up-database-and-service",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-set-up-database-and-service",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "infra-azure-set-up-database-and-service",
+      "to": "infra-azure-access-control-and-operations",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-set-up-database-and-service",
+      "to": "infra-azure-domains-and-https",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-set-up-database-and-service",
+      "to": "infra-azure-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-set-up-database-and-service",
+      "to": "infra-azure-set-up-account-and-network",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-capabilities",
+      "to": "infra-configuration",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-capabilities",
+      "to": "infra-environments-and-workspaces",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-capabilities",
+      "to": "infra-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-capabilities",
+      "to": "infra-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-capabilities",
+      "to": "infra-security-and-access",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-configuration",
+      "to": "infra-database",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-configuration",
+      "to": "infra-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-configuration",
+      "to": "infra-module-architecture",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-configuration",
+      "to": "infra-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-database",
+      "to": "infra-configuration",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-database",
+      "to": "infra-environments-and-workspaces",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-database",
+      "to": "infra-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-database",
+      "to": "infra-module-architecture",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-database",
+      "to": "infra-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-environments-and-workspaces",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "infra-environments-and-workspaces",
+      "to": "infra-database",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-environments-and-workspaces",
+      "to": "infra-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-environments-and-workspaces",
+      "to": "infra-module-architecture",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-environments-and-workspaces",
+      "to": "infra-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-getting-started",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "infra-getting-started",
+      "to": "infra-capabilities",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-getting-started",
+      "to": "infra-configuration",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-getting-started",
+      "to": "infra-database",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-getting-started",
+      "to": "infra-module-architecture",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-getting-started",
+      "to": "infra-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-module-architecture",
+      "to": "infra-configuration",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-module-architecture",
+      "to": "infra-environments-and-workspaces",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-module-architecture",
+      "to": "infra-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-module-architecture",
+      "to": "infra-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-overview",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "infra-overview",
+      "to": "infra-capabilities",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-overview",
+      "to": "infra-configuration",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-overview",
+      "to": "infra-database",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-overview",
+      "to": "infra-environments-and-workspaces",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-overview",
+      "to": "infra-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-overview",
+      "to": "infra-module-architecture",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-overview",
+      "to": "infra-security-and-access",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-and-access",
+      "to": "infra-capabilities",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-and-access",
+      "to": "infra-configuration",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-and-access",
+      "to": "infra-database",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-and-access",
+      "to": "infra-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-and-access",
+      "to": "infra-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-app-commands",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "manages"
+    },
+    {
+      "from": "platform-cli-app-commands",
+      "to": "platform-cli-infra-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-app-commands",
+      "to": "platform-cli-mechanism",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-app-commands",
+      "to": "platform-cli-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-infra-commands",
+      "to": "infra-overview",
+      "rel": "manages"
+    },
+    {
+      "from": "platform-cli-infra-commands",
+      "to": "platform-cli-app-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-infra-commands",
+      "to": "platform-cli-mechanism",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-infra-commands",
+      "to": "platform-cli-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-mechanism",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "manages"
+    },
+    {
+      "from": "platform-cli-mechanism",
+      "to": "infra-overview",
+      "rel": "manages"
+    },
+    {
+      "from": "platform-cli-mechanism",
+      "to": "platform-cli-app-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-mechanism",
+      "to": "platform-cli-infra-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-mechanism",
+      "to": "platform-cli-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-overview",
+      "to": "platform-cli-app-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-overview",
+      "to": "platform-cli-infra-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-overview",
+      "to": "platform-cli-mechanism",
+      "rel": "related-to"
+    },
+    {
+      "from": "rules-engine-catala-new-project-example",
+      "to": "rules-engine-catala-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "rules-engine-catala-new-project-example",
+      "to": "rules-engine-catala-using-the-template",
+      "rel": "related-to"
+    },
+    {
+      "from": "rules-engine-catala-overview",
+      "to": "infra-overview",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "rules-engine-catala-overview",
+      "to": "rules-engine-catala-new-project-example",
+      "rel": "related-to"
+    },
+    {
+      "from": "rules-engine-catala-overview",
+      "to": "rules-engine-catala-using-the-template",
+      "rel": "related-to"
+    },
+    {
+      "from": "rules-engine-catala-using-the-template",
+      "to": "infra-overview",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "rules-engine-catala-using-the-template",
+      "to": "rules-engine-catala-new-project-example",
+      "rel": "related-to"
+    },
+    {
+      "from": "rules-engine-catala-using-the-template",
+      "to": "rules-engine-catala-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "source:app-template",
+      "to": "app-template-setting-up-a-new-rails-project",
+      "rel": "documents"
+    },
+    {
+      "from": "source:app-template",
+      "to": "app-template-using-the-rails-template",
+      "rel": "documents"
+    },
+    {
+      "from": "source:documentai-api",
+      "to": "documentai-api-new-project-example",
+      "rel": "documents"
+    },
+    {
+      "from": "source:documentai-api",
+      "to": "documentai-api-overview",
+      "rel": "documents"
+    },
+    {
+      "from": "source:documentai-api",
+      "to": "documentai-api-using-the-template",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-api-authentication",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-application-forms",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-attributes",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-audit-log-and-actors",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-authorization",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-business-process",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-determinations",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-overview",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-rules-engine",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-tasks",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-value-objects",
+      "rel": "documents"
+    },
+    {
+      "from": "source:platform-cli",
+      "to": "platform-cli-app-commands",
+      "rel": "documents"
+    },
+    {
+      "from": "source:platform-cli",
+      "to": "platform-cli-infra-commands",
+      "rel": "documents"
+    },
+    {
+      "from": "source:platform-cli",
+      "to": "platform-cli-mechanism",
+      "rel": "documents"
+    },
+    {
+      "from": "source:platform-cli",
+      "to": "platform-cli-overview",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-api-authentication",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-application-form",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-attributes",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-audit-log",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-authorization",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-business-process",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-case",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-determination",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-form-builder",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-form-flows",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-generators",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-getting-started",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-rules-engine",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk",
+      "to": "strata-sdk-tasks",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-template-rules-engine-catala",
+      "to": "rules-engine-catala-new-project-example",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-template-rules-engine-catala",
+      "to": "rules-engine-catala-overview",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-template-rules-engine-catala",
+      "to": "rules-engine-catala-using-the-template",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-unemployment",
+      "to": "example-strata-unemployment-application-form",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-unemployment",
+      "to": "example-strata-unemployment-attributes",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-unemployment",
+      "to": "example-strata-unemployment-components",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-unemployment",
+      "to": "example-strata-unemployment-flow",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-unemployment",
+      "to": "example-strata-unemployment-form-builder",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-unemployment",
+      "to": "example-strata-unemployment-overview",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra",
+      "to": "infra-capabilities",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra",
+      "to": "infra-configuration",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra",
+      "to": "infra-database",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra",
+      "to": "infra-environments-and-workspaces",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra",
+      "to": "infra-getting-started",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra",
+      "to": "infra-module-architecture",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra",
+      "to": "infra-overview",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra",
+      "to": "infra-security-and-access",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra-azure",
+      "to": "infra-azure-access-control-and-operations",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra-azure",
+      "to": "infra-azure-domains-and-https",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra-azure",
+      "to": "infra-azure-overview",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra-azure",
+      "to": "infra-azure-set-up-account-and-network",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra-azure",
+      "to": "infra-azure-set-up-database-and-service",
+      "rel": "documents"
+    },
+    {
+      "from": "strata-sdk-api-authentication",
+      "to": "strata-sdk-authorization",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-application-form",
+      "to": "strata-sdk-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-application-form",
+      "to": "strata-sdk-authorization",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-application-form",
+      "to": "strata-sdk-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-application-form",
+      "to": "strata-sdk-determination",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-application-form",
+      "to": "strata-sdk-generators",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-application-form",
+      "to": "strata-sdk-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-attributes",
+      "to": "strata-sdk-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-attributes",
+      "to": "strata-sdk-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-attributes",
+      "to": "strata-sdk-generators",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-audit-log",
+      "to": "strata-sdk-authorization",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-audit-log",
+      "to": "strata-sdk-determination",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-authorization",
+      "to": "strata-sdk-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-authorization",
+      "to": "strata-sdk-audit-log",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-business-process",
+      "to": "strata-sdk-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-business-process",
+      "to": "strata-sdk-case",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-business-process",
+      "to": "strata-sdk-generators",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-business-process",
+      "to": "strata-sdk-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-case",
+      "to": "strata-sdk-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-case",
+      "to": "strata-sdk-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-case",
+      "to": "strata-sdk-generators",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-case",
+      "to": "strata-sdk-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-determination",
+      "to": "strata-sdk-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-determination",
+      "to": "strata-sdk-audit-log",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-determination",
+      "to": "strata-sdk-rules-engine",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-form-builder",
+      "to": "strata-sdk-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-form-builder",
+      "to": "strata-sdk-form-flows",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-form-flows",
+      "to": "strata-sdk-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-form-flows",
+      "to": "strata-sdk-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-form-flows",
+      "to": "strata-sdk-generators",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-generators",
+      "to": "strata-sdk-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-generators",
+      "to": "strata-sdk-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-generators",
+      "to": "strata-sdk-audit-log",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-generators",
+      "to": "strata-sdk-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-generators",
+      "to": "strata-sdk-case",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-generators",
+      "to": "strata-sdk-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-getting-started",
+      "to": "strata-sdk-application-form",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-getting-started",
+      "to": "strata-sdk-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-getting-started",
+      "to": "strata-sdk-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-getting-started",
+      "to": "strata-sdk-generators",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-rules-engine",
+      "to": "strata-sdk-determination",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-tasks",
+      "to": "strata-sdk-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-tasks",
+      "to": "strata-sdk-case",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-tasks",
+      "to": "strata-sdk-generators",
+      "rel": "related-to"
+    }
+  ]
+}

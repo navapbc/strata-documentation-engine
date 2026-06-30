@@ -1,0 +1,29 @@
+name: Lint & Test
+on:
+  push:
+    paths: ["scripts/**", "tests/**", "skills/**", "sources.md", "docs/**", ".github/workflows/lint.yml"]
+  pull_request:
+    paths: ["scripts/**", "tests/**", "skills/**", "sources.md", "docs/**", ".github/workflows/lint.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install -r scripts/requirements.txt pytest
+      - name: Unit tests
+        run: python -m pytest -v
+      - name: Lint manifest
+        run: python -m scripts.lint_manifest
+      - name: Lint docs
+        run: python -m scripts.lint_docs
+      - name: Graph freshness (committed graph matches frontmatter)
+        run: |
+          python -m scripts.build_graph
+          git diff --exit-code -- docs/INDEX.md docs/graph.json
