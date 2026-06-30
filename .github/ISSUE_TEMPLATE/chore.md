@@ -1,9 +1,8 @@
 ---
 name: Chore
 about: Non-user-visible maintenance work. Dependency upgrades, CI fixes, test coverage, tooling changes.
-title: "[Chore] "
+title: ""
 labels: chore
-assignees: ""
 ---
 
 ## What and why
@@ -17,4 +16,4 @@ What needs to change, and why now. Include the forcing function if there is one 
 
 ## Notes
 
-Anything a developer needs to know to do this safely: blast radius, rollback plan, related config changes.
+Anything a developer needs to know to do this safely: what could break, how to roll back if something goes wrong, related config changes.

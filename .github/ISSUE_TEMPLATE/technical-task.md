@@ -3,7 +3,6 @@ name: Technical task
 about: An implementation handoff. Captures enough context for a developer or agent to pick up work without a synchronous conversation.
 title: ""
 labels: technical-task
-assignees: ""
 ---
 
 ## What we decided
@@ -19,7 +18,7 @@ Prior spikes, experiments, or attempts. What was learned. What dead ends to avoi
 Where to begin: relevant files, functions, scripts, or commands. Entry points for an agent or new developer.
 
 - File / location: 
-- Key function or module: 
+- Key function, class, or module (e.g., `scripts/lint_docs.py::validate_doc`): 
 - Run with: 
 
 ## Definition of done

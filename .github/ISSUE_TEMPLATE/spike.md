@@ -1,9 +1,8 @@
 ---
 name: Spike
 about: A time-boxed investigation. The output is a recommendation or findings doc, not shipped code.
-title: "[Spike] "
+title: ""
 labels: spike
-assignees: ""
 ---
 
 ## Question to answer
@@ -12,7 +11,7 @@ What specific question or uncertainty are we resolving? Frame it so the answer i
 
 ## Time box
 
-<!-- How long should this take before we stop and assess? E.g., 1 day, half a sprint. -->
+How long before we stop and assess findings, even if the question is not fully answered? For example: 1 day, or half a sprint.
 
 ## What we already know
 

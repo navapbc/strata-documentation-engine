@@ -1,9 +1,8 @@
 ---
 name: Bug
 about: Something is broken or behaving unexpectedly.
-title: "[Bug] "
+title: ""
 labels: bug
-assignees: ""
 ---
 
 ## What happened
@@ -24,10 +23,10 @@ What should have happened instead.
 
 What happened instead.
 
-## Environment
+## Environment (fill in what you know)
 
 - Branch / version: 
-- Python version: 
+- Python version (if known): 
 - Relevant config or flags: 
 
 ## Additional context

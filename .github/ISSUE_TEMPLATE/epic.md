@@ -1,9 +1,8 @@
 ---
 name: Epic
 about: A large initiative framed around an outcome. Break it into stories and tasks before work begins.
-title: "[Epic] "
+title: ""
 labels: epic
-assignees: ""
 ---
 
 ## Goal
