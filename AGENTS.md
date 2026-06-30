@@ -46,7 +46,7 @@ python -m scripts.lint_manifest          # validates sources.md -> "MANIFEST_OK"
 python -m scripts.lint_manifest --json   # emits parsed sources (used by the skill at runtime)
 python -m scripts.lint_docs              # validates doc frontmatter + registry usage -> "DOCS_OK"
 python -m scripts.build_graph            # writes docs/INDEX.md + docs/graph.json -> "GRAPH_OK"
-python -m scripts.source_delta --json    # classify sources new/changed/unchanged/throttled/orphaned
+python -m scripts.source_delta --json    # skill-runtime only (not part of the manual dev pipeline): classify sources new/changed/unchanged/throttled/orphaned
 ```
 
 Scripts are run as modules (`python -m scripts.x`), not as files — `pyproject.toml` sets
@@ -118,10 +118,10 @@ Setup (clone sources to .sources/) → Run 1 DOCUMENT → build graph
 ```
 
 - **Run 1** (`workflows/run-1-document.mjs`): one `general-purpose` agent per source, in parallel.
-  Each reads `agents/source-doc.md` + its profile + the registries, then writes docs to
+  Each reads `skills/generate-strata-docs/references/agents/source-doc.md` + its profile + the registries, then writes docs to
   `docs/sources/<id>/` and a distillation log to `.logs/<id>.distillation.md`.
 - **Run 2** (`workflows/run-2-verify-fix.mjs`): per doc, a bounded loop (`max_rounds`, default 2) of
-  verify → adjudicate → fix using four agent roles (`agents/{verifier,adjudicator,fixer}.md`). A
+  verify → adjudicate → fix using four agent roles (`skills/generate-strata-docs/references/agents/{verifier,adjudicator,fixer}.md`). A
   verifier finds claims unsupported by the source; an adjudicator confirms/rejects each by
   re-checking the source; a fixer edits only confirmed findings. Residual findings after the last
   round mark the doc `verified: needs-review`, with the audit trail in `docs/.verification/`.
@@ -175,8 +175,8 @@ delta classifier, preserve this: emit a visible record rather than discarding.
 
 ## Conventions and gotchas
 
-- `.sources/` and `.logs/` are runtime, gitignored directories — absent in a clean tree.
-- `docs/.verification/` and `docs/.curation/improvements.md` are audit trail — keep them.
+- `.sources/` and `.logs/` are runtime, gitignored directories; absent in a clean tree.
+- `docs/.verification/` and `docs/.curation/` are audit trail. Keep them.
 - `scripts/frontmatter.py` is the shared YAML parser for both the linter and graph builder.
   Change it in one place.
 - The design spec and plan live in `docs/superpowers/{specs,plans}/`; section references like
