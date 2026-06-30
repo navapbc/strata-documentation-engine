@@ -6,7 +6,7 @@ description: Orients a new developer or agent to this repository. Verifies local
 # Onboard
 
 Walks through local setup, verifies the environment, and surfaces anything that needs attention.
-This skill does not make automated changes — it reads, checks, and reports.
+This skill does not make automated changes: it reads, checks, and reports.
 
 ## Steps
 
@@ -14,9 +14,9 @@ This skill does not make automated changes — it reads, checks, and reports.
 
 Read the following files in order. Do not summarize them back to the user; just load the context:
 
-1. `README.md` — project overview and purpose
-2. `AGENTS.md` — architecture, conventions, and the documentation maintenance contract
-3. `CONTRIBUTING.md` — branch naming, commit template, PR conventions, and pipeline
+1. `README.md`: project overview and purpose
+2. `AGENTS.md`: architecture, conventions, and the documentation maintenance contract
+3. `CONTRIBUTING.md`: branch naming, commit template, PR conventions, and pipeline
 
 After reading, briefly confirm to the user: one sentence on what this repo does and one sentence on
 the two layers (generation vs. validation/graph).
@@ -72,13 +72,13 @@ If the output is not `.gitmessage`, the template is not configured. Offer to run
 git config commit.template .gitmessage
 ```
 
-Ask before running — do not apply automatically.
+Ask before running. Do not apply automatically.
 
 ### 7. Report
 
 Summarize what was checked and the result of each step. Flag anything that needs the user's
 attention. If everything passed, confirm the environment is ready and point the user to:
 
-- `sources.md` — the manifest of source repos the engine documents
-- `skills/generate-strata-docs/SKILL.md` — the main generation skill to invoke next
-- `.github/ISSUE_TEMPLATE/` — templates to use when filing new work
+- `sources.md`: the manifest of source repos the engine documents
+- `skills/generate-strata-docs/SKILL.md`: the main generation skill to invoke next
+- `.github/ISSUE_TEMPLATE/`: templates to use when filing new work

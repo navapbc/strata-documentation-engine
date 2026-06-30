@@ -1,7 +1,7 @@
 # Agent and Developer Guide
 
 This file is the canonical instruction set for both human developers and AI agents working in this
-repository. `CLAUDE.md` is a symlink to this file — edit only `AGENTS.md`.
+repository. `CLAUDE.md` is a symlink to this file. Edit only `AGENTS.md`.
 
 ## What this is
 
@@ -12,10 +12,10 @@ a frontmatter-derived index + graph and runs an adversarial verify→fix loop ov
 
 There are two distinct layers, edited very differently:
 
-1. **Generation layer** — non-deterministic, Claude-driven. The `generate-strata-docs` skill
+1. **Generation layer**: non-deterministic, Claude-driven. The `generate-strata-docs` skill
    (`skills/generate-strata-docs/SKILL.md`) orchestrates two multi-agent `Workflow` runs. Invoke
    this; rarely hand-edit its output.
-2. **Validation / graph layer** — deterministic Python in `scripts/`. This is the spine that
+2. **Validation / graph layer**: deterministic Python in `scripts/`. This is the spine that
    enforces correctness and is what you'll most often edit and test. Output is reproducible from
    doc frontmatter alone.
 
@@ -49,7 +49,7 @@ python -m scripts.build_graph            # writes docs/INDEX.md + docs/graph.jso
 python -m scripts.source_delta --json    # skill-runtime only (not part of the manual dev pipeline): classify sources new/changed/unchanged/throttled/orphaned
 ```
 
-Scripts are run as modules (`python -m scripts.x`), not as files — `pyproject.toml` sets
+Scripts are run as modules (`python -m scripts.x`), not as files; `pyproject.toml` sets
 `pythonpath = ["."]` so `scripts/` and `tests/` resolve.
 
 ## Workflow
@@ -71,7 +71,7 @@ jeffhorn/oscer-42-short-description
 
 Open all PRs as drafts. Mark ready for review only after self-review is complete.
 
-Use `.github/PULL_REQUEST_TEMPLATE.md` — GitHub pre-populates it automatically.
+Use `.github/PULL_REQUEST_TEMPLATE.md`. GitHub pre-populates it automatically.
 
 ### Commits
 
@@ -125,7 +125,7 @@ Setup (clone sources to .sources/) → Run 1 DOCUMENT → build graph
   verifier finds claims unsupported by the source; an adjudicator confirms/rejects each by
   re-checking the source; a fixer edits only confirmed findings. Residual findings after the last
   round mark the doc `verified: needs-review`, with the audit trail in `docs/.verification/`.
-- The skill commits to the `Workflow` tool with **no fallback** — if `Workflow` is unavailable it
+- The skill commits to the `Workflow` tool with **no fallback**: if `Workflow` is unavailable, it
   stops and escalates. Subagents never talk to the user.
 - The skill runs in **full** mode (document every source) or **update** mode (only new + changed
   sources, computed by `scripts/source_delta.py`). Drift is detected by comparing each clone's
@@ -136,7 +136,7 @@ Setup (clone sources to .sources/) → Run 1 DOCUMENT → build graph
 
 Every doc under `docs/sources/<id>/` starts with YAML frontmatter
 (contract: `skills/generate-strata-docs/references/doc-frontmatter-schema.md`). `build_graph.py`
-derives `docs/INDEX.md` and `docs/graph.json` purely from that frontmatter — never edit those two
+derives `docs/INDEX.md` and `docs/graph.json` purely from that frontmatter. Never edit those two
 files by hand.
 
 Two cross-link axes connect docs, both resolved through registries (fenced kebab-case key lists
