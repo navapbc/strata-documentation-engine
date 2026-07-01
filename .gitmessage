@@ -1,0 +1,10 @@
+# Subject line: imperative mood, 50 chars or less
+# Example: Add spike template to issue tracker
+
+# Body (optional): wrap at 72 chars. Explain WHY, not what.
+# What the diff shows is already visible; what the diff doesn't show
+# (the constraint, the rejected alternative, the non-obvious invariant)
+# is what belongs here.
+
+# Leave one blank line between subject and body.
+# Reference issues with: Closes #123 or Relates to #123
