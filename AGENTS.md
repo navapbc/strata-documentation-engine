@@ -90,8 +90,8 @@ issues with `Closes #n` or `Relates to #n`.
 Before filing a durable, outward-facing artifact (a GitHub issue, a PR description, or a
 commit-message set), review and revise it first. Do not file the first draft. Run the
 `review-draft` skill, which checks the draft for quality, template adherence, voice, punctuation
-(no em dashes), and house style, then revises. Filing happens only after the caller or user
-approves the revised draft.
+(no em dashes), formatting (no hard-wrapped issue or PR bodies, see `CONTRIBUTING.md`), and house
+style, then revises. Filing happens only after the caller or user approves the revised draft.
 
 ## Issue templates
 

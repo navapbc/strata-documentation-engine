@@ -59,6 +59,19 @@ jeffhorn/oscer-42-short-description
 
 Open all pull requests as drafts initially. Mark ready for review when the work is complete and self-reviewed.
 
+## Formatting issue and PR bodies
+
+GitHub renders issue descriptions, PR descriptions, and comments as GitHub-Flavored Markdown, and in
+that context it treats a single newline inside a paragraph as a line break (unlike a `.md` file
+rendered on github.com, where single newlines collapse into a space). So a body that was hard-wrapped
+at 72 or 80 columns renders as ragged, broken lines.
+
+Write one line per paragraph and let it soft-wrap. Separate paragraphs with a blank line. Lists,
+tables, and fenced code blocks keep their own line structure and are unaffected. This is the
+opposite of a commit message body, which is plain text and should wrap at 72 columns (see the
+commit template). The distinction is by artifact: wrap commit bodies, do not wrap issue or PR
+bodies.
+
 ## Running the pipeline
 
 ```bash
