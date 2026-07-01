@@ -45,9 +45,8 @@ over `technical-task`, `bug` over `technical-task`).
 Fill in the template's sections. Do not leave a heading with an empty body unless the template says
 it is optional.
 
-Write the body one line per paragraph; do not hard-wrap at a column width. GitHub renders a single
-newline in an issue body as a line break, so hard-wrapped text shows up as ragged, broken lines. See
-"Formatting issue and PR bodies" in `CONTRIBUTING.md`.
+Write the body one line per paragraph; do not hard-wrap it. See "Formatting issue and PR bodies" in
+`CONTRIBUTING.md` for why.
 
 ### 3. Apply the matching label
 

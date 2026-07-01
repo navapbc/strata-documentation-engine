@@ -32,8 +32,8 @@ Review the draft along these five dimensions. Each is a separate lens; do not co
    filler rather than clipping into fragments, complete sentences, "we" for shared decisions.
 4. **Punctuation and formatting.** No em dashes (hard rule). En dashes only for genuine numeric
    ranges. Line wrapping is by artifact: issue and PR bodies must not be hard-wrapped (one line per
-   paragraph, since GitHub renders a single newline as a line break); a commit message body should
-   wrap at 72 columns. See "Formatting issue and PR bodies" in `CONTRIBUTING.md`.
+   paragraph); a commit message body should wrap at 72 columns. See "Formatting issue and PR bodies"
+   in `CONTRIBUTING.md`.
 5. **House style and stated preferences.** Anything the repo's conventions or the requester has
    asked for.
 
@@ -54,7 +54,7 @@ Each reviewer must:
   severity (BLOCKER / MAJOR / MINOR / NIT);
 - run a literal em-dash check and report every hit;
 - for an issue or PR body, check for hard-wrapped paragraphs (a paragraph broken across several
-  short lines) and report each, since GitHub renders those newlines as line breaks;
+  short lines) and report each;
 - end with a one-paragraph verdict.
 
 ### 3. Adjudicate
