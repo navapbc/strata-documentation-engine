@@ -1,13 +1,14 @@
 ---
 name: review-draft
-description: Reviews a durable, outward-facing draft (a GitHub issue, a PR description, or a commit-message set) before it is filed. Dispatches review subagents across defined dimensions, adjudicates their findings, and revises. Use before creating an issue or PR, or finalizing commit messages.
+description: Reviews a durable, outward-facing draft (a GitHub issue, a PR description, or a commit-message set) before it is filed. Runs a deterministic review workflow — an Opus reviewer finds issues across five dimensions, then Sonnet agents adjudicate the findings and revise. Use before creating an issue or PR, or finalizing commit messages.
 ---
 
 # Review Draft
 
-Reviews a draft before it ships and returns a revised version. This skill is an orchestrator:
-it dispatches review subagents, adjudicates their findings, and applies the ones it agrees with.
-It does not file anything; filing stays with the caller after the draft is approved.
+Reviews a draft before it ships and returns a revised version. This skill is an **orchestrator**:
+it runs a deterministic `Workflow` that reviews, adjudicates, and revises, then presents the
+result. It does not file anything; filing stays with the caller after the draft is approved.
+Subagents never talk to the user.
 
 ## When to use
 
@@ -19,53 +20,58 @@ Before filing any durable, outward-facing artifact:
 
 Skip it for throwaway or internal scratch text that no one else will read.
 
-## Dimensions
+## What it checks
 
-Review the draft along these five dimensions. Each is a separate lens; do not collapse them.
+The reviewer applies five dimensions; each is a separate lens. The authoritative rubric lives in
+`references/agents/reviewer.md`.
 
-1. **Quality.** Accurate, complete, and useful to the reader. Claims are verifiable. Nothing
-   misleading. Test-plan items (for a PR) are actually checkable.
-2. **Template adherence.** Matches the target template's sections, order, and conventions. For
-   issues, the relevant `.github/ISSUE_TEMPLATE/` file. For PRs, `.github/PULL_REQUEST_TEMPLATE.md`.
-   For commits, the `.gitmessage` scaffold (imperative subject 50 chars or less, body explains why).
-3. **Voice.** Warm but professional, plain language where the audience is mixed, concise by cutting
-   filler rather than clipping into fragments, complete sentences, "we" for shared decisions.
-4. **Punctuation.** No em dashes (hard rule). En dashes only for genuine numeric ranges.
-5. **House style and stated preferences.** Anything the repo's conventions or the requester has
-   asked for.
+1. **Quality.** Accurate, complete, useful; claims verifiable; test-plan items checkable.
+2. **Template adherence.** Matches the target template's sections, order, and conventions.
+3. **Voice.** Warm but professional, plain language, complete sentences, "we" for shared decisions.
+4. **Punctuation.** No em dashes (hard rule); en dashes only for genuine numeric ranges.
+5. **House style and stated preferences.** Repo conventions and anything the requester asked for.
+
+Each finding carries a severity: BLOCKER / MAJOR / MINOR / NIT. An em dash anywhere is at least a
+MAJOR finding and must be fixed before filing.
 
 ## Steps
 
 ### 1. Gather inputs
 
-Identify the draft text, the artifact type (issue / PR / commit), and the matching template file.
-Read the template so the review can check adherence against it.
+Identify the draft text, the artifact type (`issue` / `pr` / `commit`), and the matching template
+file path (`.github/ISSUE_TEMPLATE/<...>.md`, `.github/PULL_REQUEST_TEMPLATE.md`, or `.gitmessage`).
+If the draft lives in a file, read it.
 
-### 2. Dispatch reviewers
+### 2. Run the review workflow
 
-Dispatch review subagents in parallel, using a cheap model. Either one reviewer per dimension or a
-single focused reviewer covering all five; prefer splitting when the draft is large or high-stakes.
-Each reviewer must:
+Resolve `<REFS>` = absolute path to `skills/review-draft/references`. Read
+`workflows/review-draft.mjs` and call:
 
-- report findings as a list, each with a location/quote, the issue, a concrete suggested fix, and a
-  severity (BLOCKER / MAJOR / MINOR / NIT);
-- run a literal em-dash check and report every hit;
-- end with a one-paragraph verdict.
+```
+Workflow({ script: <contents of review-draft.mjs>,
+           args: { refs_dir: "<REFS>", draft: "<draft text>",
+                   artifact_type: "issue" | "pr" | "commit",
+                   template_path: "<template path or empty>" } })
+```
 
-### 3. Adjudicate
+The workflow runs three phases: an **Opus** reviewer at **high** effort finds issues across the
+five dimensions, a **Sonnet** adjudicator at **medium** effort confirms or rejects each finding,
+and a **Sonnet** reviser at **medium** effort applies only the confirmed findings. It short-circuits
+when the reviewer finds nothing or the adjudicator confirms nothing.
 
-For each finding, decide whether you agree. Do not apply findings blindly. Where you disagree,
-record your reasoning and reject the finding rather than applying it. If your platform supports
-replying to a reviewer, a brief exchange can resolve genuine ambiguity before you decide. Reject
-findings that are wrong or that misread the draft's purpose, and say why.
+Commit to the `Workflow` tool with **no fallback**: if `Workflow` is unavailable in the runtime,
+stop and escalate — do not silently substitute another dispatch.
 
-### 4. Revise and present
+### 3. Present results
 
-Apply the findings you accept. Present the revised draft to the user for approval. Note any finding
-you rejected and the reason. Do not file the artifact; that is the caller's step once approved.
+The workflow returns `revised_draft`, `applied` (confirmed findings that were applied), `rejected`
+(findings the adjudicator rejected, each with a `why`), the reviewer `verdict`, and any `em_dashes`
+hits. Present the revised draft to the user for approval, and note every rejected finding and the
+reason it was rejected. Do not file the artifact; that is the caller's step once approved.
 
 ## Notes
 
-- Keep reviewers cheap and the adjudication in a more capable model.
+- The reviewer runs on Opus at high effort; the adjudicator and reviser run on Sonnet at medium
+  effort.
 - An em dash anywhere is at least a MAJOR finding and must be fixed before filing.
 - This skill complements the "Drafting durable artifacts" convention in `AGENTS.md`.
