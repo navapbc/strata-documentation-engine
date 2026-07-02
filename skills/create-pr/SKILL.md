@@ -41,6 +41,9 @@ Use `.github/PULL_REQUEST_TEMPLATE.md`. Keep it terse and technical, in complete
 changed and why, how (if not obvious from the diff), a checkable test plan, and notes for reviewers.
 Reference the issue with `Closes #n` or `Relates to #n`.
 
+Write the description one line per paragraph; do not hard-wrap it. See "Formatting issue and PR
+bodies" in `CONTRIBUTING.md` for why.
+
 ### 4. Review the description
 
 Run the `review-draft` skill on the PR description before opening it. Apply the findings you agree

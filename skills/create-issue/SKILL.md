@@ -45,6 +45,9 @@ over `technical-task`, `bug` over `technical-task`).
 Fill in the template's sections. Do not leave a heading with an empty body unless the template says
 it is optional.
 
+Write the body one line per paragraph; do not hard-wrap it. See "Formatting issue and PR bodies" in
+`CONTRIBUTING.md` for why.
+
 ### 3. Apply the matching label
 
 Each template declares its label (`epic`, `story`, `bug`, `technical-task`, `spike`, `chore`). Apply
@@ -53,7 +56,8 @@ that label when filing. If the label does not exist yet, create it first.
 ### 4. Review the draft
 
 Run the `review-draft` skill on the issue body before filing. It checks quality, template adherence,
-voice, punctuation (no em dashes), and house style. Apply the findings you agree with.
+voice, punctuation (no em dashes), formatting (no hard-wrapped body), and house style. Apply the
+findings you agree with.
 
 ### 5. File
 
