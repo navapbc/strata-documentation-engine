@@ -4,9 +4,7 @@ paths:
   - "tests/**"
   - "sources.md"
   - "skills/generate-strata-docs/**"
-  - "docs/sources/**"
-  - "docs/INDEX.md"
-  - "docs/graph.json"
+  - "docs/**"
   - "docs/.verification/**"
   - "docs/.curation/**"
 ---

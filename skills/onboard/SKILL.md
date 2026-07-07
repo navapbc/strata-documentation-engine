@@ -15,8 +15,12 @@ This skill does not make automated changes: it reads, checks, and reports.
 Read the following files in order. Do not summarize them back to the user; just load the context:
 
 1. `README.md`: project overview and purpose
-2. `AGENTS.md`: architecture, conventions, and the documentation maintenance contract
-3. `CONTRIBUTING.md`: branch naming, commit template, PR conventions, and pipeline
+2. `AGENTS.md`: orientation, commands, the contribution workflow, and the documentation
+   maintenance contract
+3. `.claude/rules/architecture.md`: the pipeline architecture and conventions. Claude Code
+   auto-loads this only when you edit the pipeline paths, so read it now for the full picture
+4. `.claude/rules/ci.md`: the CI checks and doc-generation workflows
+5. `CONTRIBUTING.md`: branch naming, commit template, PR conventions, and pipeline
 
 After reading, briefly confirm to the user: one sentence on what this repo does and one sentence on
 the two layers (generation vs. validation/graph).
