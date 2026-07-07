@@ -34,6 +34,7 @@ pip install -r scripts/requirements.txt pytest    # setup
 
 python -m pytest -v                               # all tests
 python -m pytest tests/test_lint_docs.py -v       # one file
+python -m pytest tests/test_lint_docs.py::test_validate_doc_accepts_valid -v  # one test
 python -m pytest -k frontmatter -v                # by pattern
 
 # Lint / build pipeline (run in order; each prints a *_OK sentinel)
@@ -43,8 +44,9 @@ python -m scripts.build_graph         # write docs/INDEX.md + docs/graph.json ->
 ```
 
 Run scripts as modules (`python -m scripts.x`), not files; `pyproject.toml` sets
-`pythonpath = ["."]`. `lint_manifest --json` and `source_delta --json` are skill-runtime helpers,
-not part of the manual dev pipeline.
+`pythonpath = ["."]` so `scripts/` and `tests/` resolve. `lint_manifest --json` emits the parsed
+sources and `source_delta --json` classifies each source (new/changed/unchanged/throttled/orphaned);
+both are skill-runtime helpers, not part of the manual dev pipeline.
 
 ## Workflow
 
@@ -98,7 +100,7 @@ paths. Read them directly in any tool:
 
 - `.claude/rules/architecture.md`: the manifest, skill orchestration, the frontmatter-driven graph,
   and the "never silently drop" invariant. Applies when editing `scripts/`, `tests/`, `sources.md`,
-  `skills/generate-strata-docs/`, or `docs/sources/`.
+  `skills/generate-strata-docs/`, or anything under `docs/`.
 - `.claude/rules/ci.md`: the lint pipeline and the doc-generation workflows. Applies when editing
   `.github/workflows/` or doc frontmatter.
 

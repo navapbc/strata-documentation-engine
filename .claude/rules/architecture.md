@@ -5,13 +5,17 @@ paths:
   - "sources.md"
   - "skills/generate-strata-docs/**"
   - "docs/sources/**"
+  - "docs/INDEX.md"
+  - "docs/graph.json"
+  - "docs/.verification/**"
+  - "docs/.curation/**"
 ---
 
 # Architecture
 
 Reference for the documentation pipeline, auto-loaded by Claude Code when you edit the scripts, the
-`generate-strata-docs` skill, the manifest, or source docs. Always-on orientation and the command
-list live in `AGENTS.md`.
+`generate-strata-docs` skill, the manifest, or anything under `docs/`. Always-on orientation and the
+command list live in `AGENTS.md`.
 
 **The manifest drives everything.** `sources.md` is a markdown table (one row per source: `id`,
 `type`, `repo`, `ref`, `subpaths`, `notes`). A source's `type` selects a profile in
@@ -27,7 +31,9 @@ Setup (clone to .sources/) → Run 1 DOCUMENT → build graph
 ```
 
 - **Run 1** (`workflows/run-1-document.mjs`): one `general-purpose` agent per source in parallel,
-  each writing docs to `docs/sources/<id>/` from its profile + the registries.
+  each reading `skills/generate-strata-docs/references/agents/source-doc.md` + its profile + the
+  registries, then writing docs to `docs/sources/<id>/` and a distillation log to
+  `.logs/<id>.distillation.md`.
 - **Run 2** (`workflows/run-2-verify-fix.mjs`): per doc, a bounded verify → adjudicate → fix loop
   (`max_rounds`, default 2); residual findings mark the doc `verified: needs-review`, audit trail in
   `docs/.verification/`. Agent role specs live under `skills/generate-strata-docs/references/agents/`.
@@ -69,5 +75,5 @@ editing the graph builder, linter, or delta classifier, emit a visible record ra
 - `docs/.verification/` and `docs/.curation/` are audit trail. Keep them.
 - `scripts/frontmatter.py` is the shared YAML parser for linter and graph builder. Change it in one
   place.
-- The design spec and plan live in `docs/superpowers/{specs,plans}/`; `§` references in code and the
-  skill point back to that spec.
+- The design spec and plan live in `docs/superpowers/{specs,plans}/`; section references like `§3.3`
+  in code and the skill point back to that spec.

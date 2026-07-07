@@ -13,7 +13,7 @@ lives in `AGENTS.md`.
 
 - **lint.yml**: pytest → lint_manifest → lint_docs → graph freshness (`build_graph` then
   `git diff --exit-code` on `docs/INDEX.md` + `docs/graph.json`). Commit regenerated
-  `INDEX.md`/`graph.json` whenever doc frontmatter changes.
+  `INDEX.md`/`graph.json` whenever doc frontmatter changes or CI fails.
 - **generate-docs.yml** / **update-docs.yml**: manual only; full-mode and update-mode skill runs
   opening PRs on `docs/full-regen` / `docs/auto-update`. Both need `ANTHROPIC_API_KEY` and
   `SOURCES_READ_TOKEN` secrets.
