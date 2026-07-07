@@ -91,76 +91,22 @@ For `technical-task.md`, fill "Starting point" and "Constraints and gotchas" tho
 what an agent or new developer needs to pick up work cold. The `create-issue` skill guides choosing,
 wording, labeling, reviewing, and filing.
 
-## Architecture
+## Architecture and CI
 
-**The manifest drives everything.** `sources.md` is a markdown table (one row per source: `id`,
-`type`, `repo`, `ref`, `subpaths`, `notes`). A source's `type` selects a profile in
-`skills/generate-strata-docs/references/profiles/<type>.md` telling the documenter how to treat that
-repo. `lint_manifest` rejects a `type` with no matching profile, so a new source type needs both a
-manifest row and a profile file.
+Deep reference lives in path-scoped rule files that Claude Code auto-loads when you edit the relevant
+paths. Read them directly in any tool:
 
-**Skill orchestration:**
-
-```
-Setup (clone to .sources/) → Run 1 DOCUMENT → build graph
-  → Run 2 VERIFY→ADJUDICATE→FIX (per doc) → rebuild graph → CURATE → report
-```
-
-- **Run 1** (`workflows/run-1-document.mjs`): one `general-purpose` agent per source in parallel,
-  each writing docs to `docs/sources/<id>/` from its profile + the registries.
-- **Run 2** (`workflows/run-2-verify-fix.mjs`): per doc, a bounded verify → adjudicate → fix loop
-  (`max_rounds`, default 2); residual findings mark the doc `verified: needs-review`, audit trail in
-  `docs/.verification/`. Agent role specs live under `skills/generate-strata-docs/references/agents/`.
-- The skill commits to `Workflow` with no fallback: if unavailable it stops and escalates. Subagents
-  never talk to the user.
-- **full** mode documents every source; **update** mode only new + changed (`scripts/source_delta.py`),
-  detecting drift by the clone's resolved SHA vs the `source_ref.ref` in existing docs and throttling
-  re-documentation until a drifted source's docs are a week old.
-
-**Frontmatter is the single source of truth for the graph.** Every doc under `docs/sources/<id>/`
-starts with YAML frontmatter (contract:
-`skills/generate-strata-docs/references/doc-frontmatter-schema.md`). `build_graph.py` derives
-`docs/INDEX.md` and `docs/graph.json` purely from it; never edit those two by hand.
-
-Two cross-link axes, both resolved through registries (fenced kebab-case key lists the linter parses):
-
-- **Feature axis** (`skills/generate-strata-docs/references/feature-keys.md`): an `sdk` doc owns a
-  key via `feature_keys`; an `example` doc uses it via `demonstrates`. The builder resolves each
-  `demonstrates` to the owning SDK doc and emits an `example-of` edge.
-- **Platform axis** (`skills/generate-strata-docs/references/platform-components.md`): a doc owns a
-  component id via `component_keys`; `platform-cli` docs declare `manages`, app/infra docs declare
-  `integrates_with`, both resolved to the owning doc.
-
-`lint_docs` hard-fails on any `feature_keys`/`demonstrates`/`component_keys`/`manages`/
-`integrates_with` value not in its registry. Add the key to the registry before writing any doc that
-references it.
-
-**"Never silently drop" invariant.** The pipeline surfaces every gap rather than hiding it. When
-editing the graph builder, linter, or delta classifier, emit a visible record rather than discarding:
-
-- Clone failure: source recorded **skipped**, not dropped.
-- Registry-valid key with no owning doc: `build_graph` prints a `GAP:` line.
-- Unresolved findings: doc marked `verified: needs-review`.
-- Source removed from `sources.md` with docs still present: `source_delta` reports **orphaned**.
-- Drifted source documented under a week ago: `source_delta` reports **throttled**.
-
-## CI
-
-- **lint.yml**: pytest → lint_manifest → lint_docs → graph freshness (`build_graph` then
-  `git diff --exit-code` on `docs/INDEX.md` + `docs/graph.json`). Commit regenerated
-  `INDEX.md`/`graph.json` whenever doc frontmatter changes.
-- **generate-docs.yml** / **update-docs.yml**: manual only; full-mode and update-mode skill runs
-  opening PRs on `docs/full-regen` / `docs/auto-update`. Both need `ANTHROPIC_API_KEY` and
-  `SOURCES_READ_TOKEN` secrets.
+- `.claude/rules/architecture.md`: the manifest, skill orchestration, the frontmatter-driven graph,
+  and the "never silently drop" invariant. Applies when editing `scripts/`, `tests/`, `sources.md`,
+  `skills/generate-strata-docs/`, or `docs/sources/`.
+- `.claude/rules/ci.md`: the lint pipeline and the doc-generation workflows. Applies when editing
+  `.github/workflows/` or doc frontmatter.
 
 ## Conventions and gotchas
 
 - `.sources/` and `.logs/` are runtime, gitignored; absent in a clean tree.
-- `docs/.verification/` and `docs/.curation/` are audit trail. Keep them.
-- `scripts/frontmatter.py` is the shared YAML parser for linter and graph builder. Change it in one
-  place.
-- The design spec and plan live in `docs/superpowers/{specs,plans}/`; `§` references in code and the
-  skill point back to that spec.
+- Pipeline-internal conventions (the audit-trail dirs, the shared `scripts/frontmatter.py` parser,
+  the `docs/superpowers/` design spec and `§` references) live in `.claude/rules/architecture.md`.
 
 ## Documentation maintenance
 
@@ -172,8 +118,8 @@ Keep these current as the project evolves; update before closing the PR.
 | New source type | Profile in `skills/generate-strata-docs/references/profiles/` and `sources.md` |
 | New registry key | The relevant registry file, before any doc references it |
 | New issue template or workflow convention | `CONTRIBUTING.md` and Workflow above |
-| Architecture change | Architecture above, and `docs/superpowers/specs/` if the design spec is affected |
-| CI workflow change | CI above |
+| Architecture change | `.claude/rules/architecture.md`, and `docs/superpowers/specs/` if the design spec is affected |
+| CI workflow change | `.claude/rules/ci.md` |
 
 If a change makes a section stale, update it in the same PR. Do not leave documentation that
 contradicts the code.
