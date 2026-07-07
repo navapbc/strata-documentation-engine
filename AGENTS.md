@@ -62,8 +62,7 @@ for a cross-project issue: `jeffhorn/oscer-42-short-description`.
 ### Pull requests
 
 Open all PRs as drafts; mark ready only after self-review. Use `.github/PULL_REQUEST_TEMPLATE.md`
-(GitHub pre-populates it). The `create-pr` skill guides naming, filling the template, review, and
-opening as a draft.
+(GitHub pre-populates it).
 
 ### Commits
 
@@ -90,8 +89,7 @@ Use the template that best fits the work; GitHub surfaces these on new-issue.
 | `chore.md` | Non-user-visible maintenance (deps, CI, tooling) |
 
 For `technical-task.md`, fill "Starting point" and "Constraints and gotchas" thoroughly; those are
-what an agent or new developer needs to pick up work cold. The `create-issue` skill guides choosing,
-wording, labeling, reviewing, and filing.
+what an agent or new developer needs to pick up work cold.
 
 ## Architecture and CI
 
