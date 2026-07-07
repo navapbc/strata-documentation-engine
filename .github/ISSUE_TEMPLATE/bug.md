@@ -5,6 +5,12 @@ title: ""
 labels: bug
 ---
 
+## Issue readiness state
+
+- [ ] Reviewed by human engineer
+- [ ] Issue refinement complete
+- [ ] Ready for work
+
 ## What happened
 
 A clear description of the unexpected behavior.

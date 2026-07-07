@@ -5,6 +5,12 @@ title: ""
 labels: spike
 ---
 
+## Issue readiness state
+
+- [ ] Reviewed by human engineer
+- [ ] Issue refinement complete
+- [ ] Ready for work
+
 ## Question to answer
 
 What specific question or uncertainty are we resolving? Frame it so the answer is unambiguous.
