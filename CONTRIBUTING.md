@@ -1,5 +1,24 @@
 # Contributing
 
+## Contribution workflow
+
+The short version of how a change moves through this repo:
+
+1. **Start from an issue.** File one with the template that fits the work (epic, story, bug,
+   technical-task, spike, or chore). The `create-issue` skill walks you through choosing a template,
+   wording it for its audience, reviewing it, labeling it, and filing it.
+2. **Branch.** Use the naming shape in [Branching](#branching) below.
+3. **Make your changes.** Keep commits terse and explain why, not what. Wire up the commit template
+   (see [Commit message template](#commit-message-template)).
+4. **Review, then open a draft PR.** Run the `review-draft` skill on the PR description, then open
+   the PR as a draft and fill in the template (see [Opening pull requests](#opening-pull-requests)).
+   The `create-pr` skill walks you through branch naming, the review, and opening the PR.
+5. **Mark ready.** Move the PR out of draft once it is self-reviewed and CI passes.
+
+Run `review-draft` before any durable artifact goes up: an issue, a PR description, or a commit
+message set. It checks quality, template adherence, voice, punctuation, and house style. The rest of
+this document covers each step in detail.
+
 ## Local setup
 
 ### Python
@@ -39,6 +58,19 @@ jeffhorn/oscer-42-short-description
 ## Opening pull requests
 
 Open all pull requests as drafts initially. Mark ready for review when the work is complete and self-reviewed.
+
+## Formatting issue and PR bodies
+
+GitHub renders issue descriptions, PR descriptions, and comments as GitHub-Flavored Markdown, and in
+that context it treats a single newline inside a paragraph as a line break (unlike a `.md` file
+rendered on github.com, where single newlines collapse into a space). So a body that was hard-wrapped
+at 72 or 80 columns renders as ragged, broken lines.
+
+Write one line per paragraph and let it soft-wrap. Separate paragraphs with a blank line. Lists,
+tables, and fenced code blocks keep their own line structure and are unaffected. This is the
+opposite of a commit message body, which is plain text and should wrap at 72 columns (see the
+commit template). The distinction is by artifact: wrap commit bodies, do not wrap issue or PR
+bodies.
 
 ## Running the pipeline
 
