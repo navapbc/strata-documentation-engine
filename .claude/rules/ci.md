@@ -1,9 +1,7 @@
 ---
 paths:
   - ".github/workflows/**"
-  - "docs/sources/**"
-  - "docs/INDEX.md"
-  - "docs/graph.json"
+  - "docs/**"
 ---
 
 # CI
