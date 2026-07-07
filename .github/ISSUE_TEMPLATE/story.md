@@ -5,6 +5,12 @@ title: ""
 labels: story
 ---
 
+## Issue readiness state
+
+- [ ] Reviewed by human engineer
+- [ ] Issue refinement complete
+- [ ] Ready for work
+
 ## What and why
 
 As a **[who]**, I want to **[do what]** so that **[outcome or value]**.
