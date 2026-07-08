@@ -71,5 +71,3 @@ editing the graph builder, linter, or delta classifier, emit a visible record ra
 - `docs/.verification/` and `docs/.curation/` are audit trail. Keep them.
 - `scripts/frontmatter.py` is the shared YAML parser for linter and graph builder. Change it in one
   place.
-- The design spec and plan live in `docs/superpowers/{specs,plans}/`; section references like `§3.3`
-  in code and the skill point back to that spec.
