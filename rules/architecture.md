@@ -5,8 +5,6 @@ paths:
   - "sources.md"
   - "skills/generate-strata-docs/**"
   - "docs/**"
-  - "docs/.verification/**"
-  - "docs/.curation/**"
 ---
 
 # Architecture
