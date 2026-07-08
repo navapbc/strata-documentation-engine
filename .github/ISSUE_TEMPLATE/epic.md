@@ -5,6 +5,12 @@ title: ""
 labels: epic
 ---
 
+## Issue readiness state
+
+- [ ] Reviewed by human engineer
+- [ ] Issue refinement complete
+- [ ] Ready for work
+
 ## Goal
 
 What outcome are we working toward, and why does it matter now? One or two sentences from the user or stakeholder perspective, not the implementation perspective.

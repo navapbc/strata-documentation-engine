@@ -5,6 +5,12 @@ title: ""
 labels: technical-task
 ---
 
+## Issue readiness state
+
+- [ ] Reviewed by human engineer
+- [ ] Issue refinement complete
+- [ ] Ready for work
+
 ## What we decided
 
 The approach or solution agreed upon. State it plainly, with just enough rationale to make the choice legible to someone who wasn't in the conversation.
