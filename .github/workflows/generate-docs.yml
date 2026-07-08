@@ -1,6 +1,6 @@
 name: Generate Strata Docs
 # Full regeneration is a deliberate, maintainer-run action — manual dispatch only.
-# Routine drift refresh + new-source pickup lives in update-docs.yml (cron + manual).
+# Routine drift refresh + new-source pickup lives in update-docs.yml.
 on:
   workflow_dispatch:
 
