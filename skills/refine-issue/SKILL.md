@@ -143,12 +143,15 @@ After the last round, collect every proposed change from both roles.
 ### 3. Reconcile with human comments
 
 Dispatch the Reviewer (Opus, general-purpose) with the issue, the comments, and the full transcript.
-Add its proposed changes to the collected set and keep its conflict list.
+Add its proposed changes to the collected set. Carry its conflict list forward: pass it to the
+Adjudicator in Step 4, and surface any conflict that stays unresolved at the gate in Step 7 so
+nothing is dropped silently.
 
 ### 4. Adjudicate
 
-Dispatch the Adjudicator (Opus, general-purpose) with the issue and the full set of proposed changes.
-Collect a verdict per change. Keep the accepted set and the rejected set with reasons.
+Dispatch the Adjudicator (Opus, general-purpose) with the issue, the full set of proposed changes,
+and the Reviewer's conflict list. Collect a verdict per change. Keep the accepted set, the rejected
+set with reasons, and any conflict the adjudication left unresolved.
 
 ### 5. Plan the refined issue
 
@@ -162,9 +165,9 @@ enforces house style, no em dashes, and no hard-wrapped paragraphs.
 
 ### 7. Present and ask permission
 
-Show the user the refined title and body, the change summary, the open questions, and every rejected
-change with its reason. Ask for explicit permission to apply the changes to the issue. Do not write
-anything yet.
+Show the user the refined title and body, the change summary, the open questions, every rejected
+change with its reason, and any unresolved human-comment conflict. Ask for explicit permission to
+apply the changes to the issue. Do not write anything yet.
 
 ### 8. Apply, only after approval
 
