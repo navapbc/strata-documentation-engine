@@ -18,6 +18,9 @@ Use on an existing issue that is about to enter a sprint and needs sharpening: u
 scope, unstated acceptance criteria, or unverified technical feasibility. Skip it for a throwaway or
 an already-refined issue.
 
+The issue must already have an initial human review: at least one human comment on it, even a bare
+"looks good to me". The skill will not run the debate on an unreviewed issue (see Step 2).
+
 You need the issue number or URL and write access via `gh`.
 
 ## Model tiers
@@ -113,6 +116,19 @@ Produce:
 - change_summary: a short markdown summary of what changed and why, for a comment on the issue.
 - open_questions: the list of unresolved questions, also embedded in the body.
 
+Readiness block rules:
+- Preserve the "Issue readiness state" section at the top of the refined body, keeping its checkbox
+  list intact and in order. If the issue predates the block, insert the current five-state block
+  from the repo's issue templates (`.github/ISSUE_TEMPLATE/`).
+- Set the boxes to reflect this refinement: tick "Issue refinement complete"; tick "All open
+  questions answered" only when the Open Questions section is empty; leave "Post-refinement changes
+  reviewed by human" unticked, since the skill's edits always need a fresh human look; never tick
+  "Ready for work". Leave "Reviewed by human engineer" as you found it.
+
+Write the body as if authored fresh. No change narrative or meta-commentary: nothing like "this
+replaces the earlier framing", "not a fixed requirement", or defensive clarifications about what
+counts as in scope. What changed and why belongs only in change_summary.
+
 End your reply with these four fields, each clearly labeled.
 
 ## Steps
@@ -128,7 +144,19 @@ gh issue view <number> --json number,title,body,comments,labels,author,url
 Note which comments are human-authored (the comment author is not a bot). Keep the full issue and
 comments as context for every dispatch.
 
-### 2. Run the debate loop
+### 2. Gate on an initial human review
+
+Refinement builds on a human's read of the issue, so require one before dispatching anything:
+
+- If the issue has at least one human-authored comment, proceed. A bare "looks good to me" counts;
+  it shows a person read the issue. If the body has an "Issue readiness state" block, also note
+  whether "Reviewed by human engineer" is ticked, and carry that state through unchanged.
+- If it has none, stop the pipeline and tell the user the issue has not had an initial human
+  review. Offer exactly two paths: the user supplies their feedback now, which you post to the
+  issue with `gh issue comment` and then treat as the human review and proceed; or the run ends
+  here. Never run the debate on an unreviewed issue.
+
+### 3. Run the debate loop
 
 Run a bounded debate, default 2 rounds. Maintain a shared transcript holding each turn's argument
 and its proposed changes. Each round:
@@ -140,36 +168,36 @@ and its proposed changes. Each round:
 
 After the last round, collect every proposed change from both roles.
 
-### 3. Reconcile with human comments
+### 4. Reconcile with human comments
 
 Dispatch the Reviewer (Opus, general-purpose) with the issue, the comments, and the full transcript.
 Add its proposed changes to the collected set. Carry its conflict list forward: pass it to the
-Adjudicator in Step 4, and surface any conflict that stays unresolved at the gate in Step 7 so
+Adjudicator in Step 5, and surface any conflict that stays unresolved at the gate in Step 8 so
 nothing is dropped silently.
 
-### 4. Adjudicate
+### 5. Adjudicate
 
 Dispatch the Adjudicator (Opus, general-purpose) with the issue, the full set of proposed changes,
 and the Reviewer's conflict list. Collect a verdict per change. Keep the accepted set, the rejected
 set with reasons, and any conflict the adjudication left unresolved.
 
-### 5. Plan the refined issue
+### 6. Plan the refined issue
 
 Dispatch the Planner (Sonnet, general-purpose) with the issue and the accepted changes only. Collect
 refined_title, refined_body, change_summary, and open_questions.
 
-### 6. Style-check the body
+### 7. Style-check the body
 
 Run the `review-draft` skill on refined_body as an issue draft. Apply the findings you accept. This
 enforces house style, no em dashes, and no hard-wrapped paragraphs.
 
-### 7. Present and ask permission
+### 8. Present and ask permission
 
 Show the user the refined title and body, the change summary, the open questions, every rejected
 change with its reason, and any unresolved human-comment conflict. Ask for explicit permission to
 apply the changes to the issue. Do not write anything yet.
 
-### 8. Apply, only after approval
+### 9. Apply, only after approval
 
 On approval, write the refined body and the summary to temporary files and run:
 
@@ -178,14 +206,19 @@ gh issue edit <number> --title "<refined_title>" --body-file <body.md>
 gh issue comment <number> --body-file <summary.md>
 ```
 
-Pass the body and comment via files so multi-line markdown survives the shell. On denial, write
-nothing and stop.
+Pass the body and comment via files so multi-line markdown survives the shell. The summary comment
+must end by reminding the reader that "Post-refinement changes reviewed by human" is unticked and
+awaiting them. On denial, write nothing and stop.
 
 ## Notes
 
-- Sub-agents never talk to the user. Only the orchestrator prompts, at Step 7.
+- Sub-agents never talk to the user. Only the orchestrator prompts, at the Step 2 gate and at
+  Step 8.
 - Never drop a finding silently: rejected changes are shown with reasons, and unresolved questions
   become an Open Questions section in the body and are surfaced at the gate.
+- The "Issue readiness state" block is never dropped, reordered, or rewritten away; treat it like
+  the pipeline's "never silently drop" invariant. The Planner's readiness block rules say which
+  boxes to tick.
 - If a sub-agent's output is unreadable, re-dispatch it once, then surface the failure rather than
   guessing.
 - This skill complements `create-issue`, which files new issues, and reuses `review-draft` for the
