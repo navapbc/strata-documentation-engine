@@ -93,7 +93,7 @@ Use the template that best fits the work; GitHub surfaces these on new-issue.
 For `technical-task.md`, fill "Starting point" and "Constraints and gotchas" thoroughly; those are
 what an agent or new developer needs to pick up work cold.
 
-The `create-issue` skill guides choosing the template, wording, labeling, reviewing, and filing.
+The `create-issue` skill guides checking for duplicates, choosing the template, wording, labeling, reviewing, and filing.
 
 ## Architecture and CI
 
