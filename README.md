@@ -25,7 +25,7 @@ sources, producing a linked, agent-queryable knowledge base.
 
 - **Locally:** open this repo in Claude Code and invoke the `generate-strata-docs` skill
   (uses your own Claude auth; needs git access to the source repos and Python 3.13).
-- **In CI:** the `Generate Strata Docs` Action (manual, weekly, or on `sources.md` change)
+- **In CI:** the `Generate Strata Docs` Action (manual)
   runs the skill and opens a PR.
   Requires the `ANTHROPIC_API_KEY` and `SOURCES_READ_TOKEN` secrets.
 
@@ -37,8 +37,6 @@ python -m pytest -v
 python -m scripts.lint_manifest
 python -m scripts.lint_docs
 ```
-
-See `docs/superpowers/specs/2026-06-18-strata-documentation-engine-design.md` for the design.
 
 ## Contributing
 

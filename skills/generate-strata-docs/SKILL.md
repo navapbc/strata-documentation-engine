@@ -118,7 +118,7 @@ Summarize: docs generated per source, sources **skipped** (with reason), docs ma
 run), any **orphaned** sources (docs whose source left `sources.md`), and any `source_delta`
 **warnings**.
 In CI the
-Action opens/updates the PR, **committing each doc with its `distillation_note` (§3.6) in the
+Action opens/updates the PR, **committing each doc with its `distillation_note` in the
 commit message** for an auditable history; the temp `.logs/` are not committed. Locally, leave
 `docs/**` in the working tree for the developer to review and commit.
 
@@ -127,5 +127,5 @@ commit message** for an auditable history; the temp `.logs/` are not committed. 
 - One model per source / one verify-fix loop per doc. **full mode** rebuilds every source;
   **update mode** (via `scripts/source_delta.py`) re-documents only new + changed sources, skips
   unchanged ones, and throttles drifted sources whose docs are less than a week old.
-- This skill commits to the `Workflow` tool (spec §8, no fallback). If `Workflow` is
+- This skill commits to the `Workflow` tool (no fallback). If `Workflow` is
   unavailable in the runtime, stop and escalate — do not silently substitute another dispatch.
