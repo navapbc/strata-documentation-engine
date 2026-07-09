@@ -23,11 +23,11 @@ this work. Search open and closed together, since a `wontfix` or already-closed 
 whether to file at all:
 
 ```bash
-gh issue list --repo navapbc/strata-documentation-engine --state all --search "<keywords>"
+gh search issues --repo navapbc/strata-documentation-engine --include-prs "<keywords>"
 ```
 
-GitHub numbers issues and PRs together, so `--state all` surfaces PRs too; a PR may already be doing
-the work.
+Omit `--state` so the search spans open and closed; `--include-prs` widens it to pull requests,
+since a PR may already be doing the work. (`gh issue list` never returns PRs, whatever its `--state`.)
 
 Judge by the work, not the topic: two issues that merely mention the same subject are not
 duplicates. A duplicate tracks the same change or investigation. Then:
@@ -39,8 +39,9 @@ duplicates. A duplicate tracks the same change or investigation. Then:
   and get their explicit confirmation before continuing. Never file silently over a known potential
   duplicate.
 
-When resolving this means closing an issue as a duplicate of another, close it with the `duplicate`
-label:
+When resolving this means closing an issue as a duplicate of another, confirm with the person at the
+keyboard first (closing and commenting publicly is an outward-facing action), then close it with the
+`duplicate` label:
 
 ```bash
 gh issue close <n> --repo navapbc/strata-documentation-engine --reason "not planned" \
