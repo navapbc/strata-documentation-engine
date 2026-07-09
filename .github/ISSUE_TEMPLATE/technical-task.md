@@ -9,6 +9,8 @@ labels: technical-task
 
 - [ ] Reviewed by human engineer
 - [ ] Issue refinement complete
+- [ ] All open questions answered
+- [ ] Post-refinement changes reviewed by human
 - [ ] Ready for work
 
 ## What we decided
