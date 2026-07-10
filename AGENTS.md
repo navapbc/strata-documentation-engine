@@ -94,10 +94,12 @@ For `technical-task.md`, fill "Starting point" and "Constraints and gotchas" tho
 what an agent or new developer needs to pick up work cold.
 
 The `create-issue` skill guides checking for duplicates, choosing the template, wording, labeling, reviewing, and filing.
+After initial human review, the `refine-issue` skill pressure-tests an existing issue for sprint
+readiness.
 
 ## Architecture and CI
 
-Deep reference lives in two rule files under `rules/` at the repo root. Claude Code auto-loads each
+Deep reference lives in rule files under `rules/` at the repo root. Claude Code auto-loads each
 when you touch a path its `paths:` frontmatter matches; other tools do not, so open the relevant file
 directly when working the paths noted below.
 
@@ -106,6 +108,8 @@ directly when working the paths noted below.
   `skills/generate-strata-docs/`, or anything under `docs/`.
 - `rules/ci.md`: the lint pipeline and the doc-generation workflows. Applies when editing
   `.github/workflows/` or doc frontmatter.
+- `rules/subagent-model-tiers.md`: which Claude model to give a sub-agent that a skill dispatches
+  via the `Agent`/Task tool. Applies when editing anything under `skills/`.
 
 ## Conventions and gotchas
 
