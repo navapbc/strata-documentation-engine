@@ -5,9 +5,7 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python3 -m scripts.hooks.pr_create" },
-          { "type": "command", "command": "python3 -m scripts.hooks.issue_create" },
-          { "type": "command", "command": "python3 -m scripts.hooks.git_commit" }
+          { "type": "command", "command": "python3 -m scripts.hooks" }
         ]
       }
     ]

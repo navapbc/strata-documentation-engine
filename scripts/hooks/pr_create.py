@@ -1,7 +1,7 @@
 """Nudge `gh pr create` toward the create-pr skill."""
 import sys
 
-from scripts.hooks import run
+from scripts.hooks import matches, run
 
 REMINDER = (
     "Reminder: open PRs through the create-pr skill. It fills "
@@ -10,8 +10,8 @@ REMINDER = (
 )
 
 
-def reminder(command):
-    return REMINDER if "gh pr create" in command else None
+def reminder(command, cwd=None):
+    return REMINDER if matches(command, "gh", "pr", "create") else None
 
 
 if __name__ == "__main__":

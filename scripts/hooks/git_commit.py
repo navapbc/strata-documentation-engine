@@ -7,24 +7,27 @@ before the commit lands.
 import subprocess
 import sys
 
-from scripts.hooks import run
+from scripts.hooks import matches, run
 
 
-def _git(*args):
-    """Trimmed stdout of a git command, or '' on any failure."""
+def _git(cwd, *args):
+    """Trimmed stdout of a git command run in `cwd`, or '' on any failure."""
+    prefix = ["-C", cwd] if cwd else []
     try:
-        result = subprocess.run(["git", *args], capture_output=True, text=True, timeout=5)
+        result = subprocess.run(["git", *prefix, *args], capture_output=True, text=True, timeout=5)
         return result.stdout.strip()
     except Exception:
         return ""
 
 
-def reminder(command):
-    if "git commit" not in command:
+def reminder(command, cwd=None):
+    if not matches(command, "git", "commit"):
         return None
-    staged = _git("diff", "--cached", "--name-only") or "(none)"
-    unstaged = _git("diff", "--name-only") or "(none)"
-    untracked = _git("ls-files", "--others", "--exclude-standard") or "(none)"
+    # cwd is the tool's reported working directory, so the lists match the repo the commit runs in
+    # rather than the hook's own process cwd. A `cd` buried inside the command still isn't reflected.
+    staged = _git(cwd, "diff", "--cached", "--name-only") or "(none)"
+    unstaged = _git(cwd, "diff", "--name-only") or "(none)"
+    untracked = _git(cwd, "ls-files", "--others", "--exclude-standard") or "(none)"
     return (
         "git commit reminder. Confirm the staged set matches your intended change set "
         "before committing.\n\n"
