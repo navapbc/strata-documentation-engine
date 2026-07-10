@@ -1,7 +1,7 @@
 import io
 import json
 
-from scripts.hooks import command_from_stdin, matches, run
+from scripts.hooks import matches, payload_from_stdin, run
 from scripts.hooks import __main__ as dispatcher
 from scripts.hooks import git_commit, issue_create, pr_create
 
@@ -48,9 +48,9 @@ def test_git_commit_threads_cwd_into_git(monkeypatch):
     assert seen == ["/repo/sub", "/repo/sub", "/repo/sub"]
 
 
-def test_command_from_stdin_handles_bad_input(monkeypatch):
+def test_payload_from_stdin_handles_bad_input(monkeypatch):
     monkeypatch.setattr("sys.stdin", io.StringIO("not json"))
-    assert command_from_stdin() == ""
+    assert payload_from_stdin() == {}
 
 
 def test_run_emits_valid_hook_json(monkeypatch):

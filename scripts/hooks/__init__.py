@@ -30,11 +30,6 @@ def cwd_of(payload):
     return payload.get("cwd") or None
 
 
-def command_from_stdin():
-    """The Bash command string from the payload on stdin, or '' (single-check `run` path)."""
-    return command_of(payload_from_stdin())
-
-
 def matches(command, *words):
     """True if `command` runs `words` as a whitespace-separated token sequence.
 
