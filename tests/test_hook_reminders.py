@@ -57,7 +57,7 @@ def test_run_emits_valid_hook_json(monkeypatch):
     out = io.StringIO()
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"tool_input": {"command": "x"}})))
     monkeypatch.setattr("sys.stdout", out)
-    assert run(lambda command: "hello") == 0
+    assert run(lambda command, cwd=None: "hello") == 0
     assert json.loads(out.getvalue())["hookSpecificOutput"]["additionalContext"] == "hello"
 
 
@@ -65,7 +65,7 @@ def test_run_is_silent_when_check_returns_none(monkeypatch):
     out = io.StringIO()
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"tool_input": {"command": "x"}})))
     monkeypatch.setattr("sys.stdout", out)
-    assert run(lambda command: None) == 0
+    assert run(lambda command, cwd=None: None) == 0
     assert out.getvalue() == ""
 
 

@@ -11,13 +11,17 @@ from scripts.hooks import matches, run
 
 
 def _git(cwd, *args):
-    """Trimmed stdout of a git command run in `cwd`, or '' on any failure."""
+    """Trimmed stdout of a git command run in `cwd`, or None on failure (including timeouts)."""
     prefix = ["-C", cwd] if cwd else []
     try:
         result = subprocess.run(["git", *prefix, *args], capture_output=True, text=True, timeout=5)
-        return result.stdout.strip()
+    except subprocess.TimeoutExpired:
+        return None
     except Exception:
-        return ""
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
 
 
 def reminder(command, cwd=None):
@@ -25,9 +29,12 @@ def reminder(command, cwd=None):
         return None
     # cwd is the tool's reported working directory, so the lists match the repo the commit runs in
     # rather than the hook's own process cwd. A `cd` buried inside the command still isn't reflected.
-    staged = _git(cwd, "diff", "--cached", "--name-only") or "(none)"
-    unstaged = _git(cwd, "diff", "--name-only") or "(none)"
-    untracked = _git(cwd, "ls-files", "--others", "--exclude-standard") or "(none)"
+    staged = _git(cwd, "diff", "--cached", "--name-only")
+    unstaged = _git(cwd, "diff", "--name-only")
+    untracked = _git(cwd, "ls-files", "--others", "--exclude-standard")
+    staged = "(unavailable)" if staged is None else (staged or "(none)")
+    unstaged = "(unavailable)" if unstaged is None else (unstaged or "(none)")
+    untracked = "(unavailable)" if untracked is None else (untracked or "(none)")
     return (
         "git commit reminder. Confirm the staged set matches your intended change set "
         "before committing.\n\n"

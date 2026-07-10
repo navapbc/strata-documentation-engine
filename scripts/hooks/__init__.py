@@ -59,7 +59,8 @@ def emit(message):
 
 def run(reminder):
     """Wire a single check's `reminder` to the I/O contract for direct invocation. Returns 0."""
-    message = reminder(command_from_stdin())
+    payload = payload_from_stdin()
+    message = reminder(command_of(payload), cwd_of(payload))
     if message:
         emit(message)
     return 0
