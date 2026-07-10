@@ -25,7 +25,7 @@ sources, producing a linked, agent-queryable knowledge base.
 
 - **Locally:** open this repo in Claude Code and invoke the `generate-strata-docs` skill
   (uses your own Claude auth; needs git access to the source repos and Python 3.13).
-- **In CI:** the `Generate Strata Docs` Action (manual, weekly, or on `sources.md` change)
+- **In CI:** the `Generate Strata Docs` Action (manual)
   runs the skill and opens a PR.
   Requires the `ANTHROPIC_API_KEY` and `SOURCES_READ_TOKEN` secrets.
 
@@ -42,8 +42,6 @@ Opening the repo in Claude Code loads local `PreToolUse` reminder hooks (`script
 in `.claude/settings.json`) that nudge `gh pr create` / `gh issue create` toward the create-pr /
 create-issue skills and list the staged set before `git commit`. They only remind, never block; see
 `rules/architecture.md`.
-
-See `docs/superpowers/specs/2026-06-18-strata-documentation-engine-design.md` for the design.
 
 ## Contributing
 

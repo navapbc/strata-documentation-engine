@@ -37,12 +37,12 @@ def _parse_fenced_keys(path):
 
 
 def load_feature_keys(path):
-    """Canonical SDK feature keys from feature-keys.md (cross-link anchor, §3.3)."""
+    """Canonical SDK feature keys from feature-keys.md (cross-link anchor)."""
     return _parse_fenced_keys(path)
 
 
 def load_platform_components(path):
-    """Canonical platform component ids from platform-components.md (cross-link anchor, §3.3b)."""
+    """Canonical platform component ids from platform-components.md (cross-link anchor)."""
     return _parse_fenced_keys(path)
 
 

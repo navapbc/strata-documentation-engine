@@ -29,7 +29,7 @@ never talk to a user.
    `YYYY-MM-DD`) in every doc's frontmatter. Update mode uses it to throttle re-documentation of
    frequently-changing sources — a drifted source is re-documented only once its docs are at least
    a week old. If no run date was provided, omit the field rather than guessing a date.
-4. Write a **distillation log** to `.logs/<id>.distillation.md` (spec §3.6): which files/symbols
+4. Write a **distillation log** to `.logs/<id>.distillation.md`: which files/symbols
    you read and which you skipped, the judgment calls you made (what to document/drop/ambiguous),
    gaps or weak spots in the source, and a short per-doc distillation note (one line each)
    suitable for that doc's commit message.
