@@ -5,8 +5,9 @@
 The short version of how a change moves through this repo:
 
 1. **Start from an issue.** File one with the template that fits the work (epic, story, bug,
-   technical-task, spike, or chore). The `create-issue` skill walks you through choosing a template,
-   wording it for its audience, reviewing it, labeling it, and filing it.
+   technical-task, spike, or chore). The `create-issue` skill walks you through checking for
+   duplicates, choosing a template, wording it for its audience, reviewing it, labeling it, and
+   filing it.
 2. **Branch.** Use the naming shape in [Branching](#branching) below.
 3. **Make your changes.** Keep commits terse and explain why, not what. Wire up the commit template
    (see [Commit message template](#commit-message-template)).
