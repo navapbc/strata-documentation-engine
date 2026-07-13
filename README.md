@@ -38,6 +38,11 @@ python -m scripts.lint_manifest
 python -m scripts.lint_docs
 ```
 
+Opening the repo in Claude Code loads local `PreToolUse` reminder hooks (`scripts/hooks/`, registered
+in `.claude/settings.json`) that nudge `gh pr create` / `gh issue create` toward the create-pr /
+create-issue skills and list the staged set before `git commit`. They only remind, never block; see
+`rules/architecture.md`.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow, branch naming, commit

@@ -66,6 +66,21 @@ editing the graph builder, linter, or delta classifier, emit a visible record ra
 - Source removed from `sources.md` with docs still present: `source_delta` reports **orphaned**.
 - Drifted source documented under a week ago: `source_delta` reports **throttled**.
 
+## Local reminder hooks
+
+`.claude/settings.json` registers one non-blocking `PreToolUse` hook under the `Bash` matcher,
+`python3 -m scripts.hooks`, that keeps durable-artifact conventions in front of an agent as it acts:
+route `gh pr create` / `gh issue create` through the create-pr / create-issue skills, and print the
+staged-vs-unstaged file lists before `git commit`. Each check is a pure
+`reminder(command, cwd) -> str | None` in its own `scripts/hooks/` module, over the single I/O
+contract in `scripts/hooks/__init__.py`; the module docstrings are the contract, so read those before
+changing a check. `scripts/hooks/__main__.py` is the dispatcher: it reads the payload once and runs
+every check listed in its `CHECKS` tuple, so adding a check means writing a module and appending to
+`CHECKS` (tested Python), never editing `settings.json`. Reminders only guide, never block (they emit
+`additionalContext`, never a `permissionDecision`), so create-pr's own `gh pr create` proceeds.
+`.claude/settings.json` is committed and shared; `.claude/settings.local.json` is per-user and not
+committed.
+
 ## Conventions
 
 - `docs/.verification/` and `docs/.curation/` are audit trail. Keep them.
