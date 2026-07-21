@@ -2,6 +2,7 @@
 id: example-oscer-business-process
 title: OSCER — certification business process and case
 source: oscer
+verified: ok
 doc_type: example
 tags: [example-app, oscer, business-process, case, state-machine, events]
 related:
@@ -12,13 +13,12 @@ demonstrates: [business-process, case]
 summary: How OSCER models the Medicaid certification lifecycle as a Strata::BusinessProcess state machine driving a Strata::Case aggregate.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: a4fc94b35ed737d20ca4530efe20d579ce5f0d53
+  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
   paths:
     - reporting-app/app/business_processes/certification_business_process.rb
     - reporting-app/app/models/certification_case.rb
     - reporting-app/app/models/certification.rb
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # OSCER — certification business process and case
@@ -37,8 +37,11 @@ domain event name:
 ```ruby
 class CertificationBusinessProcess < Strata::BusinessProcess
   # System (automated) determination steps
-  system_process(EXTERNAL_EXEMPTION_CHECK_STEP, ->(kase) {
-    ExemptionDeterminationService.determine(kase)
+  system_process(EXTERNAL_EXCLUSION_CHECK_STEP, ->(kase) {
+    ExclusionDeterminationService.determine(kase)
+  })
+  system_process(EXTERNAL_EXCEPTION_CHECK_STEP, ->(kase) {
+    ExceptionDeterminationService.determine(kase)
   })
   system_process(EXTERNAL_COMMUNITY_ENGAGEMENT_CHECK_STEP, ->(kase) {
     CommunityEngagementCheckService.determine(kase)
@@ -51,13 +54,13 @@ class CertificationBusinessProcess < Strata::BusinessProcess
   staff_task(REVIEW_DENIAL_RESPONSE_STEP, ReviewDenialResponseTask)
 
   # Entry point: a CertificationCreated event starts the process and builds the case
-  start(EXTERNAL_EXEMPTION_CHECK_STEP, on: "CertificationCreated") do |event|
+  start(EXTERNAL_EXCLUSION_CHECK_STEP, on: "CertificationCreated") do |event|
     CertificationCase.new(certification_id: event[:payload][:certification_id])
   end
 
   # Event-driven transitions between steps
-  transition(EXTERNAL_EXEMPTION_CHECK_STEP, "DeterminedNotExempt", EXTERNAL_COMMUNITY_ENGAGEMENT_CHECK_STEP)
-  transition(EXTERNAL_EXEMPTION_CHECK_STEP, "DeterminedExempt", END_STEP)
+  transition(EXTERNAL_EXCLUSION_CHECK_STEP, "DeterminedNotExcluded", EXTERNAL_EXCEPTION_CHECK_STEP)
+  transition(EXTERNAL_EXCLUSION_CHECK_STEP, "DeterminedExcluded", END_STEP)
   # ...
 end
 ```
@@ -65,27 +68,31 @@ end
 The flow as declared:
 
 1. **Start** — `CertificationCreated` (published by `Certification.after_create_commit`) starts the
-   process at the external exemption check and constructs a `CertificationCase` bound to the
+   process at the external exclusion check and constructs a `CertificationCase` bound to the
    certification id.
-2. **External exemption check** (`system_process`) — runs `ExemptionDeterminationService.determine`.
-   `DeterminedExempt` ends the case; `DeterminedNotExempt` advances to the CE check.
-3. **External community-engagement check** (`system_process`) — runs
+2. **External exclusion check** (`system_process`) — runs `ExclusionDeterminationService.determine`.
+   `DeterminedExcluded` ends the case; `DeterminedNotExcluded` advances to the exception check.
+3. **External exception check** (`system_process`) — runs `ExceptionDeterminationService.determine`.
+   `DeterminedExcepted` ends the case (the member need not report); `DeterminedNotExcepted` advances
+   to the CE check.
+4. **External community-engagement check** (`system_process`) — runs
    `CommunityEngagementCheckService.determine`, which assesses aggregate hours and income from both
    member-reported and externally-sourced data.
    `DeterminedCommunityEngagementMet` ends; `DeterminedCommunityEngagementInsufficient` and
    `DeterminedCommunityEngagementActionRequired` route to the member's report-activities step.
-4. **Report activities** (`applicant_task`) — the member submits one of three application forms.
+5. **Report activities** (`applicant_task`) — the member submits one of three application forms.
    Each form's submission event (`ActivityReportApplicationFormSubmitted`,
    `ExemptionApplicationFormSubmitted`, `DenialResponseApplicationFormSubmitted`) transitions to the
    matching staff review step.
-5. **Staff review** (`staff_task` × 3) — a caseworker approves/denies. Approval events end the case;
+6. **Staff review** (`staff_task` × 3) — a caseworker approves/denies. Approval events end the case;
    denial events route back to report-activities (or end the case on a `…Final` event when the
    verification window has closed).
 
 Note the transitions are written so that a **denial while the verification window is open** returns
 the member to `report_activities` (e.g. `ActivityReportDenied`), whereas a **final denial**
 (`ActivityReportDeniedFinal`) ends the case — the two event names are emitted by the case model
-depending on window state (see below).
+depending on window state (see below). "Excluded", "excepted", and "exempt" are three distinct
+outcomes in this flow and are not interchangeable.
 
 ## The case aggregate
 
@@ -97,14 +104,21 @@ app-specific state via `store_accessor :facts`:
 ```ruby
 class CertificationCase < Strata::Case
   store_accessor :facts, :activity_report_approval_status, :activity_report_approval_status_updated_at,
-    :exemption_request_approval_status, # ...
+    :exemption_request_approval_status, :exemption_request_approval_status_updated_at,
+    :denial_response_approval_status, :denial_response_approval_status_updated_at
 ```
 
-The case exposes domain transitions (`accept_activity_report`, `deny_activity_report`,
-`accept_exemption_request`, `accept_denial_response`, etc.). Each one runs inside a `transaction`,
-flips the relevant approval-status accessor, calls the SDK's `close!`/`save!`, and publishes the
-next workflow event. Most also record a `Determination` on the `Certification` (the
-exemption-denial path instead writes a `Strata::AuditLog` entry):
+The case exposes two families of state-mutating methods. The caseworker-facing transitions
+(`accept_activity_report`, `deny_activity_report`, `accept_exemption_request`,
+`accept_denial_response`, etc.) each run inside a `transaction`, flip the relevant approval-status
+accessor, call the SDK's `close!`/`save!`, and then publish the next workflow event directly. The
+automated `record_*` methods (`record_exclusion_determination`, `record_exception_determination`,
+`record_external_ce_combined_assessment`, etc.), invoked by the determination services, only mutate
+case state inside the `transaction` — the calling service publishes the event and sends
+notifications; some of these do not flip an accessor at all (e.g.
+`record_exception_determination` only `close!`s). Most methods in both families also record a
+`Determination` on the `Certification` (the exemption-denial path instead writes a
+`Strata::AuditLog` entry):
 
 ```ruby
 def deny_activity_report(user, application_form)
@@ -144,4 +158,3 @@ process's `transition` declarations subscribe to those same event names, and
 `NotificationsEventListener` subscribes for member emails (see
 [audit log and actors](./audit-log-and-actors.md) and [determinations](./determinations.md) for how
 those events tie into determination recording and notifications).
-</content>

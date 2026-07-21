@@ -2,6 +2,7 @@
 id: example-oscer-attributes
 title: OSCER — typed attributes and attribute types
 source: oscer
+verified: ok
 doc_type: example
 tags: [example-app, oscer, attributes, strata-attribute, types, money, dates]
 related:
@@ -15,19 +16,20 @@ demonstrates:
   - attribute-types/us-date
   - attribute-types/name
   - attribute-types/range
-summary: How OSCER uses the strata_attribute DSL and the SDK's money, year-month, us-date, name, and range attribute types across forms, activities, and value objects.
+  - attribute-types/array
+summary: How OSCER uses the strata_attribute DSL and the SDK's money, year-month, us-date, name, range, and array attribute types across forms, activities, and value objects.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: a4fc94b35ed737d20ca4530efe20d579ce5f0d53
+  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
   paths:
     - reporting-app/app/models/income_activity.rb
     - reporting-app/app/models/activity_report_application_form.rb
     - reporting-app/app/models/external_income_activity.rb
+    - reporting-app/app/models/external_hourly_activity.rb
     - reporting-app/app/models/member.rb
     - reporting-app/app/forms/demo/certifications/base_create_form.rb
     - reporting-app/app/models/activity.rb
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # OSCER — typed attributes and attribute types
@@ -57,12 +59,21 @@ strata_attribute :due_date, :date
 strata_attribute :member_comment, :text
 ```
 
-The DSL accepts modifiers — `array: true` for a list of values and `range: true` for a value range:
+The DSL accepts modifiers — `array: true` for a list of values and `range: true` for a value range.
+
+## Array
+
+Reporting periods on the activity-report form are lists, declared with `array: true`, and
+`MemberStatus` stores its reason codes as string arrays:
 
 ```ruby
 # app/models/activity_report_application_form.rb
 strata_attribute :reporting_periods, :year_month, array: true
 strata_attribute :months_that_can_be_certified, :year_month, array: true
+
+# app/models/member_status.rb
+strata_attribute :reason_codes, :string, array: true
+strata_attribute :human_readable_reason_codes, :string, array: true
 ```
 
 ## Money
@@ -138,4 +149,3 @@ The demo form validates the decomposed sub-fields directly (`member_name_first`,
 (`attribute :name, ActiveModel::Type::Json.new(Strata::Name)`).
 
 For the value-object types these attributes resolve into, see [value objects](./value-objects.md).
-</content>

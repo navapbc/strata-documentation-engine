@@ -2,13 +2,14 @@
 id: infra-database
 title: Database — Aurora, the Role Manager, and Access Control
 source: template-infra
+verified: ok
 doc_type: guide
 tags: [infra, database, postgres, aurora, rds, lambda, iam, terraform]
 related: [infra-overview, infra-module-architecture, infra-getting-started, infra-configuration, infra-environments-and-workspaces]
 summary: How the database layer provisions Aurora Serverless v2 PostgreSQL, uses a role-manager Lambda to create the app and migrator users, secures access with IAM authentication, and how to upgrade the engine.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: d2b569e3eef126514745b0e0e5d92a8739d0c6f2
+  ref: 80a7cc8ec802c442098933f65280175b8453c659
   paths:
     - docs/infra/set-up-database.md
     - docs/infra/database-access-control.md
@@ -16,8 +17,7 @@ source_ref:
     - docs/decisions/infra/2023-05-25-separate-database-infrastructure-into-separate-layer.md
     - docs/decisions/infra/2023-05-25-provision-database-users-with-serverless-function.md
     - docs/decisions/infra/2023-06-05-database-migration-architecture.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Database — Aurora, the Role Manager, and Access Control

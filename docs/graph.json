@@ -53,7 +53,7 @@
         "capability",
         "document-processing",
         "documentai",
-        "sidecar"
+        "standalone-service"
       ],
       "path": "sources/documentai-api/overview.md"
     },
@@ -162,6 +162,20 @@
       "path": "sources/oscer/business-process.md"
     },
     {
+      "id": "example-oscer-components",
+      "title": "OSCER \u2014 SDK view components",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "components",
+        "example-app",
+        "oscer",
+        "uswds",
+        "view-component"
+      ],
+      "path": "sources/oscer/components.md"
+    },
+    {
       "id": "example-oscer-determinations",
       "title": "OSCER \u2014 determinations and the Determinable concern",
       "source": "oscer",
@@ -193,13 +207,13 @@
     },
     {
       "id": "example-oscer-rules-engine",
-      "title": "OSCER \u2014 rules engine (exemption eligibility)",
+      "title": "OSCER \u2014 rules engine (exclusion eligibility)",
       "source": "oscer",
       "doc_type": "example",
       "tags": [
         "eligibility",
         "example-app",
-        "exemption",
+        "exclusion",
         "oscer",
         "rules-engine"
       ],
@@ -904,6 +918,11 @@
     },
     {
       "from": "app-template-using-the-rails-template",
+      "to": "infra-azure-overview",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "app-template-using-the-rails-template",
       "to": "infra-overview",
       "rel": "integrates-with"
     },
@@ -1068,6 +1087,26 @@
       "rel": "example-of"
     },
     {
+      "from": "example-oscer-components",
+      "to": "example-oscer-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-components",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-components",
+      "to": "example-oscer-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-components",
+      "to": "strata-sdk-form-builder",
+      "rel": "example-of"
+    },
+    {
       "from": "example-oscer-determinations",
       "to": "example-oscer-audit-log-and-actors",
       "rel": "related-to"
@@ -1099,6 +1138,11 @@
     },
     {
       "from": "example-oscer-overview",
+      "to": "documentai-api-overview",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "example-oscer-overview",
       "to": "example-oscer-api-authentication",
       "rel": "related-to"
     },
@@ -1125,6 +1169,11 @@
     {
       "from": "example-oscer-overview",
       "to": "example-oscer-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-components",
       "rel": "related-to"
     },
     {
@@ -1186,6 +1235,11 @@
       "from": "example-oscer-tasks",
       "to": "strata-sdk-tasks",
       "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-value-objects",
+      "to": "documentai-api-overview",
+      "rel": "integrates-with"
     },
     {
       "from": "example-oscer-value-objects",
@@ -1825,6 +1879,11 @@
     {
       "from": "source:oscer",
       "to": "example-oscer-business-process",
+      "rel": "documents"
+    },
+    {
+      "from": "source:oscer",
+      "to": "example-oscer-components",
       "rel": "documents"
     },
     {

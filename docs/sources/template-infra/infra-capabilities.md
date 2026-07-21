@@ -2,13 +2,14 @@
 id: infra-capabilities
 title: Application Capabilities — Notifications, Identity, Jobs, Monitoring, Service Exec
 source: template-infra
+verified: ok
 doc_type: guide
 tags: [infra, notifications, ses, sms, cognito, identity-provider, background-jobs, monitoring, ecs-exec, bedrock]
 related: [infra-overview, infra-getting-started, infra-configuration, infra-security-and-access, infra-environments-and-workspaces]
 summary: Optional application capabilities the template can enable — SES email and AWS End User Messaging SMS notifications, Cognito identity provider, EventBridge background jobs, CloudWatch monitoring alerts, ECS Exec service command execution, and Bedrock document data extraction.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: d2b569e3eef126514745b0e0e5d92a8739d0c6f2
+  ref: 80a7cc8ec802c442098933f65280175b8453c659
   paths:
     - docs/infra/notifications.md
     - docs/infra/sms-notifications.md
@@ -19,8 +20,7 @@ source_ref:
     - docs/infra/document-data-extraction.md
     - docs/decisions/infra/2025-01-09-notifications-architecture.md
     - docs/decisions/infra/2026-02-19-sms-notifications-implementation.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Application Capabilities

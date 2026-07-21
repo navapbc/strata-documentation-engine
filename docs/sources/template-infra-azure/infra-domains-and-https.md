@@ -2,19 +2,20 @@
 id: infra-azure-domains-and-https
 title: Custom domains and HTTPS for the Azure infra template
 source: template-infra-azure
+verified: ok
 doc_type: guide
 tags: [infra, azure, terraform, dns, domains, https, tls, certificates, key-vault]
 related: [infra-azure-overview, infra-azure-set-up-account-and-network, infra-azure-set-up-database-and-service]
 summary: How to configure custom domains (Azure DNS hosted zones and A records) and HTTPS/TLS certificates (ACME, Key Vault, or imported) for application services in the Azure infra template.
 source_ref:
   repo: https://github.com/navapbc/template-infra-azure
-  ref: f930f2ba39be8ab6a55eaa0b538ad96def2e331b
+  ref: e10a383c4871d6eab3999baf63a01e5bd5a81f4c
   paths:
     - docs/infra/set-up-custom-domains.md
     - docs/infra/https-support.md
     - docs/system-architecture.md
-verified: ok
-last_documented: 2026-06-29
+    - infra/project-config/networks.tf
+last_documented: 2026-07-21
 ---
 
 # Custom domains and HTTPS
@@ -87,10 +88,9 @@ Steps:
 
 ## How this fits the architecture
 
-The Application Gateway (one per application/service) terminates TLS at the load balancer; the
+The Application Gateway (one per application/service) is the per-service load balancer where TLS
+certificates are attached (Source: `docs/infra/https-support.md`); the
 project's per-subscription **Certificate Key Vault** holds the TLS certificates, and the Terraform
 **ACME provider** acquires and refreshes certificates during Terraform operations for domains not
 managed by other methods. Private DNS zones provide name resolution for Private Endpoints inside the
 virtual network. (Source: `docs/system-architecture.md`.)
-</content>
-</invoke>

@@ -92,4 +92,3 @@ wish to claim dependents:
 `f.conditional(<field>, eq: <value>)` blocks can nest, as shown above (spouse fields inside the
 dependents block). The same pattern gates `branch_of_service` on `is_veteran`, `return_date` on
 `has_return_date`, and `prior_claim_state` on `filed_claim_other_state`.
-</content>

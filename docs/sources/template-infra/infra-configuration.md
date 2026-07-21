@@ -2,13 +2,14 @@
 id: infra-configuration
 title: Configuration — Project Config, App Config, Env Vars, and Secrets
 source: template-infra
+verified: ok
 doc_type: guide
 tags: [infra, configuration, terraform, environment-variables, secrets]
 related: [infra-overview, infra-module-architecture, infra-getting-started, infra-database]
 summary: How the template configures itself from static project-config and app-config modules, and how to add application environment variables and secrets.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: d2b569e3eef126514745b0e0e5d92a8739d0c6f2
+  ref: 80a7cc8ec802c442098933f65280175b8453c659
   paths:
     - docs/infra/infrastructure-configuration.md
     - docs/infra/environment-variables-and-secrets.md
@@ -17,8 +18,7 @@ source_ref:
     - infra/project-config/networks.tf
     - infra/project-config/system_notifications.tf
     - docs/decisions/infra/2023-09-07-consolidate-infra-config-from-tfvars-files-into-config-module.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Configuration — Project Config, App Config, Env Vars, and Secrets

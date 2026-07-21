@@ -2,13 +2,14 @@
 id: infra-security-and-access
 title: Security and Access — IAM/OIDC, WAF, HTTPS, and Custom Domains
 source: template-infra
+verified: ok
 doc_type: guide
 tags: [infra, security, iam, oidc, github-actions, waf, https, dns, route53]
 related: [infra-overview, infra-getting-started, infra-configuration, infra-database, infra-capabilities]
 summary: How GitHub Actions authenticates to AWS via OIDC and gets scoped permissions, plus the production-launch protections — web application firewall, HTTPS certificates, and custom domains.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: d2b569e3eef126514745b0e0e5d92a8739d0c6f2
+  ref: 80a7cc8ec802c442098933f65280175b8453c659
   paths:
     - docs/infra/cloud-access-control.md
     - docs/infra/web-application-firewall.md
@@ -17,8 +18,7 @@ source_ref:
     - docs/infra/set-up-aws-account.md
     - infra/project-config/aws_services.tf
     - docs/decisions/infra/2022-10-05-use-custom-implementation-of-github-oidc.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Security and Access — IAM/OIDC, WAF, HTTPS, and Custom Domains

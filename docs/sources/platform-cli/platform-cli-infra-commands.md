@@ -2,6 +2,7 @@
 id: platform-cli-infra-commands
 title: nava-platform infra command reference
 source: platform-cli
+verified: ok
 doc_type: guide
 tags: [platform-cli, infra, template-infra, commands, cli]
 related: [platform-cli-overview, platform-cli-mechanism, platform-cli-app-commands]
@@ -9,7 +10,7 @@ manages: [template-infra]
 summary: Reference for the nava-platform infra command group (install, add-app, update, update-base, update-app, migrate-from-legacy, info) that installs and updates template-infra.
 source_ref:
   repo: https://github.com/navapbc/platform-cli
-  ref: e565096992407a70e73e5a85167421f9bd85addb
+  ref: 57d5d5c6c4626e0bd13ed81b469c91c2533498f0
   paths:
     - nava/platform/cli/commands/infra/__init__.py
     - nava/platform/cli/commands/infra/install_command.py
@@ -21,8 +22,7 @@ source_ref:
     - docs/updating.md
     - docs/adding-an-app.md
     - docs/getting-started/new-project.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # `nava-platform infra` command reference
@@ -116,8 +116,8 @@ Converts a project that used the old `.template-version` file into the
 Platform CLI's `.template-infra/` answers-file format, producing `base.yml` and
 `app-<APP_NAME>.yml` files. Fails if no legacy version file is found.
 `--origin-template-uri` defaults to the `template-infra` repo. `--commit`
-defaults to false. After migrating, run `infra update` (then `infra update-app`)
-to perform the actual template update.
+defaults to false. After migrating, run `infra update` to perform the actual
+template update.
 
 ## `infra info`
 

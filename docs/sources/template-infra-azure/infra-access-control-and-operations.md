@@ -2,13 +2,14 @@
 id: infra-azure-access-control-and-operations
 title: Access control, workspaces, and operations
 source: template-infra-azure
+verified: ok
 doc_type: guide
 tags: [infra, azure, terraform, access-control, entra, workspaces, compliance, security, operations]
 related: [infra-azure-overview, infra-azure-set-up-account-and-network, infra-azure-set-up-database-and-service]
 summary: Cloud and database access control, infra-admin Entra permissions, isolated development with Terraform workspaces, tearing down infrastructure, and the compliance/vulnerability/style checks for the Azure infra template.
 source_ref:
   repo: https://github.com/navapbc/template-infra-azure
-  ref: f930f2ba39be8ab6a55eaa0b538ad96def2e331b
+  ref: e10a383c4871d6eab3999baf63a01e5bd5a81f4c
   paths:
     - docs/infra/cloud-access-control.md
     - docs/infra/database-access-control.md
@@ -18,8 +19,8 @@ source_ref:
     - docs/compliance.md
     - docs/infra/vulnerability-management.md
     - docs/infra/style-guide.md
-verified: ok
-last_documented: 2026-06-29
+    - infra/modules/auth-github-actions/main.tf
+last_documented: 2026-07-21
 ---
 
 # Access control, workspaces, and operations
@@ -32,8 +33,9 @@ infrastructure down, and the compliance/security/style checks the template ships
 
 GitHub Actions needs permissions to create, modify, and destroy resources as part of CI/CD. In the
 current Azure setup the GitHub Actions identity is granted broad access to subscription resources,
-defined by the `subscription_roles` variable in `infra/modules/auth-github-actions/main.tf`.
-(Source: `docs/infra/cloud-access-control.md`.)
+defined by the `subscription_roles` list in `infra/modules/auth-github-actions/main.tf` (assigned via
+an `azurerm_role_assignment` per role). (Source: `docs/infra/cloud-access-control.md`,
+`infra/modules/auth-github-actions/main.tf`.)
 
 ## Database access control
 
@@ -102,6 +104,8 @@ terraform -chdir=infra/<APP_NAME>/service delete <WORKSPACE_NAME>
 ```
 
 Use a short workspace name (initials work well) to avoid hitting Azure resource name length limits.
+(The workspace-isolation doc's example commands use the AWS-style `dev.s3.tfbackend` name; on Azure
+the actual backend files follow the `azurerm` naming from the overview.)
 
 ## Destroy infrastructure
 
@@ -139,5 +143,3 @@ Tear everything down in **reverse** order of creation — the account root modul
   conventions (short job names, imperative step names, blank-line separation) and points shell scripts
   at [Google's Shell Style Guide](https://google.github.io/styleguide/shellguide.html). Run linters
   locally with `make infra-lint`. (Source: `docs/infra/style-guide.md`.)
-</content>
-</invoke>

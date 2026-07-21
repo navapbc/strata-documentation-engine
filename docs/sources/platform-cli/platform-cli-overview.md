@@ -2,6 +2,7 @@
 id: platform-cli-overview
 title: nava-platform CLI overview
 source: platform-cli
+verified: ok
 doc_type: guide
 tags: [platform-cli, cli, installation, copier, strata]
 related: [platform-cli-mechanism, platform-cli-infra-commands, platform-cli-app-commands]
@@ -9,15 +10,14 @@ component_keys: [platform-cli]
 summary: What the nava-platform CLI is, how to install it (uv, pipx, Nix, Docker), and the two command groups (infra and app) it exposes.
 source_ref:
   repo: https://github.com/navapbc/platform-cli
-  ref: e565096992407a70e73e5a85167421f9bd85addb
+  ref: 57d5d5c6c4626e0bd13ed81b469c91c2533498f0
   paths:
     - README.md
     - nava/platform/cli/main.py
     - nava/platform/cli/commands/infra/__init__.py
     - nava/platform/cli/commands/app.py
     - docs/getting-started/index.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # nava-platform CLI overview
@@ -35,7 +35,7 @@ repository.
 ### uv (recommended)
 
 Prerequisite: `git` 2.27+ on your `$PATH`, plus [uv](https://docs.astral.sh/uv/getting-started/installation/)
-0.5.8+.
+0.6.15+.
 
 ```sh
 uv tool install git+https://github.com/navapbc/platform-cli
@@ -57,7 +57,7 @@ uv tool uninstall nava-platform-cli
 ### pipx
 
 Prerequisites: `git` 2.27+ and Python 3.11+ (the CLI requires Python 3.11+ per
-`requires-python = ">=3.11"`; pipx itself only needs Python 3.8+ to run). If you
+`requires-python = ">=3.11"`; pipx itself requires Python 3.10+ to run). If you
 lack Python 3.11+, let pipx fetch one (see below).
 
 ```sh

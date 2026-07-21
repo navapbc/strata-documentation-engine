@@ -92,4 +92,3 @@ helper.
 > Note: not every field is a typed Strata attribute. Many fields (e.g. `email`, `phone_primary`,
 > the boolean screener questions, `gender`, `payment_method`) are plain Active Record columns
 > validated and rendered without a `strata_attribute` declaration.
-</content>

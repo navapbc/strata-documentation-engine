@@ -82,4 +82,3 @@ The flow is referenced from three places:
 
 The page constants referenced by the model's validations (`Flow::IDENTITY`, `Flow::CONTACT`, …)
 correspond to the `question_page` names declared here.
-</content>

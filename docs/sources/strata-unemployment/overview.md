@@ -102,5 +102,3 @@ Within `unemployment/app`, the app does **not** use the SDK's determination, cas
 audit-log, rules-engine, or virtual-actor features. Authentication is handled by the app's own
 adapters under `app/adapters/auth/` and `app/services/auth_service.rb` (a Cognito/mock adapter
 pair), not by the SDK's auth surface.
-</content>
-</invoke>

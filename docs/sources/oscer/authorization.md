@@ -2,6 +2,7 @@
 id: example-oscer-authorization
 title: OSCER — authorization policies
 source: oscer
+verified: ok
 doc_type: example
 tags: [example-app, oscer, policies, authorization, pundit, region-scoping]
 related:
@@ -12,15 +13,15 @@ demonstrates: [policies]
 summary: How OSCER builds on Strata::TaskPolicy and Strata::ApplicationFormPolicy for task and application-form authorization, including region-based query scoping.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: a4fc94b35ed737d20ca4530efe20d579ce5f0d53
+  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
   paths:
     - reporting-app/app/policies/strata/task_policy.rb
     - reporting-app/app/policies/activity_report_application_form_policy.rb
     - reporting-app/app/policies/exemption_application_form_policy.rb
     - reporting-app/app/policies/activity_report_information_request_policy.rb
+    - reporting-app/app/policies/staff_policy.rb
     - reporting-app/app/controllers/tasks_controller.rb
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # OSCER — authorization policies
@@ -97,14 +98,22 @@ end
 ```
 
 The information-request policies likewise `include Strata::ApplicationFormPolicy` and override
-`update?` to assert the requesting user owns the underlying application form
-(`application_form.user_id == user.id` — `app/policies/activity_report_information_request_policy.rb`).
+`update?` to assert the requesting user owns the underlying application form:
+
+```ruby
+# app/policies/activity_report_information_request_policy.rb
+def update?
+  application_form = ActivityReportApplicationForm.find(record.application_form_id)
+  application_form.user_id == user.id
+end
+```
+
+(`ExemptionInformationRequestPolicy` does the same against `ExemptionApplicationForm`.)
 
 ## Base policies (app-side)
 
 `Strata::ApplicationFormPolicy` is mixed into policies that inherit from the app's `ApplicationPolicy`
-(a default-deny base) and, for tasks, `StaffPolicy` (which gates on `staff?`/`admin?` roles and adds
-`staff_in_region?`). The SDK policy concern supplies the per-action defaults the application-form and
-task controllers authorize against; the app extends them with role checks, region scoping, and
-ownership rules.
-</content>
+(a default-deny base — every predicate returns `false` until overridden) and, for tasks, `StaffPolicy`
+(which gates on `staff?`/`admin?` roles delegated to the user, and adds `staff_in_region?`). The SDK
+policy concern supplies the per-action defaults the application-form and task controllers authorize
+against; the app extends them with role checks, region scoping, and ownership rules.

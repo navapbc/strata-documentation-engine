@@ -2,6 +2,7 @@
 id: platform-cli-mechanism
 title: How install and update work (Copier wrapper)
 source: platform-cli
+verified: ok
 doc_type: guide
 tags: [platform-cli, copier, update, answers-file, mechanism]
 related: [platform-cli-overview, platform-cli-infra-commands, platform-cli-app-commands]
@@ -9,7 +10,7 @@ manages: [template-infra, template-application-rails]
 summary: The CLI wraps Copier to install templates at their latest git tag, records answers in .template-<name>/<app>.yml files, and performs a 3-way diff on update; the target project repo must be clean.
 source_ref:
   repo: https://github.com/navapbc/platform-cli
-  ref: e565096992407a70e73e5a85167421f9bd85addb
+  ref: 57d5d5c6c4626e0bd13ed81b469c91c2533498f0
   paths:
     - docs/how-it-works.md
     - nava/platform/templates/template.py
@@ -17,8 +18,7 @@ source_ref:
     - nava/platform/cli/commands/infra/__init__.py
     - nava/platform/cli/commands/app.py
     - docs/updating.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # How install and update work

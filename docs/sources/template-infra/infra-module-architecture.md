@@ -2,13 +2,14 @@
 id: infra-module-architecture
 title: Terraform Module Architecture and Layers
 source: template-infra
+verified: ok
 doc_type: guide
 tags: [infra, terraform, modules, layers, architecture, adr]
 related: [infra-overview, infra-getting-started, infra-configuration, infra-environments-and-workspaces]
 summary: How the Terraform code is split into independently-deployed root-module layers and reusable child modules, the dependency order, and the guidelines for choosing a resource's layer.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: d2b569e3eef126514745b0e0e5d92a8739d0c6f2
+  ref: 80a7cc8ec802c442098933f65280175b8453c659
   paths:
     - docs/infra/module-architecture.md
     - docs/infra/making-infra-changes.md
@@ -21,8 +22,7 @@ source_ref:
     - docs/decisions/infra/2023-05-09-separate-terraform-backend-configs-into-separate-config-files.md
     - docs/decisions/infra/2023-05-25-separate-database-infrastructure-into-separate-layer.md
     - docs/decisions/infra/2023-12-01-network-layer-design.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Terraform Module Architecture and Layers
@@ -45,7 +45,7 @@ The Terraform code (`docs/infra/module-architecture.md`) is split into:
 
 The calling structure: `accounts` → `terraform-backend-s3` + `auth-github-actions`; `networks` →
 `network`; `{{app_name}}/build-repository` → `container-image-repository`;
-`{{app_name}}/database` → `database`; `{{app_name}}/service` → `service` (web-app).
+`{{app_name}}/database` → `database`; `{{app_name}}/service` → `service`.
 
 ## Layers
 

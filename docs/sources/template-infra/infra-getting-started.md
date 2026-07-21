@@ -2,6 +2,7 @@
 id: infra-getting-started
 title: Getting Started — Standing Up Infrastructure
 source: template-infra
+verified: ok
 doc_type: guide
 tags: [infra, setup, terraform, aws, getting-started, deployment]
 related: [infra-overview, infra-module-architecture, infra-configuration, infra-database, infra-capabilities]
@@ -9,7 +10,7 @@ integrates_with: [template-application-rails]
 summary: The end-to-end setup sequence for a project — install the template, set up developer tools, then deploy the account, network, build repository, database, and service layers in order.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: d2b569e3eef126514745b0e0e5d92a8739d0c6f2
+  ref: 80a7cc8ec802c442098933f65280175b8453c659
   paths:
     - README.md
     - infra/README.md
@@ -21,8 +22,7 @@ source_ref:
     - docs/infra/set-up-app-env.md
     - docs/infra/add-application.md
     - docs/infra/staging-and-production-environments.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Getting Started — Standing Up Infrastructure
@@ -38,7 +38,7 @@ and the `docs/infra/set-up-*` guides. The layers must be deployed in dependency 
 You need an application that meets the template's application requirements before the final
 (service) step — though you can defer that and use the example app for testing infrastructure
 (`infra/README.md`). To start a compatible application from scratch, use a Nava Platform application
-template (the Rails app template in v1); see
+template; see
 [infra-overview](infra-overview.md) for how the templates compose.
 
 ## 1. Install the template

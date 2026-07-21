@@ -81,4 +81,3 @@ Two pages defer their entire layout to SDK templates via `render template:`, sup
 
 These templates and the localized `strata.application_forms.statuses.*` keys are provided by the
 SDK engine (mounted at `/` via `mount Strata::Engine => "/"`); the app supplies data and copy.
-</content>
