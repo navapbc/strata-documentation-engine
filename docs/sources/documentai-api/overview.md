@@ -2,23 +2,23 @@
 id: documentai-api-overview
 title: DocumentAI API capability overview
 source: documentai-api
+verified: ok
 doc_type: guide
-tags: [documentai, sidecar, capability, document-processing, aws, bedrock]
+tags: [documentai, standalone-service, capability, document-processing, aws, bedrock]
 related: [documentai-api-using-the-template]
 component_keys: [documentai-api]
 integrates_with: [template-infra]
-summary: A deployable Strata capability — a document-processing sidecar that classifies and extracts data from uploaded documents using AWS Bedrock Data Automation.
+summary: A deployable Strata capability — a separately deployable, independently scalable document-processing service that classifies and extracts data from uploaded documents using AWS Bedrock Data Automation.
 source_ref:
   repo: https://github.com/navapbc/strata-template-documentai-api
-  ref: a8170b5ad1dedf652b65e93949c410a941a1d5e4
+  ref: 7c7f30c78f26f4d3708539b30cfb7acfd2ec2e7b
   paths:
     - README.md
     - code.json
     - template/{{app_name}}/README.md.jinja
     - template/docs/{{app_name}}/diagrams/architecture.mmd
     - template/{{app_name}}/src/documentai_api/config/constants.py
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # DocumentAI API capability overview
@@ -26,7 +26,7 @@ last_documented: 2026-06-29
 ## What it is
 
 The DocumentAI API is a **deployable Strata capability**: a document-processing service
-that identifies and extracts structured data from uploaded document files. Unlike most
+that identifies and extracts structured data from uploaded document files. Unlike some other
 Strata templates (which scaffold an app you then build out), this one ships as a nearly
 complete application intended for use almost out of the box — the upstream README describes
 it as "more of a complete application intended for use almost out of the box."
@@ -52,8 +52,8 @@ are PDF, JPEG, PNG, and TIFF.
 
 ## How it fits the Strata ecosystem
 
-The DocumentAI API is designed to run as a **sidecar service deployed beside a host
-application** rather than as a standalone product. Per the upstream deployment guide
+The DocumentAI API is designed to run as a **separately deployable, independently scalable
+document-processing service** provisioned beside a host application. Per the upstream deployment guide
 (`template-only-docs/deployment.md`), it is provisioned through the
 [Strata AWS infrastructure template](https://github.com/navapbc/template-infra): you enable
 the infra template's **Document Data Extraction** module (`enable_document_data_extraction = true`),

@@ -1,36 +1,42 @@
-# Verification findings: example-oscer-rules-engine
+# Verification findings: example-oscer-rules-engine (round 1)
 
-Doc: docs/sources/oscer/rules-engine.md
-Source: .sources/oscer
-Round: 1
+Doc: `docs/sources/oscer/rules-engine.md`
+Source checkout: `.sources/oscer` @ `c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750` (matches `source_ref.ref`)
 
-## Result: no findings
+## Result
 
-All OSCER-side claims were re-checked against the source and are supported:
+No findings. The doc is fully supported by the source.
 
-- `Rules::ExemptionRuleset < Strata::Rules::MedicaidRuleset` and all fact methods
-  (`age_under_19`, `is_pregnant`, `is_american_indian_or_alaska_native`,
-  `is_veteran_with_disability`, `eligible_for_exemption`) match
-  `reporting-app/app/models/rules/exemption_ruleset.rb` exactly, including the `return if x.nil?`
-  undetermined-fact semantics and the `facts.all?(&:nil?)` / `facts.any?` aggregate logic.
-- The `evaluate_exemption_eligibility` snippet (instantiate ruleset, wrap in
-  `Strata::RulesEngine`, `set_facts(...)`, `engine.evaluate(:eligible_for_exemption)`) matches
-  `reporting-app/app/services/exemption_determination_service.rb` (set_facts keys: date_of_birth,
-  evaluated_on, pregnancy_status, race_ethnicity, veteran_disability_rating).
-- The branch-on-`eligibility_fact.value` block, `record_exemption_determination`, the
-  `DeterminedExempt` / `DeterminedNotExempt` event publishes, and the
-  `case.exemption.denied` audit-log write all match the service source.
-- `Determination.to_reason_codes(eligibility_fact)` and `REASON_CODE_MAPPING` exist in
-  `reporting-app/app/models/determination.rb`; `to_reason_codes` selects `reasons` where
-  `reason.value` and maps `name` → code, confirming the doc's description of `Fact#value` /
-  `Fact#reasons`.
-- `record_exemption_determination(eligibility_fact, actor)` exists in
-  `reporting-app/app/models/certification_case.rb` and its docstring types the argument as
-  `Strata::RulesEngine::Fact`, confirming the doc's `Fact` type claim.
-- `ExemptionDeterminationService` does `include Strata::VirtualActor`, confirming the VirtualActor
-  attribution claim.
+## Claims checked (all confirmed)
 
-SDK-internal claims (`age_over_65` inherited from `Strata::Rules::MedicaidRuleset`, the engine
-resolving the fact dependency graph, the shape of `Strata::RulesEngine::Fact`) cannot be
-independently confirmed because the Strata SDK gem is not vendored in this checkout. None of these
-claims are contradicted by the OSCER source, and the OSCER usage is fully consistent with them.
+- `Rules::ExclusionRuleset < Strata::Rules::MedicaidRuleset` with one method per fact — confirmed
+  (`reporting-app/app/models/rules/exclusion_ruleset.rb:5`).
+- Constants `POSTPARTUM_EXCLUSION_MONTHS = 12`, `FORMER_FOSTER_CARE_AGE_CAP = 26`,
+  `INMATE_BUFFER_MONTHS = 3` — confirmed (lines 9, 12, 18). The abbreviated snippet's `# ...` correctly
+  elides `former_foster_care`, `medically_frail`, `caretaker`, `tanf_snap_work`, `drug_treatment`,
+  `inmate` (lines 40-90).
+- `is_pregnant`, `is_american_indian_or_alaska_native`, `is_veteran_with_disability` bodies — confirmed
+  (lines 20-36). The doc's single-line combined nil guard for `is_pregnant` is a faithful paraphrase of
+  the two source guard clauses.
+- `eligible_for_exclusion` aggregate (`facts.all?(&:nil?)` → return; else `facts.any?`) — confirmed
+  (lines 92-97).
+- `ExclusionDeterminationService.evaluate_exclusion_eligibility` instantiates the ruleset, wraps it in
+  `Strata::RulesEngine`, calls `set_facts`, and evaluates `:eligible_for_exclusion` — confirmed
+  (`exclusion_determination_service.rb:29-49`). All set_facts keys, including the six behind the doc's
+  `# ...` comment, match source order (lines 34-45).
+- Branch on `eligibility_fact.value`: excluded → `record_exclusion_determination` + publish
+  `DeterminedExcluded`; else → `AuditLog.write!(action: "case.exclusion.denied", ...)` + publish
+  `DeterminedNotExcluded` — confirmed (lines 14-24).
+- Highest-priority selection: reasons filtered to true, `min_by(exclusion_priority)`, "lowest priority
+  number wins", mapped through `Determination::REASON_CODE_MAPPING.fetch` — confirmed (lines 53-68;
+  `determination.rb:64-99`).
+- Service mixes in `Strata::VirtualActor`; `self` is the class-level virtual actor — confirmed
+  (`include Strata::VirtualActor`, `class << self`, lines 4-5).
+- Claim that `ExceptionDeterminationService` is a "distinct, non-rules-engine" service — confirmed:
+  `exception_determination_service.rb` references `Rules::ExclusionRuleset` only for constants and never
+  uses `Strata::RulesEngine`.
+
+SDK-internal claims (the engine resolving the fact dependency graph by parameter name, the shape of the
+returned `Fact` with `value`/`reasons`) cannot be independently confirmed because the Strata SDK gem is
+not vendored in this checkout. None are contradicted by the OSCER source, and the OSCER usage is fully
+consistent with them.

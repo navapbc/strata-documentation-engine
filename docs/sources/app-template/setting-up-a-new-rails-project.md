@@ -2,6 +2,7 @@
 id: app-template-setting-up-a-new-rails-project
 title: Setting up a new Rails project
 source: app-template
+verified: ok
 doc_type: example
 tags: [rails, walkthrough, bootstrap, local-development, getting-started]
 related: [app-template-using-the-rails-template]
@@ -10,17 +11,17 @@ integrates_with: [template-infra]
 summary: End-to-end walkthrough of installing the Rails application template and running the generated app locally.
 source_ref:
   repo: https://github.com/navapbc/template-application-rails
-  ref: 29a54e3206e36018997b54b74bdd2349ddfad984
+  ref: 6cc244340dff39d0cdb333ea5e10abf6cfcd7722
   paths:
     - README.md
     - template/{{app_name}}/README.md.jinja
     - template/{{app_name}}/Makefile.jinja
     - template/{{app_name}}/local.env.example.jinja
     - template/{{app_name}}/config/routes.rb
+    - template/{{app_name}}/Dockerfile
     - template/docs/{{app_name}}/technical-foundation.md
     - template/.github/workflows/ci-{{app_name}}.yml.jinja
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Setting up a new Rails project
@@ -68,7 +69,7 @@ its docs, and a CI workflow.
 │   ├── db/                        # migrate/, seeds/, schema.rb, seeds.rb
 │   ├── spec/                      # RSpec tests
 │   ├── Makefile                   # the command surface
-│   ├── Dockerfile                 # multi-stage: base → build → dev / release
+│   ├── Dockerfile                 # multi-stage: base → build → (dev | release-build); base → release (copies from release-build)
 │   └── local.env.example          # template for the .env file
 ├── docs/myapp/                    # technical-foundation.md, software-architecture.md, auth.md, ...
 └── .github/workflows/ci-myapp.yml # lint + test on pushes/PRs touching myapp/**
@@ -124,11 +125,13 @@ the Ruby version in `.ruby-version` and Node LTS).
 
 ## 6. Run the checks
 
-The generated CI workflow runs lint and tests (`template/.github/workflows/ci-{{app_name}}.yml.jinja`).
-Run the same locally (`template/{{app_name}}/Makefile.jinja`):
+The generated CI workflow runs lint and tests (`template/.github/workflows/ci-{{app_name}}.yml.jinja`);
+its lint step invokes `make lint-ci`, which runs RuboCop without auto-fixing. Run the tests and lint
+locally (`template/{{app_name}}/Makefile.jinja`):
 
 ```sh
-make lint        # RuboCop with auto-fix
+make lint        # RuboCop with auto-fix (local convenience)
+make lint-ci     # RuboCop without auto-fix (matches CI)
 make test        # RSpec; pass args="spec/path/to/file_spec.rb" to scope
 ```
 

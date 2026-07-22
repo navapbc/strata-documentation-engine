@@ -1,43 +1,37 @@
-# Verification findings: infra-azure-set-up-database-and-service (round 2)
+# Verification findings: infra-azure-set-up-database-and-service (round 1)
 
-Source: `.sources/template-infra-azure` @ f930f2ba39be8ab6a55eaa0b538ad96def2e331b
+Source: `.sources/template-infra-azure` @ `e10a383c4871d6eab3999baf63a01e5bd5a81f4c` (matches `source_ref.ref`).
 
-## Summary
+## Result: no findings
 
-Round 1 finding has been applied: the document now correctly clarifies that `has_database` is set in `app-config/main.tf` while the production sizing settings are tuned in `app-config/<ENVIRONMENT>.tf`.
+Every substantive claim in the doc is supported by the cited source files.
 
-All other major claims verified against source documentation and Terraform code. No new inaccuracies found.
+Checks performed:
 
-## Detailed verification
-
-**Section 1 (Database setup):**
-- Database layer: Azure Database for PostgreSQL flexible server, `app` schema, Entra ID groups, Container App Job role manager, Postgres user creation → all supported by `docs/infra/set-up-database.md`
-- Makefile targets: `infra-configure-app-database`, `db-role-manager-release-build`, `db-role-manager-release-publish`, `infra-update-app-database`, `infra-update-app-database-roles`, `infra-check-app-database-roles` → all exist in `Makefile`
-- Table permissions: `ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO app` SQL command → supported by source
-- Database access control: Entra ID groups ("DB Admin", "Migrator", "App"), token via `az account get-access-token --resource-type oss-rdbms` → all supported by `docs/infra/database-access-control.md`
-
-**Section 2 (Service setup):**
-- Requirements and configuration → supported by `docs/infra/set-up-app-env.md`
-- `has_database` in `app-config/main.tf` + production sizing in `app-config/<ENVIRONMENT>.tf` → **fixed from round 1**, now accurate per `infra/{{app_name}}/app-config/main.tf:16` and `prod.tf`
-- Makefile targets: `infra-configure-app-service`, `release-build`, `release-publish`, `infra-update-app-service` → all exist
-- Service configuration dependent on `has_database` → supported by source
-
-**Section 3 (Environment variables and secrets):**
-- 12-factor configuration → supported
-- Infrastructure provides environment variables for "task-role auth, database access, document storage" → source claims "ECS task role" (AWS terminology), but Azure infrastructure provides `AZURE_CLIENT_ID`, database vars, and storage vars. The doc's vague term "task-role auth" is not contradicted by source; it's a generalization.
-- File path, map names, override mechanism → all verified against `environment-variables-and-secrets.md` and actual `environment-variables.tf`
-- Secrets `manage_method` ("generated"/"manual") and `secret_name` → supported
-- Manual secrets must be stored in Azure Key Vault before deploying → supported by source
-
-**Section 4 (Background jobs):**
-- Azure Container App Jobs, scheduled and event-triggered jobs, worker task queue not yet implemented → supported by `docs/infra/background-jobs.md`
-- Single manually-triggered Container App Job for migrations → supported
-- Custom jobs via `azurerm_container_app_job` in `infra/{{app_name}}/service` → supported
-
-**Section 5 (Deploying ongoing changes):**
-- Release target order: `release-build` → `release-publish` → `release-run-database-migrations` → `release-deploy` → all exist in `Makefile`
-- Migrations run as `migrator` role before deploy as `app` role → supported by source
-
-## No inaccuracies found
-
-Document is fully supported by source. Round 1 suggested fix has been incorporated.
+- Database setup 5-step summary — matches `docs/infra/set-up-database.md` steps 1-5 (PostgreSQL
+  flexible server, `app` schema, Entra ID group, role-manager Container App Job, create `app`/`migrator` users).
+- `has_database = false` skip guidance and `infra/<APP_NAME>/app-config/main.tf` location — confirmed
+  (`main.tf` line 16 `has_database = true`).
+- All Makefile targets exist: `infra-configure-app-database`, `db-role-manager-release-build`,
+  `db-role-manager-release-publish`, `infra-update-app-database`, `infra-update-app-database-roles`,
+  `infra-check-app-database-roles`, `infra-configure-app-service`, `infra-update-app-service`,
+  `release-build`, `release-publish`, `release-run-database-migrations`, `release-deploy`.
+- The "Lambda function" / `<ENVIRONMENT>.s3.tfbackend` AWS-carryover note is accurate — source
+  `set-up-database.md` line 59 says "Lambda function" and line 36 names `<ENVIRONMENT>.s3.tfbackend`.
+- `ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO app` and the migrator/app permissions rationale —
+  matches `set-up-database.md` and `database-access-control.md`.
+- Three Entra groups ("DB Admin", "Migrator", "App"), username=group name, token as password,
+  `az account get-access-token --resource-type oss-rdbms` — matches `database-access-control.md`.
+- Service-layer requirements (compatible app, `has_database`, per-env sizing in `<ENVIRONMENT>.tf`
+  with `service_cpu`/`service_memory`/`service_desired_instance_count`, load test, non-default
+  network, database layer) — matches `set-up-app-env.md`; `prod.tf` confirms those three vars.
+- Env vars/secrets: `default_extra_environment_variables`, `service_override_extra_environment_variables`,
+  `secrets` map with `manage_method` generated/manual and `secret_name`, manual-secret-before-deploy
+  warning — matches `environment-variables-and-secrets.md`. The doc's filename
+  `env-config/environment-variables.tf` (hyphen) matches the actual file on disk (the source prose
+  uses an underscore; the doc's hyphenated form is correct).
+- Background jobs: scheduled + event-triggered, worker-queue "not yet implemented", single
+  manually-triggered migration job, add `azurerm_container_app_job` in the service module — matches
+  `background-jobs.md`.
+- Release chain `release-build → release-publish → release-run-database-migrations → release-deploy`
+  — matches `releases.md` and Makefile.

@@ -2,6 +2,7 @@
 id: documentai-api-using-the-template
 title: Using and deploying the DocumentAI template
 source: documentai-api
+verified: ok
 doc_type: guide
 tags: [documentai, copier, nava-platform, deployment, aws, fastapi, docker]
 related: [documentai-api-overview, documentai-api-new-project-example]
@@ -9,7 +10,7 @@ integrates_with: [template-infra]
 summary: How to install the DocumentAI template with the nava-platform CLI, run it locally, and deploy it as a sidecar using the Strata AWS infrastructure template.
 source_ref:
   repo: https://github.com/navapbc/strata-template-documentai-api
-  ref: a8170b5ad1dedf652b65e93949c410a941a1d5e4
+  ref: 7c7f30c78f26f4d3708539b30cfb7acfd2ec2e7b
   paths:
     - README.md
     - copier.yml
@@ -20,8 +21,7 @@ source_ref:
     - template/{{app_name}}/pyproject.toml
     - template/{{app_name}}/docker-compose.yml.jinja
     - template/docs/{{app_name}}/api-authentication.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Using and deploying the DocumentAI template
@@ -30,7 +30,7 @@ last_documented: 2026-06-29
 
 - The [`nava-platform` CLI](https://github.com/navapbc/platform-cli) (installs/updates the template).
 - For local development of the generated app (`template/{{app_name}}/README.md.jinja`):
-  Python 3.11+, [`uv`](https://docs.astral.sh/uv/), Docker & Docker Compose, and Make.
+  Python 3.12+, [`uv`](https://docs.astral.sh/uv/), Docker & Docker Compose, and Make.
 
 ## Installing the template
 
@@ -69,11 +69,12 @@ placeholder `{{app_name}}`). The generated project contains:
   `Dockerfile`, `docker-compose.yml`, `Makefile`, `pyproject.toml`, and tests.
 - `template/docs/{{app_name}}/` — project docs (API authentication, writing tests, accessing
   real AWS resources from Docker) and the architecture diagram.
-- `template/.github/workflows/ci-{{app_name}}.yml` — a generated CI workflow.
+- `template/.github/workflows/ci-{{app_name}}.yml.jinja` — a CI workflow that renders to
+  `ci-<app_name>.yml` in the generated project.
 
 ## The application stack
 
-Grounded in `template/{{app_name}}/pyproject.toml`: a Python 3.11+ service built on **FastAPI**
+Grounded in `template/{{app_name}}/pyproject.toml`: a Python 3.12+ service built on **FastAPI**
 + **uvicorn**, using **boto3** to talk to AWS (S3, DynamoDB, Bedrock Data Automation), with
 `pypdf`, `pdf2image`, `opencv-python-headless`, and `python-magic` for document handling, and
 **Typer** for the background-job CLIs. Dependencies are managed with `uv` (lockfile

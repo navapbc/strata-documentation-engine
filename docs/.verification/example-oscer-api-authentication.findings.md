@@ -1,34 +1,34 @@
-# Verification findings: example-oscer-api-authentication
+# Verification findings: example-oscer-api-authentication (round 1)
 
 Doc: `docs/sources/oscer/api-authentication.md`
-Source checkout: `.sources/oscer` @ `a4fc94b35ed737d20ca4530efe20d579ce5f0d53` (matches `source_ref.ref`)
-Round: 1
+Source checkout: `.sources/oscer` @ `c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750` (matches `source_ref.ref`)
 
 ## Result
 
-No findings. Every claim in the doc is supported by the source.
+No findings. The doc is fully supported by the source.
 
 ## Claims checked
 
-- The `ApiHmacAuthentication` concern code block (lines 35-52) is a verbatim match of
-  `reporting-app/app/controllers/concerns/api_hmac_authentication.rb` (strategy build,
-  authenticator, `@current_api_client = Api::Client.new`, rescue of the three error types
-  rendering `:unauthorized` + `false`). CONFIRMED.
+- Frontmatter `source_ref.ref` matches the checkout HEAD SHA exactly.
+- The `ApiHmacAuthentication` concern code block (doc lines 35-52) is a verbatim match of
+  `reporting-app/app/controllers/concerns/api_hmac_authentication.rb` lines 8-25 (strategy build,
+  authenticator, `authenticator.authenticate!(request)`, `@current_api_client = Api::Client.new`,
+  rescue of `AuthenticationError`/`InvalidSignature`/`MissingCredentials` rendering `:unauthorized`
+  + `false`). CONFIRMED.
 - SDK pieces listed (`Strata::Auth::Strategies::Hmac.new(secret_key:)`,
-  `Strata::ApiAuthenticator.new(strategy:)` / `#authenticate!(request)`, and the
-  `AuthenticationError`/`InvalidSignature`/`MissingCredentials` rescue) match the concern source. CONFIRMED.
-- `Api::Client#state_system?` returns `true` — matches `app/models/api/client.rb`. CONFIRMED.
-- `ApiController < ActionController::Metal`, includes Pundit + the concern, sets
-  `pundit_user` to `@current_api_client`, and runs `before_action :authenticate_api_request!` —
-  matches `app/controllers/api_controller.rb`. CONFIRMED.
+  `Strata::ApiAuthenticator.new(strategy:)` / `#authenticate!(request)`, and the three-class error
+  hierarchy) match the concern source. CONFIRMED.
+- `Api::Client#state_system?` returns `true`; `staff?`/`member?`/`admin?` return `false` — matches
+  `reporting-app/app/models/api/client.rb` lines 7-21. CONFIRMED.
+- `ApiController < ActionController::Metal`, `include Pundit::Authorization`, sets `pundit_user` to
+  `@current_api_client`, and runs `before_action :authenticate_api_request!` — matches
+  `reporting-app/app/controllers/api_controller.rb` lines 3, 13, 16, 55-57. CONFIRMED.
 - `Api::DirectUploadsController < ActiveStorage::DirectUploadsController`, includes the concern,
   `skip_before_action :authenticate_user!`, and runs the HMAC `before_action` — matches
-  `app/controllers/api/direct_uploads_controller.rb`. The doc's phrasing that the two controllers
-  have base classes that "can't share an inheritance chain" is consistent with the source comments
-  (ActionController::Metal vs ActiveStorage::DirectUploadsController/ActionController::Base). CONFIRMED.
-- The skip-Devise rationale ("so Devise session auth doesn't pre-empt") matches the source comment
-  describing the `authenticated_active_storage.rb` monkey-patch that adds `authenticate_user!`. CONFIRMED.
+  `reporting-app/app/controllers/api/direct_uploads_controller.rb` lines 12-18. The "can't share an
+  inheritance chain" phrasing and the monkey-patched Devise `authenticate_user!` rationale match the
+  source file's own comments (lines 4-11). CONFIRMED.
 
 Minor omission (not a finding): the doc does not mention
-`protect_from_forgery with: :null_session` on `Api::DirectUploadsController`; this is an
-incidental detail, not an inaccuracy.
+`protect_from_forgery with: :null_session` on `Api::DirectUploadsController` — an incidental detail,
+not an inaccuracy.

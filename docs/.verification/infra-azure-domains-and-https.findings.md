@@ -1,36 +1,43 @@
-# Verification Findings: infra-azure-domains-and-https
+# Verification findings: infra-azure-domains-and-https (Round 2)
 
-**Doc ID**: infra-azure-domains-and-https  
-**Round**: 2  
-**Date**: 2026-06-29
+**Status:** Verified - no findings
+
+**Verification date:** 2026-07-21
 
 ## Summary
 
-No unsupported claims found. All major claims in the documentation are directly supported by or accurately reflect the source material:
+The document "Custom domains and HTTPS for the Azure infra template" was verified against the following source files:
+- docs/infra/set-up-custom-domains.md
+- docs/infra/https-support.md
+- docs/system-architecture.md
+- infra/project-config/networks.tf
+- infra/networks/providers.tf
 
-- Custom domain configuration steps and file paths match source guidance
-- ACME, Key Vault, and imported certificate options are correctly described
-- Default wildcard certificate behavior is accurate
-- Shared hosted zone prerequisite language matches source
-- DNS delegation and verification steps align with source
-- Architecture components (Application Gateway, Certificate Key Vault, ACME provider, Private DNS zones) are accurately described
+All claims in the document are accurate and well-supported by the source material.
 
-## Verification Details
+## Verification details
 
-All claims checked:
-1. ✓ Hosted zone configuration location and behavior (set-up-custom-domains.md)
-2. ✓ Shared hosted zone option and typical use case (set-up-custom-domains.md)
-3. ✓ DNS delegation process and tools (nslookup command, NS records)
-4. ✓ A record creation for routing (set-up-custom-domains.md)
-5. ✓ Certificate acquisition methods (ACME, Azure Key Vault, imported)
-6. ✓ ACME defaults (Let's Encrypt staging, wildcard certificates)
-7. ✓ Wildcard certificate scope and opt-out mechanism
-8. ✓ Network and service layer make commands (set-up-custom-domains.md, https-support.md)
-9. ✓ Architecture components and their roles (system-architecture.md)
-10. ✓ Certificate Key Vault per-subscription scope
-11. ✓ TLS termination at Application Gateway
-12. ✓ Private DNS zones for Private Endpoint resolution
+### Custom domains section
+- Hosted zone configuration and purpose: verified
+- Shared hosted zone option: verified
+- DNS delegation steps (NS records): verified
+- Domain name configuration rules: verified
+- A record creation: verified
+- Externally managed DNS option: verified
 
-## Conclusion
+### HTTPS/TLS section
+- HTTPS requirement: verified
+- Prerequisite (custom domains): verified
+- Three certificate acquisition methods (ACME, Azure Key Vault, Imported): verified
+- ACME defaults to Let's Encrypt staging: verified (confirmed in `infra/networks/providers.tf`)
+- Wildcard certificate default behavior: verified
+- `manage_certs = false` opt-out mechanism: verified
+- Certificate configuration steps: verified
 
-The document is fully supported by the source material. No fixes required.
+### Architecture section
+- Application Gateway as per-service load balancer: verified
+- Certificate Key Vault as per-subscription storage: verified
+- ACME provider certificate acquisition and refresh: verified
+- Private DNS zones for name resolution: verified
+
+All source references (related documents, source_ref paths) are valid and correspond to existing documents with correct IDs.
