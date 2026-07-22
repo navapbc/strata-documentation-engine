@@ -1,0 +1,21 @@
+{
+  "name": "strata-qa",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": { "strata-qa": "dist/cli.js" },
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc",
+    "qa": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@cursor/sdk": "1.0.24"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
