@@ -48,30 +48,37 @@ export function ground(answer: ModelAnswer, nodePaths: Set<string>, readDoc: Doc
   }
 
   const verifiedDocs = new Map<string, string>(); // nodePath -> frontmatter verified value
-  let fullyVerified = 0;
+  // Each cited doc is read + whitespace-normalized once, even when a model cites
+  // the same path in multiple citations. undefined = not yet read; null = unreadable.
+  const docCache = new Map<string, { normalized: string; verified: string } | null>();
 
   for (const citation of answer.citations) {
     const path = normalizeCitationPath(citation.path);
     if (!nodePaths.has(path)) continue;
     counts.citationsResolved++;
 
-    const doc = readDoc(path);
-    if (doc === null) continue;
+    let entry = docCache.get(path);
+    if (entry === undefined) {
+      const doc = readDoc(path);
+      entry = doc === null ? null : { normalized: normalizeWhitespace(doc), verified: extractVerifiedStatus(doc) };
+      docCache.set(path, entry);
+    }
+    if (entry === null) continue;
+
     const quote = normalizeWhitespace(citation.quote);
     if (quote.length === 0) continue;
-    if (!normalizeWhitespace(doc).includes(quote)) continue;
+    if (!entry.normalized.includes(quote)) continue;
 
     counts.quotesVerified++;
-    fullyVerified++;
-    if (!verifiedDocs.has(path)) verifiedDocs.set(path, extractVerifiedStatus(doc));
+    if (!verifiedDocs.has(path)) verifiedDocs.set(path, entry.verified);
   }
 
   counts.distinctDocs = verifiedDocs.size;
   const sources = [...verifiedDocs.entries()].map(([path, verified]) => ({ path, verified }));
 
   let status: FinalStatus;
-  if (fullyVerified === 0) status = "no_match";
-  else if (fullyVerified < counts.citationsTotal) status = "low_confidence";
+  if (counts.quotesVerified === 0) status = "no_match";
+  else if (counts.quotesVerified < counts.citationsTotal) status = "low_confidence";
   else status = "answered";
 
   return { status, sources, grounding: counts };

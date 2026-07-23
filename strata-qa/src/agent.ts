@@ -1,5 +1,6 @@
 import { Agent, Cursor } from "@cursor/sdk";
 import type { AgentModeOption, ModelSelection } from "@cursor/sdk";
+import { buildRepairPrompt } from "./prompt.js";
 
 export interface AgentUsage {
   inputTokens: number;
@@ -138,7 +139,7 @@ export function createCursorSeam(): AgentSeam {
     async reformat(malformed: string, model: string, timeoutMs: number): Promise<AgentRun> {
       // Tool-less repair: no retrieval re-run. The agent gets only the malformed
       // text and must re-emit it as valid JSON; cwd still locked down.
-      const prompt = `The following text was supposed to contain exactly one fenced JSON block with fields "status", "answer", "citations" (array of { "path", "quote" }). Re-emit ONLY that JSON, valid, in a single \`\`\`json fence. Do not change any values. Do not use any tools.\n\n${malformed}`;
+      const prompt = buildRepairPrompt(malformed);
       const r = await withTimeout(Agent.prompt(prompt, buildAgentOptions(model, process.cwd())), timeoutMs);
       return toRun(r as SdkRunResultLike);
     },

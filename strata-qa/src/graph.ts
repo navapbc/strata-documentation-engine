@@ -19,12 +19,12 @@ export function loadNodePaths(docsRoot: string): Set<string> {
 }
 
 export function normalizeCitationPath(raw: string): string {
-  let p = raw.trim();
-  p = p.replace(/^\.\//, "");
-  p = p.replace(/^docs\//, "");
-  p = p.replace(/#.*$/, "");
-  p = p.replace(/(:\d+)+$/, "");
-  return p;
+  return raw
+    .trim()
+    .replace(/^\.\//, "")
+    .replace(/^docs\//, "")
+    .replace(/#.*$/, "")
+    .replace(/(:\d+)+$/, "");
 }
 
 export function computeDocsVersion(docsRoot: string): string {

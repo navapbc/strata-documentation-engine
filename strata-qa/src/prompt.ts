@@ -33,3 +33,10 @@ Rules:
 - Every citation must carry a quote copied verbatim from that file.
 - If the docs do not support an answer, use "status": "no_match" with "answer": null and an empty citations array. Refusing is correct; guessing is not.`;
 }
+
+// Tool-less repair prompt: the model gets only the malformed text and must
+// re-emit it as valid JSON. The schema contract is authored here alongside
+// buildPrompt so a schema change touches one layer, not the agent transport.
+export function buildRepairPrompt(malformed: string): string {
+  return `The following text was supposed to contain exactly one fenced JSON block with fields "status", "answer", "citations" (array of { "path", "quote" }). Re-emit ONLY that JSON, valid, in a single \`\`\`json fence. Do not change any values. Do not use any tools.\n\n${malformed}`;
+}

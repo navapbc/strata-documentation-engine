@@ -108,6 +108,13 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
   const { question, model, docsRoot, timeoutMs } = opts;
   const logDir = opts.logDir ?? join(".logs", "qa");
 
+  // Preflight bailout — docsVersion is not yet known, so it stays "".
+  const fail = (exitCode: number, errorMessage: string): RunOutcome => ({
+    result: errorResult(model, "", null, null),
+    exitCode,
+    errorMessage,
+  });
+
   // Preflight — fail loud with a distinct exit code per failure mode.
   // A THROW from the auth/list SDK calls (e.g. a transient 5xx after auth) maps
   // to TRANSPORT so the exit-code + single-JSON contract holds; checkAuth
@@ -115,62 +122,51 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
   let ids: string[];
   try {
     if (!(await seam.checkAuth())) {
-      return {
-        result: errorResult(model, "", null, null),
-        exitCode: EXIT.AUTH,
-        errorMessage: "CURSOR_API_KEY missing or failed to authenticate",
-      };
+      return fail(EXIT.AUTH, "CURSOR_API_KEY missing or failed to authenticate");
     }
     ids = await seam.listModelIds();
   } catch (e) {
-    return {
-      result: errorResult(model, "", null, null),
-      exitCode: EXIT.TRANSPORT,
-      errorMessage: `preflight failed contacting the model API: ${String(e)}`,
-    };
+    return fail(EXIT.TRANSPORT, `preflight failed contacting the model API: ${String(e)}`);
   }
   if (!ids.includes(model)) {
-    return {
-      result: errorResult(model, "", null, null),
-      exitCode: EXIT.MODEL,
-      errorMessage: `model '${model}' not found; available: ${ids.join(", ")}`,
-    };
+    return fail(EXIT.MODEL, `model '${model}' not found; available: ${ids.join(", ")}`);
   }
   for (const rel of [join("docs", "graph.json"), join("docs", "INDEX.md"), join("docs", "sources")]) {
     if (!existsSync(join(docsRoot, rel))) {
-      return {
-        result: errorResult(model, "", null, null),
-        exitCode: EXIT.DOCS,
-        errorMessage: `docs root '${docsRoot}' is missing ${rel}`,
-      };
+      return fail(EXIT.DOCS, `docs root '${docsRoot}' is missing ${rel}`);
     }
   }
   if (!seam.supportsReadOnlyLockdown()) {
-    return {
-      result: errorResult(model, "", null, null),
-      exitCode: EXIT.LOCKDOWN,
-      errorMessage: "SDK cannot enforce read-only tool lockdown (design-blocking; see spec)",
-    };
+    return fail(EXIT.LOCKDOWN, "SDK cannot enforce read-only tool lockdown (design-blocking; see spec)");
   }
   const docsVersion = computeDocsVersion(docsRoot);
+
+  // A live agent call (ask or reformat) that throws maps to a distinct exit code:
+  // a wall-clock TimeoutError to TIMEOUT, anything else to TRANSPORT.
+  const mapAgentError = (
+    e: unknown,
+    label: string,
+    usage: AgentUsage | null,
+    durationMs: number | null,
+  ): RunOutcome =>
+    e instanceof TimeoutError
+      ? {
+          result: errorResult(model, docsVersion, usage, durationMs),
+          exitCode: EXIT.TIMEOUT,
+          errorMessage: `${label} timed out after ${e.timeoutMs}ms`,
+        }
+      : {
+          result: errorResult(model, docsVersion, usage, durationMs),
+          exitCode: EXIT.TRANSPORT,
+          errorMessage: `${label} failed: ${String(e)}`,
+        };
 
   // Agentic retrieval — one shot.
   let run;
   try {
     run = await seam.ask(buildPrompt(question), model, docsRoot, timeoutMs);
   } catch (e) {
-    if (e instanceof TimeoutError) {
-      return {
-        result: errorResult(model, docsVersion, null, null),
-        exitCode: EXIT.TIMEOUT,
-        errorMessage: `agent call timed out after ${e.timeoutMs}ms`,
-      };
-    }
-    return {
-      result: errorResult(model, docsVersion, null, null),
-      exitCode: EXIT.TRANSPORT,
-      errorMessage: `agent call failed: ${String(e)}`,
-    };
+    return mapAgentError(e, "agent call", null, null);
   }
   if (!run.ok || run.text === null) {
     return {
@@ -188,18 +184,7 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
     try {
       repair = await seam.reformat(run.text, model, timeoutMs);
     } catch (e) {
-      if (e instanceof TimeoutError) {
-        return {
-          result: errorResult(model, docsVersion, usage, run.durationMs),
-          exitCode: EXIT.TIMEOUT,
-          errorMessage: `repair call timed out after ${e.timeoutMs}ms`,
-        };
-      }
-      return {
-        result: errorResult(model, docsVersion, usage, run.durationMs),
-        exitCode: EXIT.TRANSPORT,
-        errorMessage: `repair call failed: ${String(e)}`,
-      };
+      return mapAgentError(e, "repair call", usage, run.durationMs);
     }
     usage = sumUsage(usage, repair.usage);
     if (repair.ok && repair.text !== null) parsed = extractAnswer(repair.text);
