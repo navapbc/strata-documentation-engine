@@ -34,8 +34,7 @@ sources, producing a linked, agent-queryable knowledge base.
 `strata-qa/` is a self-contained TypeScript CLI (isolated from the Python pipeline) that answers a
 natural-language question from the generated docs graph via the Cursor SDK, with a deterministic
 quote-verified grounding gate: every citation must resolve to a `docs/graph.json` node **and** carry
-a verbatim quote found in the cited doc, or the tool refuses. Default model is `gpt-5.6-luna`. Design:
-`docs/superpowers/specs/2026-07-22-strata-qa-cli-design.md`.
+a verbatim quote found in the cited doc, or the tool refuses. Default model is `gpt-5.6-luna`.
 
 ```bash
 cd strata-qa && npm install                      # setup (Node 22)

@@ -57,8 +57,7 @@ npm run qa -- eval --docs-root ..                # score golden fixtures (live)
 
 Default model is `gpt-5.6-luna`. One JSON object on stdout per run; refusals (`no_match`,
 `low_confidence`) exit 0, operational failures exit non-zero (2 auth, 3 model, 4 docs, 5 lockdown,
-6 parse, 7 transport). Logs land in `.logs/qa/` (gitignored). Design:
-`docs/superpowers/specs/2026-07-22-strata-qa-cli-design.md`.
+6 parse, 7 transport). Logs land in `.logs/qa/` (gitignored).
 
 ## Workflow
 
