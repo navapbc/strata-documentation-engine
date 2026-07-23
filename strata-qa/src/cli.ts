@@ -142,7 +142,13 @@ export async function main(argv: string[], io: Io, seam: AgentSeam = createCurso
       seam,
     );
   } finally {
-    restore();
+    // On a timeout the underlying Agent.prompt is still running (the wall-clock
+    // bound rejects but cannot cancel it) and may emit late progress to stdout.
+    // Leave stdout rerouted to stderr in that case so an orphaned write can never
+    // corrupt our single JSON line; the process exits moments later. io.out writes
+    // to the real stdout captured before silencing, so the result still lands there.
+    // Every other outcome means the agent settled, so restoring is safe.
+    if (outcome?.exitCode !== EXIT.TIMEOUT) restore();
   }
 
   io.out(JSON.stringify(outcome.result) + "\n");
@@ -154,8 +160,14 @@ export async function main(argv: string[], io: Io, seam: AgentSeam = createCurso
 // Real entrypoint. True under `tsx src/cli.ts` and `node dist/cli.js`; false when
 // vitest imports this module (argv[1] is the vitest binary), so tests never exit.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  // Bind the real stdout writer now, before main's silenceStdout can reroute the
+  // global process.stdout.write. This keeps io.out a stable sink to the true
+  // stdout even while silencing is active (the timeout path never restores it).
+  const realStdoutWrite = process.stdout.write.bind(process.stdout);
   main(process.argv.slice(2), {
-    out: (s) => process.stdout.write(s),
+    out: (s) => {
+      realStdoutWrite(s);
+    },
     err: (s) => process.stderr.write(s),
   })
     .then((code) => process.exit(code))

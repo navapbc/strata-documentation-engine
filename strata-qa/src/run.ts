@@ -136,6 +136,16 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
       return fail(EXIT.DOCS, `docs root '${docsRoot}' is missing ${rel}`);
     }
   }
+  // Load the citation-target set here in preflight, not at the grounding stage:
+  // a malformed/truncated graph.json otherwise throws after the (expensive) model
+  // call and escapes runQa as an uncaught TRANSPORT-mapped crash with no JSON
+  // emitted. Catching it here keeps it a fail-fast, single-JSON EXIT.DOCS.
+  let nodePaths: Set<string>;
+  try {
+    nodePaths = loadNodePaths(docsRoot);
+  } catch (e) {
+    return fail(EXIT.DOCS, `docs graph '${join(docsRoot, "docs", "graph.json")}' is malformed: ${String(e)}`);
+  }
   if (!seam.supportsReadOnlyLockdown()) {
     return fail(EXIT.LOCKDOWN, "SDK cannot enforce read-only tool lockdown (design-blocking; see spec)");
   }
@@ -199,8 +209,7 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
     };
   }
 
-  // Deterministic grounding gate.
-  const nodePaths = loadNodePaths(docsRoot);
+  // Deterministic grounding gate. nodePaths was loaded + validated in preflight.
   const readDoc = (nodePath: string): string | null => {
     try {
       return readFileSync(join(docsRoot, "docs", nodePath), "utf8");

@@ -130,6 +130,26 @@ describe("runQa", () => {
     expect(out.exitCode).toBe(EXIT.DOCS);
   });
 
+  test("malformed graph.json (invalid JSON) -> exit 4, fails fast before the model call", async () => {
+    const root = makeDocsRoot();
+    writeFileSync(join(root, "docs", "graph.json"), "{ not valid json");
+    let asked = false;
+    const seam = fakeSeam({ ask: async () => ((asked = true), finished(GOOD_BLOCK)) });
+    const out = await runQa(opts(root, join(root, "logs")), seam);
+    expect(out.exitCode).toBe(EXIT.DOCS);
+    expect(out.result.status).toBe("error");
+    expect(out.errorMessage).toMatch(/malformed/i);
+    expect(asked).toBe(false); // preflight bailed before any (expensive) agent call
+  });
+
+  test("malformed graph.json (missing nodes array) -> exit 4", async () => {
+    const root = makeDocsRoot();
+    writeFileSync(join(root, "docs", "graph.json"), JSON.stringify({ edges: [] }));
+    const out = await runQa(opts(root, join(root, "logs")), fakeSeam());
+    expect(out.exitCode).toBe(EXIT.DOCS);
+    expect(out.errorMessage).toMatch(/malformed/i);
+  });
+
   test("no lockdown support -> exit 5", async () => {
     const root = makeDocsRoot();
     const out = await runQa(opts(root, join(root, "logs")), fakeSeam({ supportsReadOnlyLockdown: () => false }));
