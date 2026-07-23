@@ -48,6 +48,18 @@ Run scripts as modules (`python -m scripts.x`), not files; `pyproject.toml` sets
 sources and `source_delta --json` classifies each source (new/changed/unchanged/throttled/orphaned);
 both are skill-runtime helpers, not part of the manual dev pipeline.
 
+```bash
+# strata-qa docs Q&A CLI (Node 22; isolated from the Python pipeline; see README)
+cd strata-qa && npm install && npm test          # setup + units (no live model)
+npm run qa -- "<question>" --docs-root ..        # ask (needs CURSOR_API_KEY: personal or service-account key)
+npm run qa -- eval --docs-root ..                # score golden fixtures (live)
+```
+
+Default model is `gpt-5.6-luna`. One JSON object on stdout per run; refusals (`no_match`,
+`low_confidence`) exit 0, operational failures exit non-zero (2 auth, 3 model, 4 docs, 5 lockdown,
+6 parse, 7 transport). Logs land in `.logs/qa/` (gitignored). Design:
+`docs/superpowers/specs/2026-07-22-strata-qa-cli-design.md`.
+
 ## Workflow
 
 ### Branching

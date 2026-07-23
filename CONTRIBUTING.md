@@ -34,6 +34,13 @@ Requires Python 3.13.
 pip install -r scripts/requirements.txt pytest
 ```
 
+### strata-qa (TypeScript)
+
+The docs Q&A CLI under `strata-qa/` uses Node 22 + npm, isolated from the Python pipeline. Run
+`cd strata-qa && npm install && npm test` before touching it. Live invocations (`npm run qa`) need
+`CURSOR_API_KEY` (a personal or service-account key). See `README.md` for usage and
+`docs/superpowers/specs/2026-07-22-strata-qa-cli-design.md` for the design.
+
 ### Commit message template
 
 This repo ships a `.gitmessage` file that scaffolds commit messages with the expected format and a few guiding comments. Wire it up once per clone:

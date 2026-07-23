@@ -29,6 +29,25 @@ sources, producing a linked, agent-queryable knowledge base.
   runs the skill and opens a PR.
   Requires the `ANTHROPIC_API_KEY` and `SOURCES_READ_TOKEN` secrets.
 
+## strata-qa — documentation Q&A CLI
+
+`strata-qa/` is a self-contained TypeScript CLI (isolated from the Python pipeline) that answers a
+natural-language question from the generated docs graph via the Cursor SDK, with a deterministic
+quote-verified grounding gate: every citation must resolve to a `docs/graph.json` node **and** carry
+a verbatim quote found in the cited doc, or the tool refuses. Default model is `gpt-5.6-luna`. Design:
+`docs/superpowers/specs/2026-07-22-strata-qa-cli-design.md`.
+
+```bash
+cd strata-qa && npm install                      # setup (Node 22)
+npm test                                         # vitest units — no live model calls
+npm run qa -- "how does OSCER authenticate API requests?" --docs-root ..
+npm run qa -- eval --docs-root ..                # score fixtures/golden.json (live model)
+```
+
+Live runs need `CURSOR_API_KEY` (a personal or service-account key). Each run prints one JSON object
+to stdout; refusals (`no_match`, `low_confidence`) exit 0, operational failures exit non-zero (auth,
+model, docs, lockdown, parse, transport). Query and refusal logs land in `.logs/qa/` (gitignored).
+
 ## Developing
 
 ```bash
