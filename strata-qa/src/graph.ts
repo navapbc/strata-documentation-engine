@@ -11,8 +11,9 @@ export function loadNodePaths(docsRoot: string): Set<string> {
   const paths = new Set<string>();
   for (const n of nodes) {
     const p = (n as { path?: unknown })?.path;
-    if (typeof p !== "string") throw new Error("malformed graph.json: node without string path");
-    paths.add(p);
+    // build_graph.py emits doc_type:"source" grouping nodes with path:null (never
+    // a citation target). Collect only string doc paths; skip null/absent paths.
+    if (typeof p === "string") paths.add(p);
   }
   return paths;
 }

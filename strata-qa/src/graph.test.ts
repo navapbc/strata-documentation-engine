@@ -30,9 +30,19 @@ describe("loadNodePaths", () => {
     expect(() => loadNodePaths(root)).toThrow(/malformed graph.json/);
   });
 
-  test("throws on node without string path", () => {
-    const root = makeDocsRoot({ nodes: [{ id: "a" }], edges: [] });
-    expect(() => loadNodePaths(root)).toThrow(/malformed graph.json/);
+  test("skips source-container nodes with a null path", () => {
+    // The real build_graph.py emits one doc_type:"source" node per source with
+    // path:null (a grouping node, never a citation target) alongside the doc
+    // nodes. loadNodePaths collects only the string doc paths and skips the rest.
+    const root = makeDocsRoot({
+      nodes: [
+        { id: "source:oscer", doc_type: "source", path: null },
+        { id: "a", path: "sources/oscer/tasks.md" },
+        { id: "b" }, // no path key at all -> also skipped, not fatal
+      ],
+      edges: [],
+    });
+    expect(loadNodePaths(root)).toEqual(new Set(["sources/oscer/tasks.md"]));
   });
 });
 
