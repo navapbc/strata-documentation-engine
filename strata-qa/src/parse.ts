@@ -9,7 +9,7 @@ export interface ModelAnswer {
   citations: ModelCitation[];
 }
 
-const FENCE = /```(?:json)?\s*\n([\s\S]*?)```/g;
+const MARKDOWN_FENCE = /```(?:json)?\s*\n([\s\S]*?)```/g;
 
 function validate(value: unknown): ModelAnswer | null {
   if (typeof value !== "object" || value === null) return null;
@@ -29,9 +29,10 @@ function validate(value: unknown): ModelAnswer | null {
   };
 }
 
+// Extract the json answer from markdown block, removing any prose around the block.
 export function extractAnswer(text: string): ModelAnswer | null {
   let last: ModelAnswer | null = null;
-  for (const m of text.matchAll(FENCE)) {
+  for (const m of text.matchAll(MARKDOWN_FENCE)) {
     try {
       const v = validate(JSON.parse(m[1]));
       if (v) last = v;
