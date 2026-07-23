@@ -64,3 +64,47 @@ The plan's Task 8 code is a TEMPLATE with two now-known-wrong spots; use these i
    upgrade that drops plan-mode read-only enforcement can be made to fail loud (exit 5).
 4. `checkAuth()` / `listModelIds()` use the REST client (`Cursor.me`, `Cursor.models.list`) which DO read
    the env key; only `Agent.prompt` needs the explicit `apiKey`.
+
+## Golden eval baseline — 2026-07-22, model gpt-5.6-luna, docsVersion 8e87a72
+
+Command: `cd strata-qa && npm run qa -- eval --docs-root ..` (live, 9 fixtures). Preceded by a graph
+loader fix (commit c2601b6) needed to run against the real 65-node corpus (9 source-container nodes
+have `path:null`; the loader now skips them).
+
+```
+PASS  expect=answerable  got=answered  What tool does the nava-platform CLI wrap to install templates?
+PASS  expect=answerable  got=answered  How does OSCER authenticate inbound API requests?
+PASS  expect=answerable  got=answered  What attribute types does the Strata SDK provide?
+PASS  expect=answerable  got=answered  How do I set up a new Rails project from the application template?
+PASS  expect=answerable  got=answered  How does OSCER model the Medicaid certification lifecycle?
+PASS  expect=refuse      got=no_match  What is the production database password for OSCER?
+FAIL  expect=refuse      got=answered  How does the Strata SDK integrate with Salesforce?
+PASS  expect=refuse      got=no_match  What did the Strata team decide in their last sprint retrospective?
+PASS  expect=refuse      got=no_match  What is the best pizza topping?
+---
+8/9 passed  |  mean latency: 338771 ms  |  total tokens: 1717611  |  quote-downgrades: 0
+```
+
+Observations:
+- **1 FAIL — Salesforce (expected refuse, got answered).** The model cited two REAL docs
+  (`sources/strata-sdk/strata-sdk-api-authentication.md`, `sources/strata-sdk/strata-sdk-tasks.md`),
+  and BOTH quotes verified (grounding 2/2). This is the spec's acknowledged limit: the gate guarantees
+  grounding, not intent — the model stitched genuine quotes into an answer to a question the corpus does
+  not actually address (SDK↔Salesforce). Not a code bug; the quote-verified gate did its job (no
+  fabrication — the quotes are real). Refusal-discipline gap to close later via prompt hardening
+  (stronger "answer only if the docs directly address the question" instruction) or fixture review.
+- **quote-downgrades: 0** — whitespace-normalized substring matching produced NO false downgrades on the
+  real corpus. The quote-matching rules are not too strict; good signal.
+- **Latency has extreme outliers (Lambda-relevant).** Answerable questions: 9–14 s each. But two questions
+  triggered very long agentic loops: the Salesforce over-answer took **971 s (~16 min)** and the
+  sprint-retro refusal **2003 s (~33 min)**; the pizza refusal was fast (5 s). The 338771 ms mean is
+  dominated by these two. **This directly threatens the future Lambda's 15-minute execution limit** (spec
+  "Lambda portability notes"). The infra story MUST bound agent runtime (max-turns / wall-clock timeout).
+  Ambiguous or barely-related questions are the slow path, not clear answers or clear refusals.
+- **Cost:** ~1.72M total tokens over 9 fixtures (~190k/question), consistent per-question.
+- Minor (test hygiene): `cli.test.ts` runs `main()` without an explicit `logDir`, so it wrote 6 stray
+  fake-seam entries (5 ms / 2 tokens / question "q") into `strata-qa/.logs/qa/queries.jsonl`. Harmless
+  (gitignored) but the CLI tests should pass a temp `logDir`.
+- Minor (log location): `run.ts` defaults `logDir` to `.logs/qa` relative to CWD, so invoking from
+  `strata-qa/` writes `strata-qa/.logs/qa/` rather than the repo-root `.logs/qa/` the spec describes.
+  Both are covered by the `.logs/` gitignore. Consider anchoring the default at the docs root.
