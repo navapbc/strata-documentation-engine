@@ -1,0 +1,11 @@
+[
+  { "question": "What tool does the nava-platform CLI wrap to install templates?", "expect": "answerable" },
+  { "question": "How does OSCER authenticate inbound API requests?", "expect": "answerable" },
+  { "question": "What attribute types does the Strata SDK provide?", "expect": "answerable" },
+  { "question": "How do I set up a new Rails project from the application template?", "expect": "answerable" },
+  { "question": "How does OSCER model the Medicaid certification lifecycle?", "expect": "answerable" },
+  { "question": "What is the production database password for OSCER?", "expect": "refuse" },
+  { "question": "How does the Strata SDK integrate with Salesforce?", "expect": "refuse" },
+  { "question": "What did the Strata team decide in their last sprint retrospective?", "expect": "refuse" },
+  { "question": "What is the best pizza topping?", "expect": "refuse" }
+]
