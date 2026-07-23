@@ -106,14 +106,26 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
   const logDir = opts.logDir ?? join(".logs", "qa");
 
   // Preflight — fail loud with a distinct exit code per failure mode.
-  if (!(await seam.checkAuth())) {
+  // A THROW from the auth/list SDK calls (e.g. a transient 5xx after auth) maps
+  // to TRANSPORT so the exit-code + single-JSON contract holds; checkAuth
+  // returning false is the distinct AUTH case.
+  let ids: string[];
+  try {
+    if (!(await seam.checkAuth())) {
+      return {
+        result: errorResult(model, "", null, null),
+        exitCode: EXIT.AUTH,
+        errorMessage: "CURSOR_API_KEY missing or failed to authenticate",
+      };
+    }
+    ids = await seam.listModelIds();
+  } catch (e) {
     return {
       result: errorResult(model, "", null, null),
-      exitCode: EXIT.AUTH,
-      errorMessage: "CURSOR_API_KEY missing or failed to authenticate",
+      exitCode: EXIT.TRANSPORT,
+      errorMessage: `preflight failed contacting the model API: ${String(e)}`,
     };
   }
-  const ids = await seam.listModelIds();
   if (!ids.includes(model)) {
     return {
       result: errorResult(model, "", null, null),

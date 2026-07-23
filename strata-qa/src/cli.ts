@@ -139,5 +139,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   main(process.argv.slice(2), {
     out: (s) => process.stdout.write(s),
     err: (s) => process.stderr.write(s),
-  }).then((code) => process.exit(code));
+  })
+    .then((code) => process.exit(code))
+    // Backstop: any unexpected throw still exits non-zero (never a silent unhandled
+    // rejection), preserving the "operational failures exit non-zero" contract.
+    .catch((e) => {
+      process.stderr.write(`fatal: ${String(e)}\n`);
+      process.exit(EXIT.TRANSPORT);
+    });
 }

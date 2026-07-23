@@ -108,6 +108,21 @@ describe("runQa", () => {
     expect(out.errorMessage).toContain("sonnet-4");
   });
 
+  test("listModelIds throws (post-auth transport failure) -> exit 7, status error, no crash", async () => {
+    const root = makeDocsRoot();
+    const out = await runQa(
+      opts(root, join(root, "logs")),
+      fakeSeam({
+        listModelIds: async () => {
+          throw new Error("models.list 503");
+        },
+      }),
+    );
+    expect(out.exitCode).toBe(EXIT.TRANSPORT);
+    expect(out.result.status).toBe("error");
+    expect(out.errorMessage).toContain("models.list 503");
+  });
+
   test("missing docs root files -> exit 4", async () => {
     const empty = mkdtempSync(join(tmpdir(), "strata-qa-empty-"));
     const out = await runQa(opts(empty, join(empty, "logs")), fakeSeam());
