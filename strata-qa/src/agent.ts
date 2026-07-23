@@ -18,8 +18,36 @@ export interface AgentSeam {
   checkAuth(): Promise<boolean>;
   listModelIds(): Promise<string[]>;
   supportsReadOnlyLockdown(): boolean;
-  ask(prompt: string, model: string, docsRoot: string): Promise<AgentRun>;
-  reformat(malformed: string, model: string): Promise<AgentRun>;
+  ask(prompt: string, model: string, docsRoot: string, timeoutMs: number): Promise<AgentRun>;
+  reformat(malformed: string, model: string, timeoutMs: number): Promise<AgentRun>;
+}
+
+// Thrown when a live model call exceeds its wall-clock budget. Carried as a
+// distinct type so callers can map it to a dedicated exit code rather than
+// lumping every stall in with generic transport failures.
+export class TimeoutError extends Error {
+  constructor(public readonly timeoutMs: number) {
+    super(`agent call did not complete within ${timeoutMs}ms`);
+    this.name = "TimeoutError";
+  }
+}
+
+// Wall-clock bound around a promise. `@cursor/sdk`'s `AgentOptions` exposes no
+// timeout or AbortSignal (NOTES.md), so this is best-effort: on timeout we reject
+// with a TimeoutError while the underlying Agent.prompt keeps running until the
+// process exits. The CLI exits immediately after, so the orphaned run is
+// harmless; Promise.race keeps the slow promise "handled" (no unhandled rejection
+// if it later settles).
+export async function withTimeout<T>(work: Promise<T>, timeoutMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const bound = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new TimeoutError(timeoutMs)), timeoutMs);
+  });
+  try {
+    return await Promise.race([work, bound]);
+  } finally {
+    clearTimeout(timer!);
+  }
 }
 
 export interface SdkRunResultLike {
@@ -102,16 +130,16 @@ export function createCursorSeam(): AgentSeam {
       return typeof Agent.prompt === "function" && READ_ONLY_MODE === "plan";
     },
 
-    async ask(prompt: string, model: string, docsRoot: string): Promise<AgentRun> {
-      const r = await Agent.prompt(prompt, buildAgentOptions(model, docsRoot));
+    async ask(prompt: string, model: string, docsRoot: string, timeoutMs: number): Promise<AgentRun> {
+      const r = await withTimeout(Agent.prompt(prompt, buildAgentOptions(model, docsRoot)), timeoutMs);
       return toRun(r as SdkRunResultLike);
     },
 
-    async reformat(malformed: string, model: string): Promise<AgentRun> {
+    async reformat(malformed: string, model: string, timeoutMs: number): Promise<AgentRun> {
       // Tool-less repair: no retrieval re-run. The agent gets only the malformed
       // text and must re-emit it as valid JSON; cwd still locked down.
       const prompt = `The following text was supposed to contain exactly one fenced JSON block with fields "status", "answer", "citations" (array of { "path", "quote" }). Re-emit ONLY that JSON, valid, in a single \`\`\`json fence. Do not change any values. Do not use any tools.\n\n${malformed}`;
-      const r = await Agent.prompt(prompt, buildAgentOptions(model, process.cwd()));
+      const r = await withTimeout(Agent.prompt(prompt, buildAgentOptions(model, process.cwd())), timeoutMs);
       return toRun(r as SdkRunResultLike);
     },
   };

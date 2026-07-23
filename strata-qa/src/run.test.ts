@@ -3,6 +3,7 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } from 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentRun, AgentSeam } from "./agent.js";
+import { TimeoutError } from "./agent.js";
 import { EXIT, runQa } from "./run.js";
 
 const DOC = `---
@@ -49,7 +50,7 @@ function fakeSeam(overrides: Partial<AgentSeam> = {}): AgentSeam {
 }
 
 function opts(root: string, logDir: string) {
-  return { question: "what wraps copier?", model: "gpt-5.6-luna", docsRoot: root, logDir };
+  return { question: "what wraps copier?", model: "gpt-5.6-luna", docsRoot: root, logDir, timeoutMs: 60_000 };
 }
 
 describe("runQa", () => {
@@ -182,5 +183,48 @@ describe("runQa", () => {
     const seam = fakeSeam({ ask: async () => ({ ok: false, text: null, usage: null, durationMs: null }) });
     const out = await runQa(opts(root, join(root, "logs")), seam);
     expect(out.exitCode).toBe(EXIT.TRANSPORT);
+  });
+
+  test("ask() timeout -> exit 8 (distinct from transport), status error", async () => {
+    const root = makeDocsRoot();
+    const seam = fakeSeam({
+      ask: async () => {
+        throw new TimeoutError(60_000);
+      },
+    });
+    const out = await runQa(opts(root, join(root, "logs")), seam);
+    expect(out.exitCode).toBe(EXIT.TIMEOUT);
+    expect(out.result.status).toBe("error");
+    expect(out.errorMessage).toMatch(/timed out/i);
+  });
+
+  test("reformat() timeout -> exit 8", async () => {
+    const root = makeDocsRoot();
+    const seam = fakeSeam({
+      ask: async () => finished("prose, not json"),
+      reformat: async () => {
+        throw new TimeoutError(60_000);
+      },
+    });
+    const out = await runQa(opts(root, join(root, "logs")), seam);
+    expect(out.exitCode).toBe(EXIT.TIMEOUT);
+    expect(out.errorMessage).toMatch(/timed out/i);
+  });
+
+  test("timeoutMs is passed through to the seam calls", async () => {
+    const root = makeDocsRoot();
+    const seen: number[] = [];
+    const seam = fakeSeam({
+      ask: async (_p, _m, _d, timeoutMs) => {
+        seen.push(timeoutMs);
+        return finished("prose"); // force the repair path so reformat also runs
+      },
+      reformat: async (_m, _model, timeoutMs) => {
+        seen.push(timeoutMs);
+        return finished(GOOD_BLOCK);
+      },
+    });
+    await runQa({ ...opts(root, join(root, "logs")), timeoutMs: 12_345 }, seam);
+    expect(seen).toEqual([12_345, 12_345]);
   });
 });

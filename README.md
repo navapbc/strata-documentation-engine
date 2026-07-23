@@ -43,9 +43,10 @@ npm run qa -- "how does OSCER authenticate API requests?" --docs-root ..
 npm run qa -- eval --docs-root ..                # score fixtures/golden.json (live model)
 ```
 
-Live runs need `CURSOR_API_KEY` (a personal or service-account key). Each run prints one JSON object
-to stdout; refusals (`no_match`, `low_confidence`) exit 0, operational failures exit non-zero (auth,
-model, docs, lockdown, parse, transport). Query and refusal logs land in `.logs/qa/` (gitignored).
+Live runs need `CURSOR_API_KEY` (a personal or service-account key). `--timeout <seconds>` bounds
+each live model call (default 60). Each run prints one JSON object to stdout; refusals (`no_match`,
+`low_confidence`) exit 0, operational failures exit non-zero (auth, model, docs, lockdown, parse,
+transport, timeout). Query and refusal logs land in `.logs/qa/` (gitignored).
 
 ## Developing
 

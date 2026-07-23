@@ -9,18 +9,21 @@ import { EXIT, runQa } from "./run.js";
 
 export const DEFAULT_MODEL = "gpt-5.6-luna";
 
+export const DEFAULT_TIMEOUT_MS = 60_000;
+
 export interface CliArgs {
   command: "ask" | "eval";
   question: string | null;
   model: string;
   docsRoot: string;
   pretty: boolean;
+  timeoutMs: number;
 }
 
 export class UsageError extends Error {}
 
-const USAGE = `usage: strata-qa "<question>" [--model <id>] [--docs-root <path>] [--pretty]
-       strata-qa eval [--model <id>] [--docs-root <path>]
+const USAGE = `usage: strata-qa "<question>" [--model <id>] [--docs-root <path>] [--timeout <seconds>] [--pretty]
+       strata-qa eval [--model <id>] [--docs-root <path>] [--timeout <seconds>]
 `;
 
 function fail(message: string): never {
@@ -34,13 +37,19 @@ export function parseArgs(argv: string[]): CliArgs {
     model: DEFAULT_MODEL,
     docsRoot: process.cwd(),
     pretty: false,
+    timeoutMs: DEFAULT_TIMEOUT_MS,
   };
   const positional: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--model") args.model = argv[++i] ?? fail("--model needs a value");
     else if (a === "--docs-root") args.docsRoot = argv[++i] ?? fail("--docs-root needs a value");
-    else if (a === "--pretty") args.pretty = true;
+    else if (a === "--timeout") {
+      const raw = argv[++i] ?? fail("--timeout needs a value");
+      const seconds = Number(raw);
+      if (!Number.isFinite(seconds) || seconds <= 0) fail("--timeout needs a positive number of seconds");
+      args.timeoutMs = seconds * 1000;
+    } else if (a === "--pretty") args.pretty = true;
     else if (a.startsWith("--")) fail(`unknown flag ${a}`);
     else positional.push(a);
   }
@@ -113,14 +122,23 @@ export async function main(argv: string[], io: Io, seam: AgentSeam = createCurso
 
   if (args.command === "eval") {
     const fixturesPath = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "golden.json");
-    return runEval({ fixturesPath, model: args.model, docsRoot: args.docsRoot }, seam, io.out);
+    return runEval(
+      { fixturesPath, model: args.model, docsRoot: args.docsRoot, timeoutMs: args.timeoutMs },
+      seam,
+      io.out,
+    );
   }
 
   const restore = silenceStdout(io.err);
   let outcome;
   try {
     outcome = await runQa(
-      { question: args.question as string, model: args.model, docsRoot: args.docsRoot },
+      {
+        question: args.question as string,
+        model: args.model,
+        docsRoot: args.docsRoot,
+        timeoutMs: args.timeoutMs,
+      },
       seam,
     );
   } finally {

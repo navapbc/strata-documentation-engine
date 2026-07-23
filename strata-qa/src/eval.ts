@@ -49,7 +49,7 @@ export function formatSummary(rows: EvalRow[]): string {
 }
 
 export async function runEval(
-  opts: { fixturesPath: string; model: string; docsRoot: string; logDir?: string },
+  opts: { fixturesPath: string; model: string; docsRoot: string; timeoutMs: number; logDir?: string },
   seam: AgentSeam,
   write: (s: string) => void,
 ): Promise<number> {
@@ -57,7 +57,13 @@ export async function runEval(
   const rows: EvalRow[] = [];
   for (const f of fixtures) {
     const { result } = await runQa(
-      { question: f.question, model: opts.model, docsRoot: opts.docsRoot, logDir: opts.logDir },
+      {
+        question: f.question,
+        model: opts.model,
+        docsRoot: opts.docsRoot,
+        timeoutMs: opts.timeoutMs,
+        logDir: opts.logDir,
+      },
       seam,
     );
     const row = scoreFixture(f, result);

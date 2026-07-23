@@ -13,17 +13,30 @@ describe("parseArgs", () => {
       model: DEFAULT_MODEL,
       docsRoot: process.cwd(),
       pretty: false,
+      timeoutMs: 60_000,
     });
   });
 
   test("flags in any order", () => {
     const a = parseArgs(["--model", "sonnet-4", "q", "--docs-root", "/x", "--pretty"]);
-    expect(a).toEqual({ command: "ask", question: "q", model: "sonnet-4", docsRoot: "/x", pretty: true });
+    expect(a).toEqual({
+      command: "ask",
+      question: "q",
+      model: "sonnet-4",
+      docsRoot: "/x",
+      pretty: true,
+      timeoutMs: 60_000,
+    });
   });
 
   test("eval subcommand", () => {
     expect(parseArgs(["eval"]).command).toBe("eval");
     expect(parseArgs(["eval", "--model", "sonnet-4"]).model).toBe("sonnet-4");
+  });
+
+  test("--timeout overrides the default (given in seconds, stored as ms)", () => {
+    expect(parseArgs(["q", "--timeout", "90"]).timeoutMs).toBe(90_000);
+    expect(parseArgs(["eval", "--timeout", "5"]).timeoutMs).toBe(5_000);
   });
 
   test.each([
@@ -32,6 +45,10 @@ describe("parseArgs", () => {
     [["--model"], /--model needs a value/],
     [["--bogus", "q"], /unknown flag/],
     [["eval", "extra"], /one question|unexpected/i],
+    [["q", "--timeout"], /--timeout needs a value/],
+    [["q", "--timeout", "0"], /--timeout .*positive/i],
+    [["q", "--timeout", "-3"], /--timeout .*positive/i],
+    [["q", "--timeout", "abc"], /--timeout .*positive/i],
   ])("rejects %j", (argv, re) => {
     expect(() => parseArgs(argv as string[])).toThrow(re);
   });

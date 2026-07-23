@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentSeam, AgentUsage } from "./agent.js";
+import { TimeoutError } from "./agent.js";
 import { computeDocsVersion, loadNodePaths } from "./graph.js";
 import type { GroundedSource, GroundingCounts, GroundingResult } from "./grounding.js";
 import { ground } from "./grounding.js";
@@ -17,12 +18,14 @@ export const EXIT = {
   LOCKDOWN: 5,
   PARSE: 6,
   TRANSPORT: 7,
+  TIMEOUT: 8,
 } as const;
 
 export interface RunOptions {
   question: string;
   model: string;
   docsRoot: string;
+  timeoutMs: number;
   logDir?: string;
 }
 
@@ -102,7 +105,7 @@ function logQuery(logDir: string, question: string, result: QaResult): void {
 }
 
 export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutcome> {
-  const { question, model, docsRoot } = opts;
+  const { question, model, docsRoot, timeoutMs } = opts;
   const logDir = opts.logDir ?? join(".logs", "qa");
 
   // Preflight — fail loud with a distinct exit code per failure mode.
@@ -154,8 +157,15 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
   // Agentic retrieval — one shot.
   let run;
   try {
-    run = await seam.ask(buildPrompt(question), model, docsRoot);
+    run = await seam.ask(buildPrompt(question), model, docsRoot, timeoutMs);
   } catch (e) {
+    if (e instanceof TimeoutError) {
+      return {
+        result: errorResult(model, docsVersion, null, null),
+        exitCode: EXIT.TIMEOUT,
+        errorMessage: `agent call timed out after ${e.timeoutMs}ms`,
+      };
+    }
     return {
       result: errorResult(model, docsVersion, null, null),
       exitCode: EXIT.TRANSPORT,
@@ -176,8 +186,15 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
   if (!parsed) {
     let repair;
     try {
-      repair = await seam.reformat(run.text, model);
+      repair = await seam.reformat(run.text, model, timeoutMs);
     } catch (e) {
+      if (e instanceof TimeoutError) {
+        return {
+          result: errorResult(model, docsVersion, usage, run.durationMs),
+          exitCode: EXIT.TIMEOUT,
+          errorMessage: `repair call timed out after ${e.timeoutMs}ms`,
+        };
+      }
       return {
         result: errorResult(model, docsVersion, usage, run.durationMs),
         exitCode: EXIT.TRANSPORT,
