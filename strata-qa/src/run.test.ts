@@ -91,6 +91,52 @@ describe("runQa", () => {
     expect(JSON.parse(refusals[0]).reason).toMatch(/no citation verified/);
   });
 
+  test("redundant unverified quote in a verified doc -> still answered, no refusal", async () => {
+    const root = makeDocsRoot();
+    const logDir = join(root, "logs");
+    const block =
+      "```json\n" +
+      JSON.stringify({
+        status: "answered",
+        answer: "It wraps Copier.",
+        citations: [
+          { path: "sources/strata-sdk/overview.md", quote: "wraps Copier to install templates" },
+          { path: "sources/strata-sdk/overview.md", quote: "a paraphrase that appears nowhere" },
+        ],
+      }) +
+      "\n```";
+    const { result, exitCode } = await runQa(opts(root, logDir), fakeSeam({ ask: async () => finished(block) }));
+    expect(exitCode).toBe(EXIT.OK);
+    expect(result.status).toBe("answered");
+    expect(result.answer).toBe("It wraps Copier.");
+    expect(existsSync(join(logDir, "refusals.jsonl"))).toBe(false);
+  });
+
+  test("low_confidence refusal logs per-citation detail", async () => {
+    const root = makeDocsRoot();
+    const logDir = join(root, "logs");
+    const block =
+      "```json\n" +
+      JSON.stringify({
+        status: "answered",
+        answer: "partly grounded",
+        citations: [
+          { path: "sources/strata-sdk/overview.md", quote: "wraps Copier to install templates" },
+          { path: "sources/strata-sdk/ghost.md", quote: "made up" },
+        ],
+      }) +
+      "\n```";
+    const { result } = await runQa(opts(root, logDir), fakeSeam({ ask: async () => finished(block) }));
+    expect(result.status).toBe("low_confidence");
+    expect(result.answer).toBeNull();
+    const entry = JSON.parse(readFileSync(join(logDir, "refusals.jsonl"), "utf8").trim());
+    expect(entry.reason).toMatch(/partial verification/);
+    expect(entry.citations).toEqual([
+      { path: "sources/strata-sdk/overview.md", quote: "wraps Copier to install templates", resolved: true, verified: true },
+      { path: "sources/strata-sdk/ghost.md", quote: "made up", resolved: false, verified: false },
+    ]);
+  });
+
   test("auth failure -> exit 2, status error", async () => {
     const root = makeDocsRoot();
     const out = await runQa(opts(root, join(root, "logs")), fakeSeam({ checkAuth: async () => false }));

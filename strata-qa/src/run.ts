@@ -52,6 +52,7 @@ const EMPTY_GROUNDING: GroundingCounts = {
   citationsResolved: 0,
   quotesVerified: 0,
   distinctDocs: 0,
+  docsCited: 0,
 };
 
 function errorResult(
@@ -87,7 +88,10 @@ function refusalReason(g: GroundingResult): string {
   if (g.grounding.citationsTotal === 0) return "model found no candidate docs";
   if (g.grounding.quotesVerified === 0)
     return "no citation verified (paths unresolved or quotes not found in cited docs)";
-  return `partial verification: ${g.grounding.quotesVerified} of ${g.grounding.citationsTotal} citations verified`;
+  return (
+    `partial verification: ${g.grounding.distinctDocs} of ${g.grounding.docsCited} cited docs verified ` +
+    `(${g.grounding.quotesVerified} of ${g.grounding.citationsTotal} quotes)`
+  );
 }
 
 function logQuery(logDir: string, question: string, result: QaResult): void {
@@ -237,6 +241,9 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
       ts: new Date().toISOString(),
       question,
       reason: refusalReason(gate),
+      // Per-citation verdicts so a refusal is diagnosable from the log alone,
+      // without re-running the (expensive, non-deterministic) model call.
+      citations: gate.citations,
     });
   }
   return { result, exitCode: EXIT.OK };

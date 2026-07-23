@@ -8,7 +8,7 @@ function result(status: QaResult["status"], quotesVerified = 1, citationsResolve
     status,
     answer: status === "answered" ? "yes" : null,
     sources: [],
-    grounding: { citationsTotal: citationsResolved, citationsResolved, quotesVerified, distinctDocs: 1 },
+    grounding: { citationsTotal: citationsResolved, citationsResolved, quotesVerified, distinctDocs: 1, docsCited: 1 },
     model: "m",
     docsVersion: "v",
     usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },

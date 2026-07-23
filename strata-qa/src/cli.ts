@@ -104,7 +104,7 @@ function prettySummary(r: QaResult): string {
     ...(r.answer !== null ? [`answer: ${r.answer}`] : []),
     ...(r.sources.length ? ["sources:"] : []),
     ...r.sources.map((s) => `  - ${s.path} (verified: ${s.verified})`),
-    `grounding: ${r.grounding.quotesVerified}/${r.grounding.citationsTotal} citations quote-verified, ${r.grounding.distinctDocs} distinct doc(s)`,
+    `grounding: ${r.grounding.distinctDocs}/${r.grounding.docsCited} cited doc(s) verified, ${r.grounding.quotesVerified}/${r.grounding.citationsTotal} quotes matched`,
     `model: ${r.model}  docs: ${r.docsVersion.slice(0, 12)}`,
     `cost: ${r.usage?.totalTokens ?? "?"} tokens  latency: ${r.durationMs ?? "?"} ms`,
   ];
