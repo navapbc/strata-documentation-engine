@@ -1,7 +1,14 @@
 // strata-qa/src/lambda/handler.test.ts
 import { describe, expect, test } from "vitest";
 import { EXIT, type RunOutcome } from "../run.js";
-import { errorResponse, toHttpResponse } from "./handler.js";
+import {
+  BadRequestError,
+  MAX_QUESTION_CHARS,
+  errorResponse,
+  parseJob,
+  toHttpResponse,
+  type FunctionUrlEvent,
+} from "./handler.js";
 
 function outcome(exitCode: number, status: string, errorMessage?: string): RunOutcome {
   return {
@@ -64,5 +71,71 @@ describe("errorResponse", () => {
     const r = errorResponse(400, "'question' is required", "rid");
     expect(r.statusCode).toBe(400);
     expect(JSON.parse(r.body)).toEqual({ error: "'question' is required", requestId: "rid" });
+  });
+});
+
+const ALLOWED = ["gpt-5.6-luna", "claude-sonnet-5"] as const;
+const post = (body: string | null | undefined, extra: Partial<FunctionUrlEvent> = {}): FunctionUrlEvent => ({
+  body,
+  requestContext: { http: { method: "POST" } },
+  ...extra,
+});
+
+describe("parseJob", () => {
+  test("parses a minimal job", () => {
+    expect(parseJob(post(JSON.stringify({ question: "how?" })), ALLOWED)).toEqual({
+      question: "how?",
+      model: undefined,
+      requestId: undefined,
+      replyTo: undefined,
+    });
+  });
+
+  test("parses the full envelope", () => {
+    const job = parseJob(
+      post(JSON.stringify({ question: "q", model: "claude-sonnet-5", requestId: "r1", replyTo: "https://x" })),
+      ALLOWED,
+    );
+    expect(job).toEqual({ question: "q", model: "claude-sonnet-5", requestId: "r1", replyTo: "https://x" });
+  });
+
+  test("decodes a base64 body", () => {
+    const b64 = Buffer.from(JSON.stringify({ question: "hi" })).toString("base64");
+    expect(parseJob(post(b64, { isBase64Encoded: true }), ALLOWED).question).toBe("hi");
+  });
+
+  test("a missing requestContext is treated as POST (RIE sends bare events)", () => {
+    expect(parseJob({ body: JSON.stringify({ question: "q" }) }, ALLOWED).question).toBe("q");
+  });
+
+  test("non-POST -> 405", () => {
+    const event = { body: "{}", requestContext: { http: { method: "GET" } } };
+    expect(() => parseJob(event, ALLOWED)).toThrow(BadRequestError);
+    try {
+      parseJob(event, ALLOWED);
+    } catch (e) {
+      expect((e as BadRequestError).statusCode).toBe(405);
+    }
+  });
+
+  test.each([
+    ["empty body", post(undefined)],
+    ["blank body", post("   ")],
+    ["not json", post("not json")],
+    ["json array", post("[]")],
+    ["missing question", post(JSON.stringify({}))],
+    ["blank question", post(JSON.stringify({ question: "  " }))],
+    ["non-string question", post(JSON.stringify({ question: 123 }))],
+    ["oversized question", post(JSON.stringify({ question: "x".repeat(MAX_QUESTION_CHARS + 1) }))],
+    ["non-string model", post(JSON.stringify({ question: "q", model: 5 }))],
+    ["model off the allowlist", post(JSON.stringify({ question: "q", model: "gpt-4-turbo" }))],
+    ["non-string requestId", post(JSON.stringify({ question: "q", requestId: 7 }))],
+  ])("rejects %s", (_label, event) => {
+    expect(() => parseJob(event as FunctionUrlEvent, ALLOWED)).toThrow(BadRequestError);
+  });
+
+  test("a question exactly at the cap is accepted", () => {
+    const q = "x".repeat(MAX_QUESTION_CHARS);
+    expect(parseJob(post(JSON.stringify({ question: q })), ALLOWED).question).toBe(q);
   });
 });
