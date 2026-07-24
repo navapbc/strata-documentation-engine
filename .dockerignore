@@ -1,0 +1,9 @@
+.git
+node_modules
+strata-qa/node_modules
+strata-qa/dist
+.logs
+.sources
+__pycache__
+.venv
+.pytest_cache
