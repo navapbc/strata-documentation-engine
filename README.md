@@ -50,6 +50,32 @@ each live model call (default 60). Each run prints one JSON object to stdout; re
 `low_confidence`) exit 0, operational failures exit non-zero (auth, model, docs, lockdown, parse,
 transport, timeout). Query and refusal logs land in `.logs/qa/` (gitignored).
 
+### Deploying strata-qa as a Lambda
+
+`strata-qa` can run as a container-image AWS Lambda behind an IAM-authed Function URL.
+The image bakes the docs + CLI in at build time; the build context is the repo root.
+
+```bash
+AWS_REGION=<region> CURSOR_API_KEY=<personal-or-service-account-key> ./strata-qa/deploy.sh
+```
+
+`deploy.sh` creates the ECR repo, stores the key in Secrets Manager, creates the
+execution role, deploys the function from the image, caps reserved concurrency, and
+prints the Function URL. Invoke it with a SigV4-signed `POST` whose JSON body is
+`{"question": "..."}` (optional `model`, `requestId`, `replyTo`); the response body is
+the `QaResult` JSON the CLI emits plus `requestId`, and `error` on failures. Refusals
+return HTTP 200.
+
+Config via Lambda env vars: `AGENT_TIMEOUT_MS` (default 90000, must stay under the
+Lambda `TIMEOUT_S` of 120), `QA_MODEL` (default `gpt-5.6-luna`), `QA_ALLOWED_MODELS`
+(comma-separated allowlist for caller-supplied `model`), `DOCS_ROOT` (default
+`/var/task`), `QA_LOG_DIR` (default `/tmp/qa` — the only writable path).
+
+Two behaviours worth knowing: `docsVersion` is a `sha256:` hash rather than a git SHA
+(the image has no `.git`; `STRATA_QA_GIT_SHA` carries the commit), and a question that
+hits the 90s timeout returns 504 and recycles the container, so the next invocation
+pays a cold start.
+
 ## Developing
 
 ```bash

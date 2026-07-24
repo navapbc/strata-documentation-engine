@@ -53,6 +53,10 @@ both are skill-runtime helpers, not part of the manual dev pipeline.
 cd strata-qa && npm install && npm test          # setup + units (no live model)
 npm run qa -- "<question>" --docs-root ..        # ask (needs CURSOR_API_KEY: personal or service-account key)
 npm run qa -- eval --docs-root ..                # score golden fixtures (live)
+
+# Deploy strata-qa as a container-image Lambda (needs AWS creds + docker + CURSOR_API_KEY)
+./strata-qa/deploy.sh                                   # from the repo root: build, push, deploy, print URL
+docker build -f strata-qa/Dockerfile -t strata-qa-lambda .   # build the image only (context = repo root)
 ```
 
 Default model is `gpt-5.6-luna`. `--timeout <seconds>` bounds each live model call (default 60).
