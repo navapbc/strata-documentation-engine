@@ -54,9 +54,14 @@ cd strata-qa && npm install && npm test          # setup + units (no live model)
 npm run qa -- "<question>" --docs-root ..        # ask (needs CURSOR_API_KEY: personal or service-account key)
 npm run qa -- eval --docs-root ..                # score golden fixtures (live)
 
-# Deploy strata-qa as a container-image Lambda (needs AWS creds + docker + CURSOR_API_KEY)
-./strata-qa/deploy.sh                                   # from the repo root: build, push, deploy, print URL
-docker build -f strata-qa/Dockerfile -t strata-qa-lambda .   # build the image only (context = repo root)
+# Deploy strata-qa as a container-image Lambda (needs AWS creds + docker; run from the repo root)
+./strata-qa/deploy.sh                            # build, push, deploy, print the Function URL
+CURSOR_API_KEY=<key> ./strata-qa/deploy.sh       # first deploy: also creates the secret
+ROTATE_SECRET=1 CURSOR_API_KEY=<key> ./strata-qa/deploy.sh   # overwrite the stored key
+
+# Build the image only. --platform is required: the function is arm64, so an x86
+# host silently produces an amd64 image the function cannot run.
+docker build -f strata-qa/Dockerfile --platform linux/arm64 -t strata-qa-lambda .
 ```
 
 Default model is `gpt-5.6-luna`. `--timeout <seconds>` bounds each live model call (default 60).

@@ -10,12 +10,14 @@ __pycache__
 
 # The image bakes docs/ as the corpus, but runQa only ever reads graph.json,
 # INDEX.md, and sources/** (run.ts). Every citation target in graph.json lives
-# under sources/, so the audit trail and the plans/specs are dead weight in the
-# image — and extra search space the retrieval agent can burn tokens wandering
-# into, since it runs with cwd = the task root. They stay in git; they just do
-# not ship.
+# under sources/, so the audit trail is dead weight in the image — and extra
+# search space the retrieval agent can burn tokens wandering into, since it runs
+# with cwd = the task root. It stays in git; it just does not ship.
 docs/.verification
 docs/.curation
+# Untracked local scratch: superpowers writes plans and specs here. Nothing in
+# git today, so this is insurance against a dev's working notes bloating the
+# image (and widening that search space) rather than an exclusion of the corpus.
 docs/superpowers
 
 # Tests never run in the image, and compiling them would put modules that
