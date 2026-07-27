@@ -5,9 +5,7 @@ import type { AgentSeam } from "./agent.js";
 import { createCursorSeam } from "./agent.js";
 import { runEval } from "./eval.js";
 import type { QaResult } from "./run.js";
-import { EXIT, runQa } from "./run.js";
-
-export const DEFAULT_MODEL = "gpt-5.6-luna";
+import { DEFAULT_MODEL, EXIT, runQa } from "./run.js";
 
 export const DEFAULT_TIMEOUT_MS = 60_000;
 

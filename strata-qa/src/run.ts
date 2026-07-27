@@ -9,6 +9,10 @@ import { appendJsonl } from "./log.js";
 import { extractAnswer } from "./parse.js";
 import { buildPrompt } from "./prompt.js";
 
+// Lives here, not in an adapter: both cli.ts and lambda/handler.ts need it, and
+// an adapter must never import another adapter's entrypoint module for it.
+export const DEFAULT_MODEL = "gpt-5.6-luna";
+
 export const EXIT = {
   OK: 0,
   USAGE: 1,

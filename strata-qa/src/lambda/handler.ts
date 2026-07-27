@@ -2,8 +2,7 @@
 import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import { randomUUID } from "node:crypto";
 import { createCursorSeam, type AgentSeam } from "../agent.js";
-import { DEFAULT_MODEL } from "../cli.js";
-import { EXIT, type QaResult, type RunOutcome } from "../run.js";
+import { DEFAULT_MODEL, EXIT, type QaResult, type RunOutcome } from "../run.js";
 import { handleQuestion, type QaConfig } from "./core.js";
 
 export interface LambdaResponse {
@@ -12,14 +11,18 @@ export interface LambdaResponse {
   body: string;
 }
 
-export const JSON_HEADERS: Record<string, string> = { "content-type": "application/json" };
+const JSON_HEADERS: Record<string, string> = { "content-type": "application/json" };
 
 // Server misconfiguration (auth/docs/lockdown) -> 500; upstream model
 // interaction (model/parse/transport) -> 502; wall-clock cutoff -> 504.
 // EXIT.LOCKDOWN is unreachable at runtime — supportsReadOnlyLockdown()
-// (agent.ts:131) is a compile-time tautology — but is mapped for completeness.
-export const EXIT_TO_HTTP: Record<number, number> = {
+// (agent.ts:131) is a compile-time tautology — and EXIT.USAGE is a CLI-only
+// argv failure, but both are mapped because the type below is exhaustive over
+// EXIT on purpose: adding an exit code to run.ts must be a compile error here,
+// not a silent fall-through to the 500 in toHttpResponse.
+const EXIT_TO_HTTP: Record<number, number> = {
   [EXIT.OK]: 200,
+  [EXIT.USAGE]: 400,
   [EXIT.AUTH]: 500,
   [EXIT.DOCS]: 500,
   [EXIT.LOCKDOWN]: 500,
@@ -27,7 +30,9 @@ export const EXIT_TO_HTTP: Record<number, number> = {
   [EXIT.PARSE]: 502,
   [EXIT.TRANSPORT]: 502,
   [EXIT.TIMEOUT]: 504,
-};
+  // The `satisfies` is the exhaustiveness gate; the declared Record<number,
+  // number> is what lets toHttpResponse index it with a plain exitCode.
+} satisfies Record<(typeof EXIT)[keyof typeof EXIT], number>;
 
 export function errorResponse(statusCode: number, message: string, requestId: string): LambdaResponse {
   return { statusCode, headers: JSON_HEADERS, body: JSON.stringify({ error: message, requestId }) };
@@ -61,6 +66,9 @@ export class BadRequestError extends Error {
   constructor(
     message: string,
     readonly statusCode: number = 400,
+    // The caller's requestId when the body parsed far enough to recover one, so
+    // a 4xx can echo it without the error path re-decoding the envelope.
+    readonly requestId?: string,
   ) {
     super(message);
     this.name = "BadRequestError";
@@ -71,61 +79,69 @@ export class BadRequestError extends Error {
 // longer question buys nothing, so cap it rather than pay for an essay.
 export const MAX_QUESTION_CHARS = 2000;
 
+// The one place that knows how a Function URL carries its payload. Any future
+// content-encoding belongs here and nowhere else.
+function decodeBody(event: FunctionUrlEvent): string {
+  const raw = event.body ?? "";
+  return event.isBase64Encoded ? Buffer.from(raw, "base64").toString("utf8") : raw;
+}
+
 export function parseJob(event: FunctionUrlEvent, allowedModels: readonly string[]): QaJob {
+  const text = decodeBody(event);
+
+  // Parse first but reject later: a caller-supplied requestId is recoverable
+  // even from a body we are about to reject, and echoing it is what lets a
+  // client correlate a 4xx with the request it sent. Rejection order below is
+  // unchanged (method, then empty, then malformed, then per-field).
+  let parsed: unknown;
+  let jsonError = false;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    jsonError = true;
+  }
+  const echoed = (parsed as { requestId?: unknown } | null | undefined)?.requestId;
+  // Annotated on the const, not just the arrow: TS only narrows through a
+  // never-returning call when the variable itself carries the type.
+  const reject: (message: string, statusCode?: number) => never = (message, statusCode = 400) => {
+    throw new BadRequestError(message, statusCode, typeof echoed === "string" ? echoed : undefined);
+  };
+
   // The Runtime Interface Emulator and direct `lambda invoke` send bare events
   // with no requestContext; only reject a method that is present and not POST.
   const method = event.requestContext?.http?.method;
   if (method !== undefined && method.toUpperCase() !== "POST") {
-    throw new BadRequestError(`method ${method} not allowed; use POST`, 405);
+    reject(`method ${method} not allowed; use POST`, 405);
   }
 
-  const raw = event.body ?? "";
-  const text = event.isBase64Encoded ? Buffer.from(raw, "base64").toString("utf8") : raw;
-  if (!text.trim()) throw new BadRequestError("request body is empty");
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new BadRequestError("request body is not valid JSON");
-  }
+  if (!text.trim()) reject("request body is empty");
+  if (jsonError) reject("request body is not valid JSON");
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new BadRequestError("request body must be a JSON object");
+    reject("request body must be a JSON object");
   }
 
   const { question, model, requestId, replyTo } = parsed as Record<string, unknown>;
   if (typeof question !== "string" || question.trim() === "") {
-    throw new BadRequestError("'question' is required and must be a non-empty string");
+    reject("'question' is required and must be a non-empty string");
   }
   if (question.length > MAX_QUESTION_CHARS) {
-    throw new BadRequestError(`'question' exceeds ${MAX_QUESTION_CHARS} characters`);
+    reject(`'question' exceeds ${MAX_QUESTION_CHARS} characters`);
   }
-  if (model !== undefined) {
-    if (typeof model !== "string") throw new BadRequestError("'model' must be a string");
-    // A caller-chosen model is a spend vector; allow only what the operator configured.
-    if (!allowedModels.includes(model)) {
-      throw new BadRequestError(`'model' must be one of: ${allowedModels.join(", ")}`);
-    }
+  if (model !== undefined && typeof model !== "string") reject("'model' must be a string");
+  // A caller-chosen model is a spend vector; allow only what the operator configured.
+  if (model !== undefined && !allowedModels.includes(model)) {
+    reject(`'model' must be one of: ${allowedModels.join(", ")}`);
   }
-  for (const [name, value] of [
-    ["requestId", requestId],
-    ["replyTo", replyTo],
-  ] as const) {
-    if (value !== undefined && typeof value !== "string") {
-      throw new BadRequestError(`'${name}' must be a string`);
-    }
-  }
+  if (requestId !== undefined && typeof requestId !== "string") reject("'requestId' must be a string");
+  if (replyTo !== undefined && typeof replyTo !== "string") reject("'replyTo' must be a string");
 
-  return {
-    question,
-    model: model as string | undefined,
-    requestId: requestId as string | undefined,
-    // Reserved for the async Slack dispatcher; accepted and ignored in this slice.
-    replyTo: replyTo as string | undefined,
-  };
+  // Reserved for the async Slack dispatcher; accepted and ignored in this slice.
+  return { question, model, requestId, replyTo };
 }
 
-const DEFAULT_TIMEOUT_MS = 90_000;
+// Distinct from cli.ts's own default (60s): a Lambda invocation has a longer
+// wall clock to spend than an interactive CLI run.
+const LAMBDA_DEFAULT_TIMEOUT_MS = 90_000;
 
 export function loadConfig(env: NodeJS.ProcessEnv): QaConfig {
   const defaultModel = env.QA_MODEL ?? DEFAULT_MODEL;
@@ -139,12 +155,12 @@ export function loadConfig(env: NodeJS.ProcessEnv): QaConfig {
     // A bad env value must not become NaN and disable the timeout entirely —
     // the wall-clock bound is the only thing standing between an ambiguous
     // question and a 33-minute agentic loop (NOTES.md).
-    timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : DEFAULT_TIMEOUT_MS,
+    timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : LAMBDA_DEFAULT_TIMEOUT_MS,
     defaultModel,
     // Lambda's filesystem is read-only except /tmp; runQa's JSONL MUST land there.
     logDir: env.QA_LOG_DIR ?? "/tmp/qa",
     // A caller-chosen model is a spend vector. The default is always permitted.
-    allowedModels: configured.includes(defaultModel) ? configured : [defaultModel, ...configured],
+    allowedModels: [...new Set([defaultModel, ...configured])],
   };
 }
 
@@ -202,21 +218,19 @@ export async function handleEvent(
 ): Promise<LambdaResponse> {
   const { emit, recycle = scheduleRecycle } = deps;
 
-  // Parse before generating an id so a caller-supplied requestId is echoed even
-  // on a 400; fall back to a generated one when the body never parsed.
-  let job: QaJob;
-  let requestId: string = randomUUID();
+  // A caller-supplied requestId is echoed even on a 400 (parseJob carries it on
+  // the error); fall back to a generated one when the body never parsed.
+  let job: QaJob & { requestId: string };
   try {
-    job = parseJob(event, config.allowedModels);
-    requestId = job.requestId ?? requestId;
-    job = { ...job, requestId };
+    const parsed = parseJob(event, config.allowedModels);
+    job = { ...parsed, requestId: parsed.requestId ?? randomUUID() };
   } catch (e) {
     if (e instanceof BadRequestError) {
-      const echoed = readRequestId(event) ?? requestId;
-      return errorResponse(e.statusCode, e.message, echoed);
+      return errorResponse(e.statusCode, e.message, e.requestId ?? randomUUID());
     }
     throw e;
   }
+  const { requestId } = job;
 
   try {
     await keys.ensure();
@@ -230,28 +244,12 @@ export async function handleEvent(
       outcome = await handleQuestion(job, seam, config, emit);
     }
 
-    if (outcome.exitCode === EXIT.TIMEOUT) {
-      poisoned = true;
-      recycle();
-    }
+    if (outcome.exitCode === EXIT.TIMEOUT) recycle();
     return toHttpResponse(outcome, requestId);
   } catch (e) {
     // Backstop: a JSON error body, never a stack.
     const message = e instanceof Error ? e.message : String(e);
     return errorResponse(500, `internal error: ${message}`, requestId);
-  }
-}
-
-// Best-effort echo of requestId when parseJob rejected the body.
-function readRequestId(event: FunctionUrlEvent): string | undefined {
-  try {
-    const raw = event.body ?? "";
-    const text = event.isBase64Encoded ? Buffer.from(raw, "base64").toString("utf8") : raw;
-    const parsed: unknown = JSON.parse(text);
-    const id = (parsed as { requestId?: unknown } | null)?.requestId;
-    return typeof id === "string" ? id : undefined;
-  } catch {
-    return undefined;
   }
 }
 
@@ -276,13 +274,17 @@ function readRequestId(event: FunctionUrlEvent): string | undefined {
 // Either way one invocation is lost per timeout. Timeouts are rare (NOTES.md:
 // 9-14s typical), so that is the accepted cost.
 //
-// Task 7 is the gate. If the recycle proves unreliable there, switch to the
-// documented fallback: fork a worker per invocation and SIGKILL it on timeout,
-// which is true cancellation at the cost of a ~100ms spawn.
-const RECYCLE_DELAY_MS = Number(process.env.RECYCLE_DELAY_MS ?? "250");
+// If the recycle proves unreliable in practice, switch to the fallback in
+// docs/superpowers/specs/2026-07-24-strata-qa-lambda-design.md: fork a worker per
+// invocation and SIGKILL it on timeout, which is true cancellation at the cost
+// of a ~100ms spawn.
+const RECYCLE_DELAY_MS = 250;
 let poisoned = false;
 
+// Both halves of the recycle live here, so injecting a fake `recycle` fakes the
+// whole mechanism and handleEvent has no hidden module-level side effect.
 function scheduleRecycle(): void {
+  poisoned = true;
   // unref so this never holds a local test process open; the Lambda RIC keeps
   // the loop alive on its own, so the timer still fires there.
   setTimeout(() => process.exit(1), RECYCLE_DELAY_MS).unref();

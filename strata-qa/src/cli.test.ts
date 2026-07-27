@@ -3,7 +3,8 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentRun, AgentSeam } from "./agent.js";
-import { DEFAULT_MODEL, main, parseArgs, UsageError } from "./cli.js";
+import { main, parseArgs } from "./cli.js";
+import { DEFAULT_MODEL } from "./run.js";
 
 describe("parseArgs", () => {
   test("question with defaults", () => {

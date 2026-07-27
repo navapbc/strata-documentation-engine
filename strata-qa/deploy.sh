@@ -75,7 +75,10 @@ docker build -f strata-qa/Dockerfile --platform "$DOCKER_PLATFORM" \
   --build-arg GIT_SHA="$GIT_SHA" -t "$IMAGE_URI" .
 docker push "$IMAGE_URI"
 
-ENV_VARS="Variables={HOME=/tmp,DOCS_ROOT=/var/task,QA_LOG_DIR=/tmp/qa,AGENT_TIMEOUT_MS=${AGENT_TIMEOUT_MS},CURSOR_API_KEY_SECRET_ID=${SECRET_ARN}}"
+# Only what the deploy knows. HOME, DOCS_ROOT, and QA_LOG_DIR are image ENVs
+# (see Dockerfile) — restating them here would hardcode /var/task and let the
+# image and the function config drift apart.
+ENV_VARS="Variables={AGENT_TIMEOUT_MS=${AGENT_TIMEOUT_MS},CURSOR_API_KEY_SECRET_ID=${SECRET_ARN}}"
 
 echo "==> Lambda function"
 if aws lambda get-function --function-name "$FUNCTION_NAME" --region "$AWS_REGION" >/dev/null 2>&1; then

@@ -1,7 +1,8 @@
 // strata-qa/src/lambda/handler.test.ts
 import { describe, expect, test } from "vitest";
+import type { AgentSeam } from "../agent.js";
 import { EXIT, type RunOutcome } from "../run.js";
-import { cfg, fakeSeam, makeDocsRoot } from "./core.test.js";
+import { cfg, fakeSeam, makeDocsRoot } from "./fixtures.js";
 import {
   BadRequestError,
   MAX_QUESTION_CHARS,
@@ -13,9 +14,23 @@ import {
   parseJob,
   toHttpResponse,
   type FunctionUrlEvent,
+  type HandleEventDeps,
+  type KeyLoader,
 } from "./handler.js";
 
 const silent = () => {};
+
+// Returns the thrown BadRequestError, so a single call can be asserted against.
+// A bare try/catch with no unreachable guard passes vacuously if the call ever
+// stops throwing.
+function rejects(fn: () => unknown): BadRequestError {
+  try {
+    fn();
+  } catch (e) {
+    return e as BadRequestError;
+  }
+  throw new Error("expected parseJob to throw a BadRequestError");
+}
 
 function outcome(exitCode: number, status: string, errorMessage?: string): RunOutcome {
   return {
@@ -117,12 +132,16 @@ describe("parseJob", () => {
 
   test("non-POST -> 405", () => {
     const event = { body: "{}", requestContext: { http: { method: "GET" } } };
-    expect(() => parseJob(event, ALLOWED)).toThrow(BadRequestError);
-    try {
-      parseJob(event, ALLOWED);
-    } catch (e) {
-      expect((e as BadRequestError).statusCode).toBe(405);
-    }
+    expect(rejects(() => parseJob(event, ALLOWED)).statusCode).toBe(405);
+  });
+
+  test("a rejection carries the caller's requestId for the error path to echo", () => {
+    const event = post(JSON.stringify({ requestId: "r1" }));
+    expect(rejects(() => parseJob(event, ALLOWED)).requestId).toBe("r1");
+  });
+
+  test("a rejection carries no requestId when the body never parsed", () => {
+    expect(rejects(() => parseJob(post("not json"), ALLOWED)).requestId).toBeUndefined();
   });
 
   test.each([
@@ -223,10 +242,18 @@ describe("createKeyLoader", () => {
 });
 
 describe("handleEvent", () => {
-  const noKeys = { ensure: async () => {}, invalidate: () => {} };
+  const noKeys: KeyLoader = { ensure: async () => {}, invalidate: () => {} };
+  // The corpus is only ever read, so one temp dir serves every test here.
+  const root = makeDocsRoot();
+
+  const ask = (
+    body: unknown,
+    seam: AgentSeam = fakeSeam(),
+    deps: HandleEventDeps = {},
+    keys: KeyLoader = noKeys,
+  ) => handleEvent({ body: JSON.stringify(body) }, seam, cfg(root), keys, { emit: silent, ...deps });
 
   test("a bad request never reaches runQa", async () => {
-    const root = makeDocsRoot();
     let asked = false;
     const seam = fakeSeam({
       ask: async () => {
@@ -234,53 +261,49 @@ describe("handleEvent", () => {
         throw new Error("should not run");
       },
     });
-    const r = await handleEvent({ body: "{}" }, seam, cfg(root), noKeys, { emit: silent });
+    const r = await ask({}, seam);
     expect(r.statusCode).toBe(400);
     expect(JSON.parse(r.body).error).toMatch(/question/i);
     expect(asked).toBe(false);
   });
 
   test("a non-POST method -> 405", async () => {
-    const root = makeDocsRoot();
     const event = { body: "{}", requestContext: { http: { method: "GET" } } };
     expect((await handleEvent(event, fakeSeam(), cfg(root), noKeys, { emit: silent })).statusCode).toBe(405);
   });
 
   test("answered -> 200", async () => {
-    const root = makeDocsRoot();
-    const r = await handleEvent(
-      { body: JSON.stringify({ question: "what is alpha?" }) },
-      fakeSeam(),
-      cfg(root),
-      noKeys,
-      { emit: silent },
-    );
+    const r = await ask({ question: "what is alpha?" });
     expect(r.statusCode).toBe(200);
     expect(JSON.parse(r.body).status).toBe("answered");
   });
 
   test("generates a requestId when the job omits one", async () => {
-    const root = makeDocsRoot();
-    const r = await handleEvent({ body: JSON.stringify({ question: "q" }) }, fakeSeam(), cfg(root), noKeys, {
-      emit: silent,
-    });
-    expect(JSON.parse(r.body).requestId).toMatch(/[0-9a-f-]{36}/);
+    expect(JSON.parse((await ask({ question: "q" })).body).requestId).toMatch(/[0-9a-f-]{36}/);
   });
 
-  test("echoes a caller-supplied requestId, including on a 400", async () => {
-    const root = makeDocsRoot();
-    const r = await handleEvent({ body: JSON.stringify({ requestId: "r1" }) }, fakeSeam(), cfg(root), noKeys, {
-      emit: silent,
-    });
+  test("echoes a caller-supplied requestId", async () => {
+    const r = await ask({ question: "q", requestId: "r1" });
+    expect(r.statusCode).toBe(200);
+    expect(JSON.parse(r.body).requestId).toBe("r1");
+  });
+
+  test("echoes a caller-supplied requestId on a 400 too", async () => {
+    const r = await ask({ requestId: "r1" });
     expect(r.statusCode).toBe(400);
     expect(JSON.parse(r.body).requestId).toBe("r1");
   });
 
+  test("generates a requestId when the body never parsed", async () => {
+    const r = await handleEvent({ body: "not json" }, fakeSeam(), cfg(root), noKeys, { emit: silent });
+    expect(r.statusCode).toBe(400);
+    expect(JSON.parse(r.body).requestId).toMatch(/[0-9a-f-]{36}/);
+  });
+
   test("an AUTH failure invalidates the key and retries once", async () => {
-    const root = makeDocsRoot();
     let invalidated = 0;
     let attempts = 0;
-    const keys = {
+    const keys: KeyLoader = {
       ensure: async () => {},
       invalidate: () => {
         invalidated += 1;
@@ -292,23 +315,17 @@ describe("handleEvent", () => {
         return attempts > 1; // first attempt fails auth, second succeeds
       },
     });
-    const r = await handleEvent({ body: JSON.stringify({ question: "q" }) }, seam, cfg(root), keys, { emit: silent });
+    const r = await ask({ question: "q" }, seam, {}, keys);
     expect(invalidated).toBe(1);
     expect(attempts).toBe(2);
     expect(r.statusCode).toBe(200);
   });
 
   test("a second AUTH failure gives up with 500", async () => {
-    const root = makeDocsRoot();
-    const seam = fakeSeam({ checkAuth: async () => false });
-    const r = await handleEvent({ body: JSON.stringify({ question: "q" }) }, seam, cfg(root), noKeys, {
-      emit: silent,
-    });
-    expect(r.statusCode).toBe(500);
+    expect((await ask({ question: "q" }, fakeSeam({ checkAuth: async () => false }))).statusCode).toBe(500);
   });
 
   test("a timeout returns 504 and schedules a container recycle", async () => {
-    const root = makeDocsRoot();
     let recycled = 0;
     const seam = fakeSeam({
       ask: async () => {
@@ -316,39 +333,26 @@ describe("handleEvent", () => {
         throw new TimeoutError(90_000);
       },
     });
-    const r = await handleEvent({ body: JSON.stringify({ question: "q" }) }, seam, cfg(root), noKeys, {
-      emit: silent,
-      recycle: () => {
-        recycled += 1;
-      },
-    });
+    // The injected recycle also stands in for poisoning the module, so this test
+    // cannot leave the real handler refusing every later invocation.
+    const r = await ask({ question: "q" }, seam, { recycle: () => void (recycled += 1) });
     expect(r.statusCode).toBe(504);
     expect(recycled).toBe(1);
   });
 
   test("a successful invocation never recycles", async () => {
-    const root = makeDocsRoot();
     let recycled = 0;
-    await handleEvent({ body: JSON.stringify({ question: "q" }) }, fakeSeam(), cfg(root), noKeys, {
-      emit: silent,
-      recycle: () => {
-        recycled += 1;
-      },
-    });
+    await ask({ question: "q" }, fakeSeam(), { recycle: () => void (recycled += 1) });
     expect(recycled).toBe(0);
   });
 
   test("an unexpected throw becomes a 500 with no stack", async () => {
-    const root = makeDocsRoot();
     const seam = fakeSeam({
       listModelIds: async () => {
         throw Object.assign(new Error("kaboom"), { stack: "SECRET STACK LINE" });
       },
     });
-    const r = await handleEvent({ body: JSON.stringify({ question: "q" }) }, seam, cfg(root), noKeys, {
-      emit: silent,
-    });
-    expect(r.body).not.toContain("SECRET STACK LINE");
+    expect((await ask({ question: "q" }, seam)).body).not.toContain("SECRET STACK LINE");
   });
 });
 

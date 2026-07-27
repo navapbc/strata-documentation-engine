@@ -66,10 +66,15 @@ prints the Function URL. Invoke it with a SigV4-signed `POST` whose JSON body is
 the `QaResult` JSON the CLI emits plus `requestId`, and `error` on failures. Refusals
 return HTTP 200.
 
-Config via Lambda env vars: `AGENT_TIMEOUT_MS` (default 90000, must stay under the
-Lambda `TIMEOUT_S` of 120), `QA_MODEL` (default `gpt-5.6-luna`), `QA_ALLOWED_MODELS`
-(comma-separated allowlist for caller-supplied `model`), `DOCS_ROOT` (default
-`/var/task`), `QA_LOG_DIR` (default `/tmp/qa` — the only writable path).
+Config via env vars, split by who owns them. `deploy.sh` sets the per-deploy ones on the
+function: `AGENT_TIMEOUT_MS` (default 90000, must stay under the Lambda `TIMEOUT_S` of
+120) and `CURSOR_API_KEY_SECRET_ID`. The container-shape ones are image `ENV`s in the
+Dockerfile, so a local `docker run` and the deployed function agree: `DOCS_ROOT`
+(`/var/task`), `QA_LOG_DIR` (`/tmp/qa` — the only writable path), and `HOME` (`/tmp`).
+`QA_MODEL` (default `gpt-5.6-luna`) and `QA_ALLOWED_MODELS` (comma-separated allowlist
+for caller-supplied `model`) are read if set, but `deploy.sh` does not set them — and
+because `update-function-configuration` replaces the whole env map, a hand-set value is
+cleared on the next deploy.
 
 Two behaviours worth knowing: `docsVersion` is a `sha256:` hash rather than a git SHA
 (the image has no `.git`; `STRATA_QA_GIT_SHA` carries the commit), and a question that
