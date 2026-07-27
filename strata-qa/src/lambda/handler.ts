@@ -281,7 +281,15 @@ export async function handleEvent(
   keys: KeyLoader,
   deps: HandleEventDeps = {},
 ): Promise<LambdaResponse> {
-  const { emit, recycle = scheduleRecycle, cancelRuns = cancelActiveRuns, budgetMs } = deps;
+  // Defaulted here, not just in handleQuestion: `handler` passes no emit, so an
+  // undefined default left the timeout line below firing nowhere in production —
+  // exactly the signal needed to tell a cancelled timeout from a recycled one.
+  const {
+    emit = (l: string) => console.log(l),
+    recycle = scheduleRecycle,
+    cancelRuns = cancelActiveRuns,
+    budgetMs,
+  } = deps;
 
   // A caller-supplied requestId is echoed even on a 400 (parseJob carries it on
   // the error); fall back to a generated one when the body never parsed.
@@ -327,7 +335,7 @@ export async function handleEvent(
       // this is a no-op), while the invocation budget above abandoned a run that
       // is still going and this is the only place holding a handle to it.
       const stopped = await cancelRuns();
-      emit?.(
+      emit(
         JSON.stringify({
           ts: new Date().toISOString(),
           requestId,
