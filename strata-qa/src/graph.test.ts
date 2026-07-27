@@ -86,12 +86,16 @@ describe("loadNodePaths memoization", () => {
     expect(loadNodePaths(root)).toEqual(new Set(["sources/a/one.md"]));
   });
 
-  test("mutating a returned set cannot corrupt the cache", () => {
+  test("the cached set is handed back directly, and the type is what stops a caller corrupting it", () => {
     const root = makeDocsRoot({ nodes: [{ id: "a", path: "sources/a/one.md" }], edges: [] });
     const first = loadNodePaths(root);
-    first.add("sources/injected/evil.md");
-    first.delete("sources/a/one.md");
-    expect(loadNodePaths(root)).toEqual(new Set(["sources/a/one.md"]));
+    // No per-request defensive copy: the very same instance comes back.
+    expect(loadNodePaths(root)).toBe(first);
+    // @ts-expect-error ReadonlySet exposes no add() — corrupting the cache is now a
+    // compile error rather than something a runtime copy has to defend against.
+    // Referenced, never called: this line is the assertion, and tsc is what runs it.
+    void first.add;
+    expect([...first]).toEqual(["sources/a/one.md"]);
   });
 });
 

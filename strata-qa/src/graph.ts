@@ -23,18 +23,26 @@ export function resetGraphCaches(): void {
   docsVersionCache.clear();
 }
 
-export function loadNodePaths(docsRoot: string): Set<string> {
-  const cached = nodePathsCache.get(docsRoot);
-  // A defensive copy: the cached Set outlives the call, and handing callers a
-  // shared mutable reference would let one request's edit leak into the next.
-  if (cached) return new Set(cached);
-  const paths = parseNodePaths(docsRoot);
-  nodePathsCache.set(docsRoot, paths);
-  return new Set(paths);
+// The corpus layout, owned here rather than respelled at each call site.
+export function graphPath(docsRoot: string): string {
+  return join(docsRoot, "docs", "graph.json");
+}
+
+export function docPath(docsRoot: string, nodePath: string): string {
+  return join(docsRoot, "docs", nodePath);
+}
+
+// ReadonlySet, not a defensive copy: the cached Set outlives the call, and the
+// type is what stops a caller mutating it — for free, and without re-allocating
+// the whole node set on every request.
+export function loadNodePaths(docsRoot: string): ReadonlySet<string> {
+  let paths = nodePathsCache.get(docsRoot);
+  if (!paths) nodePathsCache.set(docsRoot, (paths = parseNodePaths(docsRoot)));
+  return paths;
 }
 
 function parseNodePaths(docsRoot: string): Set<string> {
-  const raw = readFileSync(join(docsRoot, "docs", "graph.json"), "utf8");
+  const raw = readFileSync(graphPath(docsRoot), "utf8");
   const graph: unknown = JSON.parse(raw);
   const nodes = (graph as { nodes?: unknown })?.nodes;
   if (!Array.isArray(nodes)) throw new Error("malformed graph.json: missing nodes array");
@@ -73,7 +81,7 @@ function readDocsVersion(docsRoot: string): string {
       .toString()
       .trim();
   } catch {
-    const bytes = readFileSync(join(docsRoot, "docs", "graph.json"));
+    const bytes = readFileSync(graphPath(docsRoot));
     return "sha256:" + createHash("sha256").update(bytes).digest("hex");
   }
 }

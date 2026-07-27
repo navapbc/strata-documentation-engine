@@ -1,8 +1,9 @@
 // strata-qa/src/lambda/handler.test.ts
 import { describe, expect, test } from "vitest";
 import type { AgentSeam } from "../agent.js";
-import { EXIT, type RunOutcome } from "../run.js";
-import { cfg, fakeSeam, makeDocsRoot } from "./fixtures.js";
+import { EXIT, errorResult, type RunOutcome } from "../run.js";
+import { fakeSeam, makeDocsRoot } from "../fixtures.js";
+import { cfg } from "./fixtures.js";
 import {
   BadRequestError,
   MAX_QUESTION_CHARS,
@@ -34,18 +35,14 @@ function rejects(fn: () => unknown): BadRequestError {
   throw new Error("expected parseJob to throw a BadRequestError");
 }
 
+// Built from run.ts's own errorResult so a new QaResult field is one edit there
+// rather than a silent divergence here.
 function outcome(exitCode: number, status: string, errorMessage?: string): RunOutcome {
   return {
     result: {
-      schema_version: 1,
+      ...errorResult("m", "v", null, null),
       status: status as RunOutcome["result"]["status"],
       answer: status === "answered" ? "A." : null,
-      sources: [],
-      grounding: { citationsTotal: 0, citationsResolved: 0, quotesVerified: 0, distinctDocs: 0, docsCited: 0 },
-      model: "m",
-      docsVersion: "v",
-      usage: null,
-      durationMs: null,
     },
     exitCode,
     errorMessage,
@@ -335,7 +332,7 @@ describe("handleEvent", () => {
     const seam = fakeSeam({
       ask: async () => {
         const { TimeoutError } = await import("../agent.js");
-        throw new TimeoutError(90_000, true);
+        throw new TimeoutError(90_000);
       },
     });
     // The injected recycle also stands in for poisoning the module, so this test
@@ -356,7 +353,7 @@ describe("handleEvent", () => {
     const seam = fakeSeam({
       ask: async () => {
         const { TimeoutError } = await import("../agent.js");
-        throw new TimeoutError(90_000, false);
+        throw new TimeoutError(90_000);
       },
     });
     const r = await ask({ question: "q" }, seam, {

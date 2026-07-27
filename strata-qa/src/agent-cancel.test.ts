@@ -6,6 +6,8 @@
 // live run as stopped leaves an orphan inside the next invocation, and reporting a
 // stopped run as live throws away a warm container for nothing.
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { SdkRunResultLike } from "./agent.js";
 
 const sdk = vi.hoisted(() => ({
@@ -98,11 +100,10 @@ describe("cancellable agent runs", () => {
     expect(sdk.run.cancelCalls).toBe(0);
   });
 
-  test("a timed-out run is cancelled, reported as cancelled, and forgotten", async () => {
+  test("a timed-out run is cancelled and forgotten", async () => {
     sdk.run = makeRun();
     await expect(createCursorSeam().ask("q", "gpt-5.6-luna", "/docs", 20)).rejects.toMatchObject({
       name: "TimeoutError",
-      cancelled: true,
     });
     expect(sdk.run.cancelCalls).toBe(1);
     expect(activeRunCount()).toBe(0); // nothing left to contain
@@ -115,8 +116,8 @@ describe("cancellable agent runs", () => {
       .ask("q", "gpt-5.6-luna", "/docs", 20)
       .catch((e) => e);
     expect(err).toBeInstanceOf(TimeoutError);
-    expect(err.cancelled).toBe(false);
     expect(sdk.run.cancelCalls).toBe(0); // never attempted: supports() said no
+    // Retention IS the contamination signal the handler reads.
     expect(activeRunCount()).toBe(1);
     await expect(cancelActiveRuns()).resolves.toBe(false);
   });
@@ -126,7 +127,7 @@ describe("cancellable agent runs", () => {
     const err = await createCursorSeam()
       .ask("q", "gpt-5.6-luna", "/docs", 20)
       .catch((e) => e);
-    expect(err.cancelled).toBe(false);
+    expect(err).toBeInstanceOf(TimeoutError);
     expect(sdk.run.cancelCalls).toBe(1);
     expect(activeRunCount()).toBe(1);
   });
@@ -154,12 +155,14 @@ describe("cancellable agent runs", () => {
     expect(sdk.sentWith[0]).toMatchObject({ mode: "plan", model: { id: "gpt-5.6-luna" } });
   });
 
-  test("the repair call is cancellable too", async () => {
+  test("the repair call is cancellable too, and runs outside the task root", async () => {
     sdk.run = makeRun();
     await expect(createCursorSeam().reformat("prose", "gpt-5.6-luna", 20)).rejects.toMatchObject({
-      cancelled: true,
+      name: "TimeoutError",
     });
     expect(sdk.run.cancelCalls).toBe(1);
     expect(activeRunCount()).toBe(0);
+    // The repair reads nothing, so it must not be handed the process cwd.
+    expect(sdk.createdWith[0]).toMatchObject({ local: { cwd: join(tmpdir(), "qa-repair") } });
   });
 });

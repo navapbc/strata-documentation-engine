@@ -81,8 +81,9 @@ Function URL answers 403 before the handler ever runs.
 Config via env vars, split by who owns them. `deploy.sh` sets the per-deploy ones on the
 function: `AGENT_TIMEOUT_MS` (default 90000) and `CURSOR_API_KEY_SECRET_ID`. The
 container-shape ones are image `ENV`s in the Dockerfile, so a local `docker run` and the
-deployed function agree: `DOCS_ROOT` (`/var/task`), `QA_LOG_DIR` (`/tmp/qa` — the only
-writable path), and `HOME` (`/tmp`). `QA_MODEL` (default `gpt-5.6-luna`) and
+deployed function agree: `DOCS_ROOT` (`/opt/qa-root` — deliberately not the task root,
+since it becomes the retrieval agent's cwd and the task root also holds `node_modules`),
+`QA_LOG_DIR` (`/tmp/qa` — the only writable path), and `HOME` (`/tmp`). `QA_MODEL` (default `gpt-5.6-luna`) and
 `QA_ALLOWED_MODELS` (comma-separated allowlist for caller-supplied `model`) are read if
 set, but `deploy.sh` does not set them — and because `update-function-configuration`
 replaces the whole env map, a hand-set value is cleared on the next deploy.
@@ -93,10 +94,11 @@ bounds do not add up to a request bound. The handler bounds the invocation separ
 the Lambda context's remaining time, which is what guarantees a clean 504 instead of a
 hard kill with no response body.
 
-Two behaviours worth knowing: `docsVersion` is a `sha256:` hash rather than a git SHA
-(the image has no `.git`; `STRATA_QA_GIT_SHA` carries the commit), and a question that
-times out returns 504 and recycles the container, so the next invocation pays a cold
-start.
+Two behaviours worth knowing. `docsVersion` is a `sha256:` hash rather than a git SHA
+(the image has no `.git`; `STRATA_QA_GIT_SHA` carries the commit). And a question that
+times out returns 504 and cancels the run, which normally leaves the container healthy
+for the next request; only a run that cannot be cancelled forces the container to be
+recycled, and then the next invocation pays a cold start.
 
 ## Developing
 

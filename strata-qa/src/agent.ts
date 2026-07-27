@@ -1,5 +1,8 @@
 import { Agent, Cursor } from "@cursor/sdk";
 import type { AgentModeOption, ModelSelection } from "@cursor/sdk";
+import { mkdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { buildRepairPrompt } from "./prompt.js";
 
 export interface AgentUsage {
@@ -27,14 +30,13 @@ export interface AgentSeam {
 // distinct type so callers can map it to a dedicated exit code rather than
 // lumping every stall in with generic transport failures.
 //
-// `cancelled` reports whether the underlying run was actually stopped or merely
-// abandoned. lambda/handler.ts uses it to decide whether the container is still
-// safe to reuse: a cancelled run leaves nothing behind, an abandoned one does.
+// Deliberately carries no "was it cancelled" flag: RunOutcome has nowhere to put
+// one (run.ts's mapAgentError flattens this to an exit code), so the only reader
+// that matters — lambda/handler.ts, deciding whether the container is still safe
+// to reuse — asks cancelActiveRuns() instead. The active-run set below is the
+// single carrier of that fact.
 export class TimeoutError extends Error {
-  constructor(
-    public readonly timeoutMs: number,
-    public readonly cancelled: boolean = false,
-  ) {
+  constructor(public readonly timeoutMs: number) {
     super(`agent call did not complete within ${timeoutMs}ms`);
     this.name = "TimeoutError";
   }
@@ -92,7 +94,9 @@ export function toRun(r: SdkRunResultLike): AgentRun {
 // `mode` unset (default "agent") and `local.sandboxOptions.enabled` alone both let the agent
 // run shell + write files; only `mode: "plan"` denied both, while still preserving file reads
 // (a follow-up prompt to read docs/INDEX.md and quote its first heading succeeded in plan mode).
-const READ_ONLY_MODE: AgentModeOption = "plan";
+// Exported so the probe scripts under scripts/ certify the mode production
+// actually uses, rather than a private copy of the literal that can drift from it.
+export const READ_ONLY_MODE: AgentModeOption = "plan";
 
 // Named because runBounded passes it to Agent.create and then restates model+mode
 // on send; an inline literal would have to be repeated in both signatures.
@@ -103,7 +107,7 @@ export interface CursorAgentOptions {
   local: { cwd: string };
 }
 
-function buildAgentOptions(model: string, cwd: string): CursorAgentOptions {
+export function buildAgentOptions(model: string, cwd: string): CursorAgentOptions {
   return {
     model: { id: model }, // ModelSelection is an object, not a bare string (NOTES.md)
     // Agent.prompt's local runtime does NOT fall back to process.env.CURSOR_API_KEY the
@@ -184,27 +188,18 @@ export function createPreflightCache(
 
 // --- Cancellable runs --------------------------------------------------------
 //
-// `Agent.prompt` is documented as "create an agent, run one prompt, and close" and
-// resolves only when the run is over, so a wall-clock bound around it can only
-// ABANDON the run. That is what forced lambda/handler.ts to poison and recycle the
-// container: an abandoned run resumes inside the next invocation after Lambda thaws
-// the environment.
+// `Agent.prompt` resolves only when the run is over, so a wall-clock bound around
+// it can only ABANDON the run — which on Lambda resumes inside the NEXT invocation
+// once the environment thaws. That is what forced lambda/handler.ts to poison and
+// recycle the container. `Agent.create` -> `agent.send()` instead hands back a `Run`
+// while it is still going, and that handle can be genuinely cancelled, which demotes
+// the recycle to a fallback.
 //
-// `Agent.create` -> `agent.send()` hands back a `Run` while it is still going, and
-// that handle supports real cancellation. Verified live (scripts/cancel-probe.ts,
-// @cursor/sdk 1.0.24, 2026-07-27):
-//   - send() returned a handle in 1643ms with status "running"
-//   - run.supports("cancel") === true for a LOCAL run
-//   - cancel() resolved in 4ms, status -> "cancelled", and wait() then RESOLVES
-//     with that terminal status rather than rejecting
-//   - 13 agent events arrived before cancel and 0 in the 4s after it
-// The process-tree check was inconclusive by design, not by accident: in plan mode
-// the local runtime spawns no child process at all, so there is no pid to reap and
-// the event count is the signal that the work actually stopped.
+// Verified live against @cursor/sdk 1.0.24 by scripts/cancel-probe.ts; the
+// measurements are recorded in NOTES.md, "Run cancellation findings" (2026-07-27).
 //
-// supports("cancel") is re-checked per run rather than assumed. If a future SDK
-// returns false, `cancelled` stays false on the TimeoutError and the handler falls
-// back to recycling the container.
+// supports("cancel") is re-checked per run rather than assumed, so a future SDK that
+// returns false leaves the run in the active set and the handler recycles instead.
 
 // The slice of `Run` this module needs. Declared structurally so the unit tests can
 // supply a fake without dragging in the SDK's full Run surface.
@@ -276,12 +271,10 @@ async function runBounded(message: string, options: CursorAgentOptions, timeoutM
       // A run only leaves the active set once it is known to have STOPPED. Deleting
       // it unconditionally would tell the handler the container is clean while an
       // uncancellable run was still going — the exact orphan the recycle exists for.
-      const cancelled = await stopRun(run);
-      if (cancelled) activeRuns.delete(run);
-      if (!(e instanceof TimeoutError)) throw e;
-      // Rethrow carrying whether the run was actually stopped, so the handler can
-      // skip the recycle when there is no orphan left to contain.
-      throw new TimeoutError(timeoutMs, cancelled);
+      // Membership afterwards IS the "is this container contaminated" signal the
+      // handler reads back through cancelActiveRuns().
+      if (await stopRun(run)) activeRuns.delete(run);
+      throw e;
     }
   } finally {
     agent.close();
@@ -292,9 +285,10 @@ async function runBounded(message: string, options: CursorAgentOptions, timeoutM
 // builds a seam per invocation, so per-instance state would never survive a warm start.
 const preflightCache = createPreflightCache();
 
-export function resetPreflightCache(): void {
-  preflightCache.reset();
-}
+// The repair call is tool-less (see buildRepairPrompt) and reads nothing, so it gets
+// an empty scratch directory instead of process.cwd() — which on Lambda is the task
+// root, with the whole production node_modules tree under it.
+const REPAIR_CWD = join(tmpdir(), "qa-repair");
 
 export function createCursorSeam(): AgentSeam {
   return {
@@ -323,7 +317,8 @@ export function createCursorSeam(): AgentSeam {
     async reformat(malformed: string, model: string, timeoutMs: number): Promise<AgentRun> {
       // Tool-less repair: no retrieval re-run. The agent gets only the malformed
       // text and must re-emit it as valid JSON; cwd still locked down.
-      return runBounded(buildRepairPrompt(malformed), buildAgentOptions(model, process.cwd()), timeoutMs);
+      mkdirSync(REPAIR_CWD, { recursive: true });
+      return runBounded(buildRepairPrompt(malformed), buildAgentOptions(model, REPAIR_CWD), timeoutMs);
     },
 
     supportsReadOnlyLockdown(): boolean {

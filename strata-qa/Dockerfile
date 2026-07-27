@@ -42,13 +42,19 @@ COPY --from=builder /build/dist ./strata-qa/dist
 # The agent runtime needs a writable HOME, and Lambda's filesystem is read-only
 # except /tmp — so both HOME and the JSONL log dir must live there.
 ENV HOME=/tmp
-ENV DOCS_ROOT=${LAMBDA_TASK_ROOT}
+# Deliberately NOT ${LAMBDA_TASK_ROOT}: DOCS_ROOT becomes the retrieval agent's
+# cwd (handler.ts -> runQa -> local.cwd), and the task root also holds the ~45MB
+# production node_modules this image installs. At ~190k tokens per question
+# (NOTES.md), search space the agent can wander into is the main cost driver, so
+# the corpus gets a directory of its own containing nothing else. .dockerignore
+# trims the corpus itself for the same reason.
+ENV DOCS_ROOT=/opt/qa-root
 ENV QA_LOG_DIR=/tmp/qa
 
 # Last, and deliberately: the baked doc corpus is what changes most often in a
 # documentation engine, and nothing below it needs rebuilding when it does. A
 # doc-only redeploy re-pushes this layer alone.
-COPY docs ./docs
+COPY docs /opt/qa-root/docs
 
 # The handler the Runtime Interface Client resolves, relative to LAMBDA_TASK_ROOT.
 # A local RIE probe can override it to inspect the image instead.

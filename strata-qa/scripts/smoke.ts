@@ -10,6 +10,9 @@
 import { Cursor, Agent } from "@cursor/sdk";
 import type { ModelSelection, LocalAgentOptions, AgentModeOption } from "@cursor/sdk";
 import { existsSync, rmSync } from "node:fs";
+// The mode production actually locks down with. Probe [4] varies it on purpose, but
+// its `plan` arms must track the seam rather than a private copy of the literal.
+import { READ_ONLY_MODE } from "../src/agent.js";
 
 const STAGE = process.env.SMOKE_STAGE ?? "all";
 const LOCKDOWN = process.env.SMOKE_LOCKDOWN ?? "sandbox";
@@ -59,7 +62,7 @@ async function main() {
       local.sandboxOptions = { enabled: true };
     }
     if (LOCKDOWN === "plan" || LOCKDOWN === "planshell") {
-      mode = "plan";
+      mode = READ_ONLY_MODE;
     }
     console.error("[4] lockdown variant:", LOCKDOWN, "| local:", JSON.stringify(local), "| mode:", mode);
 

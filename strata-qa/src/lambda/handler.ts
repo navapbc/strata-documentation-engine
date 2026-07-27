@@ -93,12 +93,14 @@ export function parseJob(event: FunctionUrlEvent, allowedModels: readonly string
   // even from a body we are about to reject, and echoing it is what lets a
   // client correlate a 4xx with the request it sent. Rejection order below is
   // unchanged (method, then empty, then malformed, then per-field).
+  //
+  // No JSON text parses to undefined, so `parsed === undefined` IS "the parse
+  // threw" — a separate flag would just be a second copy of that fact.
   let parsed: unknown;
-  let jsonError = false;
   try {
     parsed = JSON.parse(text);
   } catch {
-    jsonError = true;
+    // fall through; `parsed` stays undefined
   }
   const echoed = (parsed as { requestId?: unknown } | null | undefined)?.requestId;
   // Annotated on the const, not just the arrow: TS only narrows through a
@@ -115,7 +117,7 @@ export function parseJob(event: FunctionUrlEvent, allowedModels: readonly string
   }
 
   if (!text.trim()) reject("request body is empty");
-  if (jsonError) reject("request body is not valid JSON");
+  if (parsed === undefined) reject("request body is not valid JSON");
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     reject("request body must be a JSON object");
   }
@@ -161,6 +163,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): QaConfig {
     logDir: env.QA_LOG_DIR ?? "/tmp/qa",
     // A caller-chosen model is a spend vector. The default is always permitted.
     allowedModels: [...new Set([defaultModel, ...configured])],
+    gitSha: env.STRATA_QA_GIT_SHA,
   };
 }
 
@@ -406,6 +409,13 @@ const keyLoader = createKeyLoader(process.env, fetchFromSecretsManager);
 // container's life, so rebuilding these each request was pure allocation.
 const cursorSeam = createCursorSeam();
 const qaConfig = loadConfig(process.env);
+
+// Start the Secrets Manager round trip during init, which Lambda runs with a CPU
+// burst and does not bill as invocation time, instead of inside the first request.
+// ensure() awaits this same memoized promise, and it clears `pending` on failure, so
+// a prefetch that fails simply degrades to fetching on demand. Rejections are
+// swallowed HERE only to avoid an unhandled rejection at init; ensure() still throws.
+void keyLoader.ensure().catch(() => {});
 
 export async function handler(event: FunctionUrlEvent, context?: LambdaContext): Promise<LambdaResponse> {
   // The delayed exit did not win the race and the container thawed first. Refuse

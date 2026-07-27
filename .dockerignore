@@ -11,8 +11,8 @@ __pycache__
 # The image bakes docs/ as the corpus, but runQa only ever reads graph.json,
 # INDEX.md, and sources/** (run.ts). Every citation target in graph.json lives
 # under sources/, so the audit trail is dead weight in the image — and extra
-# search space the retrieval agent can burn tokens wandering into, since it runs
-# with cwd = the task root. It stays in git; it just does not ship.
+# search space the retrieval agent can burn tokens wandering into, since the
+# corpus root is its cwd. It stays in git; it just does not ship.
 docs/.verification
 docs/.curation
 # Untracked local scratch: superpowers writes plans and specs here. Nothing in
@@ -21,6 +21,8 @@ docs/.curation
 docs/superpowers
 
 # Tests never run in the image, and compiling them would put modules that
-# `import "vitest"` into dist/ alongside the handler. fixtures.ts is not a
-# *.test.ts file and imports nothing external, so it costs nothing to keep.
+# `import "vitest"` into dist/ alongside the handler. The fixture modules exist
+# only for those tests, so they go too — nothing that ships imports them.
 strata-qa/src/**/*.test.ts
+strata-qa/src/fixtures.ts
+strata-qa/src/lambda/fixtures.ts

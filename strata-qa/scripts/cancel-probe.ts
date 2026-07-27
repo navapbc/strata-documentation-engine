@@ -12,76 +12,35 @@
 //   [A] agent.send() hands back a Run handle *before* the run finishes, so there is
 //       something to cancel while it is still going.
 //   [B] run.supports("cancel") is true for a LOCAL run (cancelRun may be cloud-only).
-//   [C] cancel() actually kills the child process tree. A status flip to "cancelled"
-//       while cursor-agent keeps burning tokens would be strictly worse than today:
-//       we would have dropped the recycle that currently contains the orphan.
+//   [C] cancel() actually stops the work. A status flip to "cancelled" while the
+//       agent keeps burning tokens would be strictly worse than today: we would
+//       have dropped the recycle that currently contains the orphan.
+//
+// [C] is measured by counting agent events either side of cancel(), NOT by walking
+// the process tree. An earlier version did both; in plan mode the local runtime
+// spawns no child process at all, so there was never a pid to reap and that signal
+// could only ever report INCONCLUSIVE (NOTES.md, "Run cancellation findings").
 import { Agent } from "@cursor/sdk";
-import type { AgentModeOption, ModelSelection } from "@cursor/sdk";
-import { execFileSync } from "node:child_process";
+import { setTimeout as sleep } from "node:timers/promises";
+// The production lockdown and option shape, imported rather than restated: a probe
+// that certifies its own private copy of `mode` certifies nothing about the seam.
+import { buildAgentOptions } from "../src/agent.js";
 
-const MODEL: ModelSelection = { id: process.env.PROBE_MODEL ?? "gpt-5.6-luna" };
-const READ_ONLY_MODE: AgentModeOption = "plan";
+const MODEL_ID = process.env.PROBE_MODEL ?? "gpt-5.6-luna";
 const REPO_ROOT = process.cwd() + "/..";
 // Long enough that the run is still going when we cancel: answerable questions
 // measured 7-14s end to end.
 const CANCEL_AFTER_MS = Number(process.env.PROBE_CANCEL_AFTER_MS ?? 4000);
 const SETTLE_MS = 4000;
 
-// Every descendant of this process, walked by ppid rather than matched by name.
-// A name filter is worthless here: the first version of this probe grepped for
-// "cursor-agent" and reported zero processes even mid-run, which says the pattern
-// was wrong, not that nothing was spawned. Walking the tree cannot miss a child
-// whatever the SDK decides to call it.
-function descendants(): string[] {
-  try {
-    const out = execFileSync("ps", ["-Ao", "pid=,ppid=,comm="], { encoding: "utf8" });
-    const rows = out
-      .split("\n")
-      .map((l) => l.trim().match(/^(\d+)\s+(\d+)\s+(.*)$/))
-      .filter((m): m is RegExpMatchArray => m !== null)
-      .map((m) => ({ pid: Number(m[1]), ppid: Number(m[2]), comm: m[3] }));
-
-    const found: string[] = [];
-    let frontier = [process.pid];
-    while (frontier.length) {
-      const next: number[] = [];
-      for (const row of rows) {
-        if (frontier.includes(row.ppid)) {
-          found.push(`${row.pid} ${row.comm}`);
-          next.push(row.pid);
-        }
-      }
-      frontier = next;
-    }
-    return found;
-  } catch {
-    return ["<ps failed>"];
-  }
-}
-
-function report(label: string): number {
-  const procs = descendants();
-  console.error(`    [ps] ${label}: ${procs.length} descendant(s)${procs.length ? " -> " + procs.join(" | ") : ""}`);
-  return procs.length;
-}
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
 async function main() {
-  console.error("[0] baseline");
-  const baseline = report("before create");
+  const options = buildAgentOptions(MODEL_ID, REPO_ROOT);
+  const agent = await Agent.create(options);
+  console.error("[0] Agent.create ok, agentId:", agent.agentId);
 
-  const agent = await Agent.create({
-    model: MODEL,
-    apiKey: process.env.CURSOR_API_KEY,
-    mode: READ_ONLY_MODE,
-    local: { cwd: REPO_ROOT },
-  });
-  console.error("[1] Agent.create ok, agentId:", agent.agentId);
-
-  // The behavioral test for "did the work actually stop", independent of process
-  // topology: count agent activity either side of cancel(). A status flip with
-  // events still arriving afterwards means the run was abandoned, not cancelled.
+  // The behavioral test for "did the work actually stop": count agent activity
+  // either side of cancel(). A status flip with events still arriving afterwards
+  // means the run was abandoned, not cancelled.
   let events = 0;
   let cancelledAt = Number.POSITIVE_INFINITY;
   let eventsAfterCancel = 0;
@@ -97,7 +56,7 @@ async function main() {
   const run = await agent.send(
     "Read docs/graph.json and docs/INDEX.md, then read every doc under docs/sources/ and " +
       "write a detailed comparison of how each source handles authentication.",
-    { model: MODEL, mode: READ_ONLY_MODE, onStep: tick, onDelta: tick },
+    { model: options.model, mode: options.mode, onStep: tick, onDelta: tick },
   );
   const handleMs = Date.now() - t0;
   console.error(`[A] send() returned a Run in ${handleMs}ms  id=${run.id}  status=${run.status}`);
@@ -115,7 +74,6 @@ async function main() {
   run.onDidChangeStatus((s) => statuses.push(s));
 
   await sleep(CANCEL_AFTER_MS);
-  const during = report(`after ${CANCEL_AFTER_MS}ms of running`);
 
   if (!supportsCancel) {
     console.error("[C] SKIPPED — cancel unsupported; the recycle in handler.ts must stay.");
@@ -126,14 +84,13 @@ async function main() {
   const eventsBeforeCancel = events;
   console.error(`[C] agent events before cancel: ${eventsBeforeCancel}`);
 
-  // [C] Does cancel() reap the process tree and stop the work?
+  // [C] Does cancel() stop the work?
   const t1 = Date.now();
   cancelledAt = Date.now();
   await run.cancel();
   console.error(`[C] cancel() resolved in ${Date.now() - t1}ms  status=${run.status}`);
 
   await sleep(SETTLE_MS);
-  const after = report(`${SETTLE_MS}ms after cancel`);
   console.error(
     `[C] agent events after cancel: ${eventsAfterCancel}` +
       (eventsAfterCancel ? ` (last ${Date.now() - lastEventAt}ms ago — WORK CONTINUED)` : " (silent — work stopped)"),
@@ -151,18 +108,10 @@ async function main() {
   }
 
   agent.close();
-  await sleep(1000);
-  const afterClose = report("after agent.close()");
 
   console.error("\n=== VERDICT ===");
   console.error(`  [A] handle before completion: ${run.status !== "finished" || handleMs < 3000 ? "PASS" : "CHECK"} (${handleMs}ms)`);
   console.error(`  [B] cancel supported locally: ${supportsCancel ? "PASS" : "FAIL"}`);
-  console.error(`  [C] processes: baseline=${baseline} during=${during} after=${after} afterClose=${afterClose}`);
-  if (during === baseline) {
-    console.error("      INCONCLUSIVE — no extra descendant even mid-run, so this signal proves nothing");
-  } else {
-    console.error(`      ${after <= baseline ? "PASS — back to baseline" : "FAIL — orphan survived cancel()"}`);
-  }
   console.error(`  [C] events: ${eventsBeforeCancel} before cancel, ${eventsAfterCancel} after`);
   console.error(
     `      ${eventsBeforeCancel === 0 ? "INCONCLUSIVE — no events even while running" : eventsAfterCancel === 0 ? "PASS — work stopped" : "FAIL — work continued past cancel()"}`,

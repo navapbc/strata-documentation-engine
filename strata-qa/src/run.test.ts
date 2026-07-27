@@ -1,11 +1,13 @@
 import { describe, expect, test } from "vitest";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { AgentRun, AgentSeam } from "./agent.js";
+import type { AgentSeam } from "./agent.js";
 import { TimeoutError } from "./agent.js";
-import { EXIT, runQa } from "./run.js";
+import { answerBlock, fakeSeam as baseSeam, finished as agentRun, makeDocsRoot as makeCorpus } from "./fixtures.js";
+import { DEFAULT_MODEL, EXIT, runQa } from "./run.js";
 
+const DOC_PATH = "sources/strata-sdk/overview.md";
 const DOC = `---
 id: sdk-overview
 verified: ok
@@ -13,41 +15,24 @@ verified: ok
 The nava-platform CLI wraps Copier to install templates.
 `;
 
-function makeDocsRoot(): string {
-  const root = mkdtempSync(join(tmpdir(), "strata-qa-run-"));
-  mkdirSync(join(root, "docs", "sources", "strata-sdk"), { recursive: true });
-  writeFileSync(
-    join(root, "docs", "graph.json"),
-    JSON.stringify({ nodes: [{ id: "a", path: "sources/strata-sdk/overview.md" }], edges: [] }),
-  );
-  writeFileSync(join(root, "docs", "INDEX.md"), "# Index\n");
-  writeFileSync(join(root, "docs", "sources", "strata-sdk", "overview.md"), DOC);
-  return root;
-}
+const makeDocsRoot = () => makeCorpus({ prefix: "strata-qa-run-", docPath: DOC_PATH, body: DOC });
 
-const GOOD_BLOCK =
-  "```json\n" +
-  JSON.stringify({
-    status: "answered",
-    answer: "It wraps Copier.",
-    citations: [{ path: "sources/strata-sdk/overview.md", quote: "wraps Copier to install templates" }],
-  }) +
-  "\n```";
+const GOOD_BLOCK = answerBlock("It wraps Copier.", [
+  { path: DOC_PATH, quote: "wraps Copier to install templates" },
+]);
 
-function finished(text: string): AgentRun {
-  return { ok: true, text, usage: { inputTokens: 100, outputTokens: 20, totalTokens: 120 }, durationMs: 900 };
-}
+// This suite asserts on summed token counts, so it pins its own usage numbers.
+const finished = (text: string) =>
+  agentRun(text, { inputTokens: 100, outputTokens: 20, totalTokens: 120 }, 900);
 
-function fakeSeam(overrides: Partial<AgentSeam> = {}): AgentSeam {
-  return {
-    checkAuth: async () => true,
-    listModelIds: async () => ["gpt-5.6-luna", "sonnet-4"],
-    supportsReadOnlyLockdown: () => true,
+const fakeSeam = (overrides: Partial<AgentSeam> = {}): AgentSeam =>
+  baseSeam({
+    // "sonnet-4" is asserted on by the unknown-model test's error message.
+    listModelIds: async () => [DEFAULT_MODEL, "sonnet-4"],
     ask: async () => finished(GOOD_BLOCK),
     reformat: async () => finished(GOOD_BLOCK),
     ...overrides,
-  };
-}
+  });
 
 function opts(root: string, logDir: string) {
   return { question: "what wraps copier?", model: "gpt-5.6-luna", docsRoot: root, logDir, timeoutMs: 60_000 };
@@ -75,14 +60,7 @@ describe("runQa", () => {
   test("fabricated quote: no_match, exit 0, refusal logged with reason", async () => {
     const root = makeDocsRoot();
     const logDir = join(root, "logs");
-    const badBlock =
-      "```json\n" +
-      JSON.stringify({
-        status: "answered",
-        answer: "made up",
-        citations: [{ path: "sources/strata-sdk/overview.md", quote: "retries five times" }],
-      }) +
-      "\n```";
+    const badBlock = answerBlock("made up", [{ path: DOC_PATH, quote: "retries five times" }]);
     const { result, exitCode } = await runQa(opts(root, logDir), fakeSeam({ ask: async () => finished(badBlock) }));
     expect(exitCode).toBe(EXIT.OK);
     expect(result.status).toBe("no_match");
@@ -94,17 +72,10 @@ describe("runQa", () => {
   test("redundant unverified quote in a verified doc -> still answered, no refusal", async () => {
     const root = makeDocsRoot();
     const logDir = join(root, "logs");
-    const block =
-      "```json\n" +
-      JSON.stringify({
-        status: "answered",
-        answer: "It wraps Copier.",
-        citations: [
-          { path: "sources/strata-sdk/overview.md", quote: "wraps Copier to install templates" },
-          { path: "sources/strata-sdk/overview.md", quote: "a paraphrase that appears nowhere" },
-        ],
-      }) +
-      "\n```";
+    const block = answerBlock("It wraps Copier.", [
+      { path: DOC_PATH, quote: "wraps Copier to install templates" },
+      { path: DOC_PATH, quote: "a paraphrase that appears nowhere" },
+    ]);
     const { result, exitCode } = await runQa(opts(root, logDir), fakeSeam({ ask: async () => finished(block) }));
     expect(exitCode).toBe(EXIT.OK);
     expect(result.status).toBe("answered");
@@ -115,17 +86,10 @@ describe("runQa", () => {
   test("low_confidence refusal logs per-citation detail", async () => {
     const root = makeDocsRoot();
     const logDir = join(root, "logs");
-    const block =
-      "```json\n" +
-      JSON.stringify({
-        status: "answered",
-        answer: "partly grounded",
-        citations: [
-          { path: "sources/strata-sdk/overview.md", quote: "wraps Copier to install templates" },
-          { path: "sources/strata-sdk/ghost.md", quote: "made up" },
-        ],
-      }) +
-      "\n```";
+    const block = answerBlock("partly grounded", [
+      { path: DOC_PATH, quote: "wraps Copier to install templates" },
+      { path: "sources/strata-sdk/ghost.md", quote: "made up" },
+    ]);
     const { result } = await runQa(opts(root, logDir), fakeSeam({ ask: async () => finished(block) }));
     expect(result.status).toBe("low_confidence");
     expect(result.answer).toBeNull();

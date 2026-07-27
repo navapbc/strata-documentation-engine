@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentSeam, AgentUsage } from "./agent.js";
 import { TimeoutError } from "./agent.js";
-import { computeDocsVersion, loadNodePaths } from "./graph.js";
+import { computeDocsVersion, docPath, graphPath, loadNodePaths } from "./graph.js";
 import type { GroundedSource, GroundingCounts, GroundingResult } from "./grounding.js";
 import { ground } from "./grounding.js";
 import { appendJsonl } from "./log.js";
@@ -30,7 +30,11 @@ export interface RunOptions {
   model: string;
   docsRoot: string;
   timeoutMs: number;
-  logDir?: string;
+  // Required: a cwd-relative default here would only ever be right for the CLI,
+  // and appendJsonl swallows write failures by design — so a caller that
+  // inherited the wrong one would lose its logs silently rather than crash.
+  // Each edge names its own writable path (cli.ts, lambda/handler.ts).
+  logDir: string;
 }
 
 export interface QaResult {
@@ -116,8 +120,7 @@ function logQuery(logDir: string, question: string, result: QaResult): void {
 }
 
 export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutcome> {
-  const { question, model, docsRoot, timeoutMs } = opts;
-  const logDir = opts.logDir ?? join(".logs", "qa");
+  const { question, model, docsRoot, timeoutMs, logDir } = opts;
 
   // Preflight bailout — docsVersion is not yet known, so it stays "".
   const fail = (exitCode: number, errorMessage: string): RunOutcome => ({
@@ -151,11 +154,11 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
   // a malformed/truncated graph.json otherwise throws after the (expensive) model
   // call and escapes runQa as an uncaught TRANSPORT-mapped crash with no JSON
   // emitted. Catching it here keeps it a fail-fast, single-JSON EXIT.DOCS.
-  let nodePaths: Set<string>;
+  let nodePaths: ReadonlySet<string>;
   try {
     nodePaths = loadNodePaths(docsRoot);
   } catch (e) {
-    return fail(EXIT.DOCS, `docs graph '${join(docsRoot, "docs", "graph.json")}' is malformed: ${String(e)}`);
+    return fail(EXIT.DOCS, `docs graph '${graphPath(docsRoot)}' is malformed: ${String(e)}`);
   }
   if (!seam.supportsReadOnlyLockdown()) {
     return fail(EXIT.LOCKDOWN, "SDK cannot enforce read-only tool lockdown (design-blocking; see spec)");
@@ -169,18 +172,12 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
     label: string,
     usage: AgentUsage | null,
     durationMs: number | null,
-  ): RunOutcome =>
-    e instanceof TimeoutError
-      ? {
-          result: errorResult(model, docsVersion, usage, durationMs),
-          exitCode: EXIT.TIMEOUT,
-          errorMessage: `${label} timed out after ${e.timeoutMs}ms`,
-        }
-      : {
-          result: errorResult(model, docsVersion, usage, durationMs),
-          exitCode: EXIT.TRANSPORT,
-          errorMessage: `${label} failed: ${String(e)}`,
-        };
+  ): RunOutcome => ({
+    result: errorResult(model, docsVersion, usage, durationMs),
+    ...(e instanceof TimeoutError
+      ? { exitCode: EXIT.TIMEOUT, errorMessage: `${label} timed out after ${e.timeoutMs}ms` }
+      : { exitCode: EXIT.TRANSPORT, errorMessage: `${label} failed: ${String(e)}` }),
+  });
 
   // Agentic retrieval — one shot.
   let run;
@@ -223,7 +220,7 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
   // Deterministic grounding gate. nodePaths was loaded + validated in preflight.
   const readDoc = (nodePath: string): string | null => {
     try {
-      return readFileSync(join(docsRoot, "docs", nodePath), "utf8");
+      return readFileSync(docPath(docsRoot, nodePath), "utf8");
     } catch {
       return null;
     }

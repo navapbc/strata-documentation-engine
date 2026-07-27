@@ -7,9 +7,19 @@ import { dirname } from "node:path";
 // success path (run.ts:238) — an unguarded throw there turns a good answer into
 // a 500. Report to stderr (never stdout: the CLI's contract is one JSON object
 // on stdout) and continue.
+// Directories this process has already created. runQa appends one or two records
+// per question into the same directory, so without this every append re-issues the
+// mkdir syscall. Cleared by nothing: a log dir does not stop existing mid-process,
+// and if one is removed the appendFileSync below fails into the same guarded path.
+const ensuredDirs = new Set<string>();
+
 export function appendJsonl(file: string, record: unknown): void {
   try {
-    mkdirSync(dirname(file), { recursive: true });
+    const dir = dirname(file);
+    if (!ensuredDirs.has(dir)) {
+      mkdirSync(dir, { recursive: true });
+      ensuredDirs.add(dir);
+    }
     appendFileSync(file, JSON.stringify(record) + "\n", "utf8");
   } catch (e) {
     console.error(`log write failed (${file}): ${String(e)}`);

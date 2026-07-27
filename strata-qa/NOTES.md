@@ -52,19 +52,6 @@ against `@cursor/sdk` 1.0.24, docs root = repo root, with a personal user API ke
   (present on error, e.g. `{message:"[unknown] Invalid User API Key"}`). Every field except `id`/`status`
   is optional — agent.ts must null-guard `result`, `durationMs`, `usage`.
 
-## Implications for src/agent.ts (Task 8) — deviations from the plan's verbatim code
-
-The plan's Task 8 code is a TEMPLATE with two now-known-wrong spots; use these instead:
-1. `model` must be `{ id: model }` (ModelSelection object), not the bare `model` string.
-2. There is no `READ_ONLY_LOCAL_OPTIONS` object under `local:`. The read-only lockdown is
-   `mode: "plan"` at the top level. `ask()` and `reformat()` must pass
-   `{ model: { id: model }, apiKey: process.env.CURSOR_API_KEY, mode: "plan", local: { cwd: docsRoot } }`.
-3. `supportsReadOnlyLockdown()` should feature-detect that `mode:"plan"` lockdown is available —
-   the honest signal is that the SDK still accepts `mode:"plan"` (proven here); implement it so an SDK
-   upgrade that drops plan-mode read-only enforcement can be made to fail loud (exit 5).
-4. `checkAuth()` / `listModelIds()` use the REST client (`Cursor.me`, `Cursor.models.list`) which DO read
-   the env key; only `Agent.prompt` needs the explicit `apiKey`.
-
 ## Golden eval baseline — 2026-07-22, model gpt-5.6-luna, docsVersion 8e87a72
 
 Command: `cd strata-qa && npm run qa -- eval --docs-root ..` (live, 9 fixtures). Preceded by a graph
@@ -102,12 +89,12 @@ Observations:
   "Lambda portability notes"). The infra story MUST bound agent runtime (max-turns / wall-clock timeout).
   Ambiguous or barely-related questions are the slow path, not clear answers or clear refusals.
 - **Cost:** ~1.72M total tokens over 9 fixtures (~190k/question), consistent per-question.
-- Minor (test hygiene): `cli.test.ts` runs `main()` without an explicit `logDir`, so it wrote 6 stray
-  fake-seam entries (5 ms / 2 tokens / question "q") into `strata-qa/.logs/qa/queries.jsonl`. Harmless
-  (gitignored) but the CLI tests should pass a temp `logDir`.
-- Minor (log location): `run.ts` defaults `logDir` to `.logs/qa` relative to CWD, so invoking from
-  `strata-qa/` writes `strata-qa/.logs/qa/` rather than the repo-root `.logs/qa/` the spec describes.
-  Both are covered by the `.logs/` gitignore. Consider anchoring the default at the docs root.
+- Minor (log location, still open): the CLI's `DEFAULT_LOG_DIR` is `.logs/qa` relative to CWD, so
+  invoking from `strata-qa/` writes `strata-qa/.logs/qa/` rather than the repo-root `.logs/qa/` the
+  spec describes, and `cli.test.ts` — which calls `main()`, and so cannot override it — leaves stray
+  fake-seam entries there. Both paths are covered by the `.logs/` gitignore. Anchoring the default at
+  the docs root, or giving `main()` a log-dir seam, would close both.
+  (`runQa` itself no longer defaults `logDir`: each edge now states its own writable path.)
 
 ## Run cancellation findings — 2026-07-27, @cursor/sdk 1.0.24, via `scripts/cancel-probe.ts`
 

@@ -63,20 +63,19 @@ export function extractVerifiedStatus(doc: string): string {
   return m ? m[1] : "unknown";
 }
 
-export function ground(answer: ModelAnswer, nodePaths: Set<string>, readDoc: DocReader): GroundingResult {
-  const counts: GroundingCounts = {
-    citationsTotal: answer.citations.length,
-    citationsResolved: 0,
-    quotesVerified: 0,
-    distinctDocs: 0,
-    docsCited: 0,
-  };
+export function ground(answer: ModelAnswer, nodePaths: ReadonlySet<string>, readDoc: DocReader): GroundingResult {
   if (answer.status === "no_match" || answer.citations.length === 0) {
-    return { status: "no_match", sources: [], grounding: counts, citations: [] };
+    const empty: GroundingCounts = {
+      citationsTotal: answer.citations.length,
+      citationsResolved: 0,
+      quotesVerified: 0,
+      distinctDocs: 0,
+      docsCited: 0,
+    };
+    return { status: "no_match", sources: [], grounding: empty, citations: [] };
   }
 
-  const citedPaths = new Set<string>(); // every distinct cited path, resolved or not
-  const verifiedDocs = new Map<string, string>(); // nodePath -> frontmatter verified value
+  const verifiedPaths = new Set<string>(); // cited docs with at least one verified quote
   // Each cited doc is read + normalized once, even when a model cites the same
   // path in multiple citations. undefined = not yet read; null = unreadable.
   const docCache = new Map<string, { normalized: string; verified: string } | null>();
@@ -84,12 +83,10 @@ export function ground(answer: ModelAnswer, nodePaths: Set<string>, readDoc: Doc
 
   for (const citation of answer.citations) {
     const path = normalizeCitationPath(citation.path);
-    citedPaths.add(path);
     const check: CitationCheck = { path, quote: citation.quote, resolved: false, verified: false };
     citations.push(check);
     if (!nodePaths.has(path)) continue;
     check.resolved = true;
-    counts.citationsResolved++;
 
     let entry = docCache.get(path);
     if (entry === undefined) {
@@ -104,13 +101,19 @@ export function ground(answer: ModelAnswer, nodePaths: Set<string>, readDoc: Doc
     if (!entry.normalized.includes(quote)) continue;
 
     check.verified = true;
-    counts.quotesVerified++;
-    if (!verifiedDocs.has(path)) verifiedDocs.set(path, entry.verified);
+    verifiedPaths.add(path);
   }
 
-  counts.distinctDocs = verifiedDocs.size;
-  counts.docsCited = citedPaths.size;
-  const sources = [...verifiedDocs.entries()].map(([path, verified]) => ({ path, verified }));
+  // Derived from the per-citation verdicts rather than tallied alongside them, so
+  // there is one place a count can be wrong instead of four.
+  const counts: GroundingCounts = {
+    citationsTotal: citations.length,
+    citationsResolved: citations.filter((c) => c.resolved).length,
+    quotesVerified: citations.filter((c) => c.verified).length,
+    distinctDocs: verifiedPaths.size,
+    docsCited: new Set(citations.map((c) => c.path)).size,
+  };
+  const sources = [...verifiedPaths].map((path) => ({ path, verified: docCache.get(path)!.verified }));
 
   // The gate is per doc, not per quote: every distinct cited doc must carry at
   // least one verified quote. A redundant quote that fails in an already-verified

@@ -3,7 +3,8 @@ import { describe, expect, test } from "vitest";
 import { TimeoutError } from "../agent.js";
 import { EXIT } from "../run.js";
 import { handleQuestion } from "./core.js";
-import { BLOCK, cfg, fakeSeam, finished, makeDocsRoot } from "./fixtures.js";
+import { BLOCK, fakeSeam, finished, makeDocsRoot } from "../fixtures.js";
+import { cfg } from "./fixtures.js";
 
 describe("handleQuestion", () => {
   test("answers and returns EXIT.OK", async () => {

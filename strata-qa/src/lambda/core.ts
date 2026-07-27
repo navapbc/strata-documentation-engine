@@ -9,6 +9,10 @@ export interface QaConfig {
   defaultModel: string;
   logDir: string;
   allowedModels: readonly string[];
+  // Build provenance, baked in as an image ENV. Resolved by loadConfig with every
+  // other env value rather than read from process.env down here, so a test can set
+  // it and there is one place that knows where configuration comes from.
+  gitSha?: string;
 }
 
 const LOGGED_QUESTION_CHARS = 200;
@@ -51,7 +55,7 @@ export async function handleQuestion(
       docsVersion: outcome.result.docsVersion,
       durationMs: outcome.result.durationMs,
       usage: outcome.result.usage,
-      gitSha: process.env.STRATA_QA_GIT_SHA,
+      gitSha: config.gitSha,
     }),
   );
 

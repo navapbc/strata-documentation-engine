@@ -2,12 +2,15 @@
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 import type { AgentSeam } from "./agent.js";
-import { createCursorSeam } from "./agent.js";
+import { activeRunCount, createCursorSeam } from "./agent.js";
 import { runEval } from "./eval.js";
 import type { QaResult } from "./run.js";
 import { DEFAULT_MODEL, EXIT, runQa } from "./run.js";
 
 export const DEFAULT_TIMEOUT_MS = 60_000;
+// The CLI's writable path, owned here rather than defaulted inside runQa — the
+// Lambda's is /tmp/qa and neither edge should inherit the other's.
+export const DEFAULT_LOG_DIR = join(".logs", "qa");
 
 export interface CliArgs {
   command: "ask" | "eval";
@@ -121,7 +124,13 @@ export async function main(argv: string[], io: Io, seam: AgentSeam = createCurso
   if (args.command === "eval") {
     const fixturesPath = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "golden.json");
     return runEval(
-      { fixturesPath, model: args.model, docsRoot: args.docsRoot, timeoutMs: args.timeoutMs },
+      {
+        fixturesPath,
+        model: args.model,
+        docsRoot: args.docsRoot,
+        timeoutMs: args.timeoutMs,
+        logDir: DEFAULT_LOG_DIR,
+      },
       seam,
       io.out,
     );
@@ -136,17 +145,18 @@ export async function main(argv: string[], io: Io, seam: AgentSeam = createCurso
         model: args.model,
         docsRoot: args.docsRoot,
         timeoutMs: args.timeoutMs,
+        logDir: DEFAULT_LOG_DIR,
       },
       seam,
     );
   } finally {
-    // On a timeout the underlying Agent.prompt is still running (the wall-clock
-    // bound rejects but cannot cancel it) and may emit late progress to stdout.
-    // Leave stdout rerouted to stderr in that case so an orphaned write can never
-    // corrupt our single JSON line; the process exits moments later. io.out writes
-    // to the real stdout captured before silencing, so the result still lands there.
-    // Every other outcome means the agent settled, so restoring is safe.
-    if (outcome?.exitCode !== EXIT.TIMEOUT) restore();
+    // A run that could not be cancelled is still going and may emit late progress
+    // to stdout, which would corrupt our single JSON line. Ask the agent module
+    // directly rather than inferring it from EXIT.TIMEOUT: since runs became
+    // cancellable, most timeouts leave nothing in flight and can restore normally.
+    // io.out writes to the real stdout captured before silencing, so the result
+    // lands there either way.
+    if (activeRunCount() === 0) restore();
   }
 
   io.out(JSON.stringify(outcome.result) + "\n");
