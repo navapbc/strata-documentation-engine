@@ -104,20 +104,99 @@ function buildAgentOptions(model: string, cwd: string): {
   };
 }
 
+// --- Preflight memoization ---------------------------------------------------
+//
+// runQa calls checkAuth() + listModelIds() before every question. Measured against
+// the live API that is ~303ms warm and ~1238ms cold, paid on each invocation for
+// two answers that barely change. On Lambda the container is reused, so caching
+// them per container removes that latency from every warm request.
+//
+// Two rules keep this safe:
+//   - Keyed by the API key. handler.ts's KeyLoader rewrites process.env.CURSOR_API_KEY
+//     on rotation, so a new key is a cache miss by construction and the rotate-and-
+//     retry path in handleEvent still re-probes against the new credential.
+//   - Only SUCCESS is cached. A cached `false` would make the auth retry a no-op and
+//     turn a recoverable rotation into a hard EXIT.AUTH; a thrown models.list stays
+//     uncached so the next call can still reach EXIT.TRANSPORT honestly.
+//
+// Residual staleness: a key revoked server-side keeps passing preflight for up to
+// the TTL, surfacing as a downstream model failure rather than EXIT.AUTH. The TTL
+// is what bounds that window.
+const PREFLIGHT_TTL_MS = 5 * 60_000;
+
+export interface PreflightCache {
+  auth(apiKey: string, probe: () => Promise<boolean>): Promise<boolean>;
+  models(apiKey: string, probe: () => Promise<string[]>): Promise<string[]>;
+  reset(): void;
+}
+
+// Injectable clock + TTL so the behavior is unit-testable without a live SDK or a
+// five-minute test. createCursorSeam uses the module-level instance below.
+export function createPreflightCache(
+  ttlMs: number = PREFLIGHT_TTL_MS,
+  now: () => number = Date.now,
+): PreflightCache {
+  let entry: { apiKey: string; authAt: number; modelIds: string[] | null; modelsAt: number } | null = null;
+
+  // A different key discards everything: the model list is per-account too.
+  const forKey = (apiKey: string) => {
+    if (!entry || entry.apiKey !== apiKey) {
+      entry = { apiKey, authAt: 0, modelIds: null, modelsAt: 0 };
+    }
+    return entry;
+  };
+  const fresh = (at: number) => at !== 0 && now() - at < ttlMs;
+
+  return {
+    async auth(apiKey, probe) {
+      const e = forKey(apiKey);
+      if (fresh(e.authAt)) return true;
+      const ok = await probe();
+      e.authAt = ok ? now() : 0;
+      return ok;
+    },
+
+    async models(apiKey, probe) {
+      const e = forKey(apiKey);
+      if (e.modelIds && fresh(e.modelsAt)) return e.modelIds;
+      const ids = await probe(); // a throw propagates uncached
+      e.modelIds = ids;
+      e.modelsAt = now();
+      return ids;
+    },
+
+    reset() {
+      entry = null;
+    },
+  };
+}
+
+// One cache per container/process, deliberately outside createCursorSeam: handler.ts
+// builds a seam per invocation, so per-instance state would never survive a warm start.
+const preflightCache = createPreflightCache();
+
+export function resetPreflightCache(): void {
+  preflightCache.reset();
+}
+
 export function createCursorSeam(): AgentSeam {
   return {
     async checkAuth(): Promise<boolean> {
-      try {
-        await Cursor.me();
-        return true;
-      } catch {
-        return false;
-      }
+      return preflightCache.auth(process.env.CURSOR_API_KEY ?? "", async () => {
+        try {
+          await Cursor.me();
+          return true;
+        } catch {
+          return false;
+        }
+      });
     },
 
     async listModelIds(): Promise<string[]> {
-      const models = await Cursor.models.list();
-      return models.map((m) => m.id);
+      return preflightCache.models(process.env.CURSOR_API_KEY ?? "", async () => {
+        const models = await Cursor.models.list();
+        return models.map((m) => m.id);
+      });
     },
 
     supportsReadOnlyLockdown(): boolean {

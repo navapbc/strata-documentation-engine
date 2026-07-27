@@ -375,11 +375,17 @@ const fetchFromSecretsManager: SecretFetcher = async (secretId) => {
 
 const keyLoader = createKeyLoader(process.env, fetchFromSecretsManager);
 
+// Built once per container, not per invocation. The seam is stateless (its preflight
+// cache is module-level in agent.ts) and the function's environment is fixed for the
+// container's life, so rebuilding these each request was pure allocation.
+const cursorSeam = createCursorSeam();
+const qaConfig = loadConfig(process.env);
+
 export async function handler(event: FunctionUrlEvent, context?: LambdaContext): Promise<LambdaResponse> {
   // The delayed exit did not win the race and the container thawed first. Refuse
   // rather than serve an invocation contaminated by an orphaned agent run.
   if (poisoned) process.exit(1);
-  return handleEvent(event, createCursorSeam(), loadConfig(process.env), keyLoader, {
+  return handleEvent(event, cursorSeam, qaConfig, keyLoader, {
     budgetMs: invocationBudgetMs(context),
   });
 }
