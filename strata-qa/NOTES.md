@@ -108,3 +108,33 @@ Observations:
 - Minor (log location): `run.ts` defaults `logDir` to `.logs/qa` relative to CWD, so invoking from
   `strata-qa/` writes `strata-qa/.logs/qa/` rather than the repo-root `.logs/qa/` the spec describes.
   Both are covered by the `.logs/` gitignore. Consider anchoring the default at the docs root.
+
+## Run cancellation findings — 2026-07-27, @cursor/sdk 1.0.24, via `scripts/cancel-probe.ts`
+
+Answers the question the original handler comment assumed away ("there is nothing to cancel — the
+SDK exposes no AbortSignal"). True of `AbortSignal`; false of the SDK as a whole.
+
+- **`Agent.prompt` is a dead end for this.** Documented as "create an agent, run one prompt, and
+  close", and it resolves only when the run is over — there is never a handle to cancel. The
+  cancellable path is `Agent.create(options)` → `agent.send(msg, sendOptions)` → `Run`.
+- **`send()` returns while the run is live: 1643ms, `status: "running"`.** So there is a real window
+  in which to act.
+- **`run.supports("cancel") === true` for a LOCAL run.** `cancelRun` is not cloud-only, despite
+  `Agent.cancelRun`'s neighbours (`get`/`archive`/`delete`) being documented as cloud-only.
+  `supports("stream")` and `supports("wait")` are also true.
+- **`cancel()` resolved in 4ms**, `status` → `"cancelled"`, and a subsequent **`wait()` RESOLVES**
+  with that terminal status rather than rejecting. `usage` is `undefined` on a cancelled run, so a
+  partial token count is not recoverable.
+- **Work genuinely stops: 13 agent events before `cancel()`, 0 in the 4s after.** Measured via
+  `onStep`/`onDelta`, which is the honest signal here.
+- **No child process is spawned in plan mode.** The first version of the probe grepped for
+  `cursor-agent`/`cursorsandbox` and found nothing even mid-run; walking descendants by ppid
+  confirms the local runtime spawns nothing at all under `mode: "plan"`. So "orphaned run" means
+  in-process async work, not a stray pid — there is nothing to `SIGKILL`, which also rules out the
+  fork-and-kill fallback the handler comment used to propose.
+- **`SendOptions.local` is `LocalSendOptions`, a different and narrower type than
+  `LocalAgentOptions`.** `cwd` belongs on `Agent.create`, not on `send`; only `model` and `mode` are
+  worth restating per send.
+- Consequence for `lambda/handler.ts`: the container poison-and-recycle is now the FALLBACK, reached
+  only when `supports("cancel")` is false or `cancel()` throws. `TimeoutError.cancelled` carries
+  which happened.

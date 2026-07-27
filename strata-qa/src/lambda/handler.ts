@@ -1,7 +1,7 @@
 // strata-qa/src/lambda/handler.ts
 import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import { randomUUID } from "node:crypto";
-import { createCursorSeam, TimeoutError, withTimeout, type AgentSeam } from "../agent.js";
+import { cancelActiveRuns, createCursorSeam, TimeoutError, withTimeout, type AgentSeam } from "../agent.js";
 import { DEFAULT_MODEL, EXIT, errorResult, type QaResult, type RunOutcome } from "../run.js";
 import { handleQuestion, type QaConfig } from "./core.js";
 
@@ -266,6 +266,9 @@ async function withInvocationBudget(
 export interface HandleEventDeps {
   emit?: (line: string) => void;
   recycle?: () => void;
+  // Stops whatever the container still has in flight, reporting false if anything
+  // could not be stopped. Defaults to the real SDK-backed canceller.
+  cancelRuns?: () => Promise<boolean>;
   // Whole-invocation wall clock in ms, or null/undefined for none. `handler`
   // derives it from the Lambda context; tests pass a number directly.
   budgetMs?: number | null;
@@ -278,7 +281,7 @@ export async function handleEvent(
   keys: KeyLoader,
   deps: HandleEventDeps = {},
 ): Promise<LambdaResponse> {
-  const { emit, recycle = scheduleRecycle, budgetMs } = deps;
+  const { emit, recycle = scheduleRecycle, cancelRuns = cancelActiveRuns, budgetMs } = deps;
 
   // A caller-supplied requestId is echoed even on a 400 (parseJob carries it on
   // the error); fall back to a generated one when the body never parsed.
@@ -317,7 +320,24 @@ export async function handleEvent(
       job.model ?? config.defaultModel,
     );
 
-    if (outcome.exitCode === EXIT.TIMEOUT) recycle();
+    if (outcome.exitCode === EXIT.TIMEOUT) {
+      // Cancellation replaces the recycle when it works, and the recycle stays as
+      // the fallback when it does not. Both timeout sources land here: agent.ts
+      // already cancelled its own per-call timeout (so nothing is in flight and
+      // this is a no-op), while the invocation budget above abandoned a run that
+      // is still going and this is the only place holding a handle to it.
+      const stopped = await cancelRuns();
+      emit?.(
+        JSON.stringify({
+          ts: new Date().toISOString(),
+          requestId,
+          event: "timeout",
+          runsStopped: stopped,
+          containerRecycled: !stopped,
+        }),
+      );
+      if (!stopped) recycle();
+    }
     return toHttpResponse(outcome, requestId);
   } catch (e) {
     // Backstop: a JSON error body, never a stack.
@@ -326,33 +346,31 @@ export async function handleEvent(
   }
 }
 
-// --- Container recycle after a timeout -------------------------------------
+// --- Container recycle after a timeout: the FALLBACK path -------------------
 //
-// withTimeout (agent.ts:42-52) is a Promise.race: it rejects, but the underlying
-// Agent.prompt keeps running. Its own comment assumes "the CLI exits immediately
-// after, so the orphaned run is harmless" — FALSE on Lambda, which freezes the
-// environment on return and thaws it for the next invocation. The orphaned agent
-// (and its cursorsandbox child) would resume inside the NEXT request: stealing
-// CPU, polluting that request's log stream, and still burning ~190k tokens on an
-// answer nobody will read.
+// This used to be the only answer to a timeout. It no longer is. agent.ts now runs
+// through `Agent.create` -> `send()` -> `Run`, and a `Run` can be genuinely
+// cancelled (verified live; see the block above `runBounded` in agent.ts). When
+// cancellation succeeds nothing is left running, the container is clean, and this
+// code never executes — the invocation still returns its 504, but the container
+// lives and the next request is served normally.
 //
-// So: poison the container and let Lambda replace it. This is a RACE — the Node
-// runtime POSTs the handler result after the returned promise resolves, and the
-// environment may freeze immediately after. Exit too eagerly and the 504 is lost;
-// use a timer and it may instead fire on the next thaw. Hence both halves:
+// The recycle survives for the case cancellation cannot cover: `supports("cancel")`
+// returning false on some future SDK, or `cancel()` throwing. Then the run really is
+// abandoned, and abandonment is not survivable on Lambda — the environment freezes
+// on return and thaws for the next invocation, so the orphaned agent would resume
+// inside the NEXT request, stealing CPU, polluting its log stream, and burning
+// ~200k tokens on an answer nobody will read.
+//
+// Poisoning the container is a RACE: the Node runtime POSTs the handler result after
+// the returned promise resolves, and the environment may freeze immediately after.
+// Exit too eagerly and the 504 is lost; use a timer alone and it may instead fire on
+// the next thaw. Hence both halves:
 //   - a short delayed exit, intended to land after the response is flushed;
-//   - a `poisoned` flag checked at the top of every invocation, so a container
-//     that survived the exit refuses to serve work rather than serving degraded
-//     work.
-// Either way one invocation is lost per timeout. Timeouts are rare (NOTES.md:
-// 9-14s typical), so that is the accepted cost.
-//
-// FALLBACK, if this ever proves unreliable in production: fork a child process per
-// invocation, run the agent there, and SIGKILL it on timeout. That is true
-// cancellation rather than abandonment — no orphan, no poisoned container, no
-// invocation sacrificed — at the cost of a ~100ms spawn on every request and an
-// IPC hop for the result. It was rejected here only because the recycle is far
-// less machinery for a path that should almost never run.
+//   - a `poisoned` flag checked at the top of every invocation, so a container that
+//     survived the exit refuses to serve work rather than serving degraded work.
+// One invocation is lost whenever this runs, which is now a genuinely exceptional
+// path rather than the cost of every timeout.
 const RECYCLE_DELAY_MS = 250;
 let poisoned = false;
 

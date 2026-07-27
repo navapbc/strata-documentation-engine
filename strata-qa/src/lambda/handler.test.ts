@@ -327,19 +327,58 @@ describe("handleEvent", () => {
     expect((await ask({ question: "q" }, fakeSeam({ checkAuth: async () => false }))).statusCode).toBe(500);
   });
 
-  test("a timeout returns 504 and schedules a container recycle", async () => {
+  // agent.ts cancels its own per-call timeout before throwing, so by the time the
+  // handler sees EXIT.TIMEOUT there is nothing in flight and the container is clean.
+  test("a timeout returns 504 and does NOT recycle when the run was cancelled", async () => {
     let recycled = 0;
+    let cancelCalls = 0;
     const seam = fakeSeam({
       ask: async () => {
         const { TimeoutError } = await import("../agent.js");
-        throw new TimeoutError(90_000);
+        throw new TimeoutError(90_000, true);
       },
     });
     // The injected recycle also stands in for poisoning the module, so this test
     // cannot leave the real handler refusing every later invocation.
-    const r = await ask({ question: "q" }, seam, { recycle: () => void (recycled += 1) });
+    const r = await ask({ question: "q" }, seam, {
+      recycle: () => void (recycled += 1),
+      cancelRuns: async () => (cancelCalls += 1) > 0,
+    });
+    expect(r.statusCode).toBe(504);
+    expect(cancelCalls).toBe(1);
+    expect(recycled).toBe(0);
+  });
+
+  // The fallback the recycle now exists for: a future SDK where supports("cancel")
+  // is false, or cancel() throws. An abandoned run is not survivable on Lambda.
+  test("a timeout recycles when the run could NOT be cancelled", async () => {
+    let recycled = 0;
+    const seam = fakeSeam({
+      ask: async () => {
+        const { TimeoutError } = await import("../agent.js");
+        throw new TimeoutError(90_000, false);
+      },
+    });
+    const r = await ask({ question: "q" }, seam, {
+      recycle: () => void (recycled += 1),
+      cancelRuns: async () => false,
+    });
     expect(r.statusCode).toBe(504);
     expect(recycled).toBe(1);
+  });
+
+  test("a timeout emits whether the run stopped and the container was recycled", async () => {
+    const lines: string[] = [];
+    const seam = fakeSeam({ ask: () => new Promise(() => {}) });
+    await ask({ question: "q" }, seam, {
+      budgetMs: 20,
+      recycle: () => {},
+      cancelRuns: async () => false,
+      emit: (l) => void lines.push(l),
+    });
+    const timeoutLine = lines.map((l) => JSON.parse(l)).find((o) => o.event === "timeout");
+    expect(timeoutLine).toMatchObject({ runsStopped: false, containerRecycled: true });
+    expect(timeoutLine.requestId).toBeDefined();
   });
 
   test("a successful invocation never recycles", async () => {
@@ -351,12 +390,20 @@ describe("handleEvent", () => {
   // The invocation budget exists to beat Lambda's hard kill, which is the one
   // path that returns no body AND never recycles. A slow seam stands in for
   // runQa's two per-call-bounded agent calls summing past the Lambda timeout.
-  test("the invocation budget returns 504 and recycles when the whole run overruns", async () => {
+  test("the invocation budget returns 504 and cancels the run it abandoned", async () => {
     let recycled = 0;
+    let cancelCalls = 0;
     const seam = fakeSeam({ ask: () => new Promise(() => {}) }); // never settles
-    const r = await ask({ question: "q" }, seam, { budgetMs: 20, recycle: () => void (recycled += 1) });
+    // Unlike the per-call timeout, this path abandons a run that is genuinely still
+    // going: the handler holds the only handle to it, so it must do the cancelling.
+    const r = await ask({ question: "q" }, seam, {
+      budgetMs: 20,
+      recycle: () => void (recycled += 1),
+      cancelRuns: async () => (cancelCalls += 1) > 0,
+    });
     expect(r.statusCode).toBe(504);
-    expect(recycled).toBe(1);
+    expect(cancelCalls).toBe(1);
+    expect(recycled).toBe(0);
     const body = JSON.parse(r.body);
     expect(body.error).toMatch(/invocation exceeded its 20ms budget/);
     expect(body.status).toBe("error");
