@@ -26,3 +26,14 @@ docs/superpowers
 strata-qa/src/**/*.test.ts
 strata-qa/src/fixtures.ts
 strata-qa/src/lambda/fixtures.ts
+
+# The CLI edge. Nothing the handler can reach imports these — the dependency chain
+# runs handler -> lambda/core -> run -> {agent,graph,grounding,log,parse,prompt},
+# while cli.ts is a leaf and eval.ts is imported only by cli.ts. Everything the two
+# edges genuinely share lives in run.ts by design (see DEFAULT_MODEL there).
+#
+# Only ~8KB of dist/, so this is about the invariant rather than the bytes: nothing
+# ships that the handler cannot reach. fixtures/golden.json is already absent for
+# the same reason — the Dockerfile never copies it.
+strata-qa/src/cli.ts
+strata-qa/src/eval.ts

@@ -1,8 +1,8 @@
 // strata-qa/src/lambda/handler.ts
 import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import { randomUUID } from "node:crypto";
-import { cancelActiveRuns, createCursorSeam, TimeoutError, withTimeout, type AgentSeam } from "../agent.js";
-import { DEFAULT_MODEL, EXIT, errorResult, type QaResult, type RunOutcome } from "../run.js";
+import { cancelActiveRuns, createCursorSeam, type AgentSeam } from "../agent.js";
+import { DEFAULT_MODEL, EXIT, withInvocationBudget, type QaResult, type RunOutcome } from "../run.js";
 import { handleQuestion, type QaConfig } from "./core.js";
 
 export interface LambdaResponse {
@@ -224,18 +224,16 @@ export function createKeyLoader(env: NodeJS.ProcessEnv, fetchSecret: SecretFetch
 
 // --- Invocation wall clock ---------------------------------------------------
 //
-// config.timeoutMs bounds ONE agent call, and per-call bounds do not sum to an
-// invocation bound: runQa can make two (ask, then the tool-less repair through
-// seam.reformat), and handleEvent runs the whole thing again on an auth retry. With
-// AGENT_TIMEOUT_MS=90000 a single request can therefore legitimately spend 180s
-// against deploy.sh's TIMEOUT_S of 120 — reachable, because the repair only runs
-// when ask already SUCCEEDED, so ask at 60s plus a repair hanging to 90s is 150s.
+// The bound itself is run.ts's withInvocationBudget, shared with the CLI; what is
+// Lambda-specific is WHY this edge needs one and where the deadline comes from.
 //
-// That matters more than the lost answer. A Lambda hard-kill is the one path that
-// returns no 504 AND never reaches recycle(), which leaves the orphaned agent
-// alive in exactly the container the recycle exists to replace. So bound the
-// invocation here, at the only layer that knows the real deadline, and beat
-// Lambda to it.
+// With AGENT_TIMEOUT_MS=90000 a single request can legitimately spend 180s against
+// deploy.sh's TIMEOUT_S of 120 (see that function's comment for how per-call bounds
+// fail to sum). That matters more than the lost answer: a Lambda hard-kill is the
+// one path that returns no 504 AND never reaches recycle(), which leaves the
+// orphaned agent alive in exactly the container the recycle exists to replace. So
+// bound the invocation here, at the only layer that knows the real deadline, and
+// beat Lambda to it.
 const RESPONSE_RESERVE_MS = 3_000;
 
 // The slice of the Lambda context this handler uses. Declared locally rather than
@@ -253,36 +251,6 @@ export function invocationBudgetMs(context?: LambdaContext): number | null {
   // Leave enough to serialize the 504 and let the recycle's delayed exit land
   // after the response is flushed.
   return Math.max(remaining - RESPONSE_RESERVE_MS, 1);
-}
-
-// Reuses withTimeout, which races but does not cancel, so this abandons the run
-// rather than stopping it. Stopping it is handleEvent's job on the EXIT.TIMEOUT
-// branch below: this is the one timeout source that leaves a run genuinely in
-// flight, and cancelActiveRuns() is what reaches the handle to end it — falling back
-// to the container recycle only when the run cannot be cancelled.
-//
-// Either way the abandoned handleQuestion may still emit() its own line before the
-// container returns or exits. That stray line is the accepted cost; the alternative
-// is the Lambda hard-kill this function exists to prevent, which returns no response
-// at all and never reaches the cleanup.
-async function withInvocationBudget(
-  work: () => Promise<RunOutcome>,
-  budgetMs: number | null | undefined,
-  model: string,
-): Promise<RunOutcome> {
-  if (typeof budgetMs !== "number") return work();
-  try {
-    return await withTimeout(work(), budgetMs);
-  } catch (e) {
-    if (!(e instanceof TimeoutError)) throw e;
-    // docsVersion stays "" for the same reason runQa's own preflight bailout
-    // leaves it empty: we cannot know it from out here.
-    return {
-      result: errorResult(model, "", null, null),
-      exitCode: EXIT.TIMEOUT,
-      errorMessage: `invocation exceeded its ${budgetMs}ms budget before the agent returned`,
-    };
-  }
 }
 
 export interface HandleEventDeps {

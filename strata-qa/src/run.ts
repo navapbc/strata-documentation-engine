@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentSeam, AgentUsage } from "./agent.js";
-import { TimeoutError } from "./agent.js";
+import { TimeoutError, withTimeout } from "./agent.js";
 import { computeDocsVersion, docPath, graphPath, loadNodePaths } from "./graph.js";
 import type { GroundedSource, GroundingCounts, GroundingResult } from "./grounding.js";
 import { ground } from "./grounding.js";
@@ -35,6 +35,13 @@ export interface RunOptions {
   // inherited the wrong one would lose its logs silently rather than crash.
   // Each edge names its own writable path (cli.ts, lambda/handler.ts).
   logDir: string;
+  // Run identity, both optional and supplied by the edge. Without them a log row
+  // says which corpus answered (docsVersion) but not which run or which code
+  // produced it, which is exactly what comparing two loop runs needs. cli.ts
+  // generates a runId per question; lambda/handler.ts passes the caller's
+  // requestId, so runQa's /tmp JSONL joins to the CloudWatch line.
+  runId?: string;
+  gitSha?: string;
 }
 
 export interface QaResult {
@@ -85,6 +92,45 @@ export function errorResult(
   };
 }
 
+// --- Whole-run wall clock ----------------------------------------------------
+//
+// `timeoutMs` bounds ONE agent call, and per-call bounds do not sum to a bound on
+// the whole run: runQa can make two calls (ask, then the tool-less repair through
+// seam.reformat), and an edge may run the whole thing again — lambda/handler.ts
+// retries once on EXIT.AUTH. So a 90s per-call bound genuinely permits 180s+, and
+// the repair only runs when ask already SUCCEEDED, which is how a 60s ask plus a
+// repair hanging to its own 90s reaches 150s.
+//
+// Lives here rather than in either adapter because both edges need it (see
+// DEFAULT_MODEL above) and neither may import the other's entrypoint for it. The
+// reason each edge *wants* a ceiling differs and stays at its call site: the Lambda
+// must beat its own hard kill, while the CLI is bounding a pathological question
+// (NOTES.md measured one at 33 minutes) inside an eval loop.
+//
+// Reuses withTimeout, which races but does not cancel, so this ABANDONS the run
+// rather than stopping it. Stopping it is the caller's job — the caller holds the
+// only handle, via cancelActiveRuns() — and this is the one timeout source that
+// leaves a run genuinely in flight.
+export async function withInvocationBudget(
+  work: () => Promise<RunOutcome>,
+  budgetMs: number | null | undefined,
+  model: string,
+): Promise<RunOutcome> {
+  if (typeof budgetMs !== "number") return work();
+  try {
+    return await withTimeout(work(), budgetMs);
+  } catch (e) {
+    if (!(e instanceof TimeoutError)) throw e;
+    // docsVersion stays "" for the same reason runQa's own preflight bailout
+    // leaves it empty: we cannot know it from out here.
+    return {
+      result: errorResult(model, "", null, null),
+      exitCode: EXIT.TIMEOUT,
+      errorMessage: `invocation exceeded its ${budgetMs}ms budget before the agent returned`,
+    };
+  }
+}
+
 function sumUsage(a: AgentUsage | null, b: AgentUsage | null): AgentUsage | null {
   if (!a) return b;
   if (!b) return a;
@@ -105,10 +151,20 @@ function refusalReason(g: GroundingResult): string {
   );
 }
 
-function logQuery(logDir: string, question: string, result: QaResult): void {
-  appendJsonl(join(logDir, "queries.jsonl"), {
+// Spread into every log record. Absent rather than null when the edge has nothing
+// to say: a `null` gitSha is a value a reader has to interpret, a missing key is not.
+function identity(opts: RunOptions): Record<string, string> {
+  return {
+    ...(opts.runId ? { runId: opts.runId } : {}),
+    ...(opts.gitSha ? { gitSha: opts.gitSha } : {}),
+  };
+}
+
+function logQuery(opts: RunOptions, result: QaResult): void {
+  appendJsonl(join(opts.logDir, "queries.jsonl"), {
     ts: new Date().toISOString(),
-    question,
+    ...identity(opts),
+    question: opts.question,
     model: result.model,
     status: result.status,
     grounding: result.grounding,
@@ -209,7 +265,7 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
   }
   if (!parsed) {
     const result = errorResult(model, docsVersion, usage, run.durationMs);
-    logQuery(logDir, question, result);
+    logQuery(opts, result);
     return {
       result,
       exitCode: EXIT.PARSE,
@@ -239,10 +295,11 @@ export async function runQa(opts: RunOptions, seam: AgentSeam): Promise<RunOutco
     durationMs: run.durationMs,
   };
 
-  logQuery(logDir, question, result);
+  logQuery(opts, result);
   if (result.status === "no_match" || result.status === "low_confidence") {
     appendJsonl(join(logDir, "refusals.jsonl"), {
       ts: new Date().toISOString(),
+      ...identity(opts),
       question,
       reason: refusalReason(gate),
       // Per-citation verdicts so a refusal is diagnosable from the log alone,

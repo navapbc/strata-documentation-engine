@@ -34,6 +34,10 @@ export async function handleQuestion(
       docsRoot: config.docsRoot,
       timeoutMs: config.timeoutMs,
       logDir: config.logDir,
+      // The same identity the emitted line below carries, so runQa's JSONL under
+      // /tmp joins to CloudWatch instead of being correlated by timestamp.
+      runId: job.requestId,
+      gitSha: config.gitSha,
     },
     seam,
   );

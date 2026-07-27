@@ -53,4 +53,19 @@ describe("handleQuestion", () => {
     // The question is the caller's text; log it truncated, never the answer body.
     expect(record.answer).toBeUndefined();
   });
+
+  // Two logs describe one invocation: this emitted line (CloudWatch) and runQa's
+  // JSONL under /tmp, which never leaves the container but is what an operator
+  // reads after exec-ing in. Passing the same requestId down as runQa's runId is
+  // what lets the two be joined instead of guessed at by timestamp.
+  test("runQa's own log records join to the emitted line by requestId", async () => {
+    const root = makeDocsRoot();
+    const config = { ...cfg(root), gitSha: "deadbee" };
+    await handleQuestion({ question: "q", requestId: "r1" }, fakeSeam(), config, () => {});
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const entry = JSON.parse(readFileSync(join(config.logDir, "queries.jsonl"), "utf8").trim());
+    expect(entry.runId).toBe("r1");
+    expect(entry.gitSha).toBe("deadbee");
+  });
 });

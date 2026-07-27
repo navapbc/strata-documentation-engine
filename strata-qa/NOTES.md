@@ -90,12 +90,14 @@ Observations:
   "Lambda portability notes"). The infra story MUST bound agent runtime (max-turns / wall-clock timeout).
   Ambiguous or barely-related questions are the slow path, not clear answers or clear refusals.
 - **Cost:** ~1.72M total tokens over 9 fixtures (~190k/question), consistent per-question.
-- Minor (log location, still open): the CLI's `DEFAULT_LOG_DIR` is `.logs/qa` relative to CWD, so
-  invoking from `strata-qa/` writes `strata-qa/.logs/qa/` rather than the repo-root `.logs/qa/` the
-  spec describes, and `cli.test.ts` — which calls `main()`, and so cannot override it — leaves stray
-  fake-seam entries there. Both paths are covered by the `.logs/` gitignore. Anchoring the default at
-  the docs root, or giving `main()` a log-dir seam, would close both.
-  (`runQa` itself no longer defaults `logDir`: each edge now states its own writable path.)
+- Minor (log location) — **CLOSED 2026-07-27.** The CLI's default log dir was `.logs/qa` relative to
+  CWD, so invoking from `strata-qa/` wrote `strata-qa/.logs/qa/` rather than the repo-root `.logs/qa/`
+  the spec describes, and `cli.test.ts` — which calls `main()`, and so could not override it — left
+  stray fake-seam entries there (131 rows by the time this was fixed). Both fixes named here were
+  taken: the default is now `<docs-root>/.logs/qa` (`defaultLogDir` in cli.ts), which is the
+  spec-described path under the documented `--docs-root ..` invocation and makes the tests write into
+  their own temp corpus, and `--log-dir` overrides it — useful for giving one tuning experiment its
+  own rows. (`runQa` itself no longer defaults `logDir`: each edge states its own writable path.)
 
 ## Run cancellation findings — 2026-07-27, @cursor/sdk 1.0.24
 
@@ -135,3 +137,11 @@ SDK exposes no AbortSignal"). True of `AbortSignal`; false of the SDK as a whole
   has to span create + send + wait on ONE deadline. Bounding only `wait()` left both of those
   unbounded, which is a CLI that hangs forever despite `--timeout` and a Lambda stall the recycle
   decision cannot see.
+- Consequence for the CLI, taken up 2026-07-27: the cancellation itself was already shared (both
+  edges go through `runBounded`), but the decision layer on top of it was Lambda-only. The CLI now
+  makes the same call at the layer that can act — `cancelActiveRuns()` on a leftover run, and an
+  explicit warning when it fails, since a run that survives is still spending. The `ask` path then
+  exits, so the warning is all it owes; `eval` shares one process across nine fixtures, so it stops
+  scheduling instead, which is the loop's only available analogue of the container recycle. The
+  whole-question bound (`withInvocationBudget`) moved to `run.ts` for the same reason — per-call
+  bounds do not sum, at either edge.

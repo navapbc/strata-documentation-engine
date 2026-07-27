@@ -66,10 +66,21 @@ ROTATE_SECRET=1 CURSOR_API_KEY=<key> ./strata-qa/deploy.sh   # overwrite the sto
 docker build -f strata-qa/Dockerfile --platform linux/arm64 -t strata-qa-lambda .
 ```
 
-Default model is `gpt-5.6-luna`. `--timeout <seconds>` bounds each live model call (default 60).
-One JSON object on stdout per run; refusals (`no_match`, `low_confidence`) exit 0, operational
-failures exit non-zero (2 auth, 3 model, 4 docs, 5 lockdown, 6 parse, 7 transport, 8 timeout).
-Logs land in `.logs/qa/` (gitignored).
+Default model is `gpt-5.6-luna`. `--timeout <seconds>` bounds ONE agent call (default 60) and a
+question can make two, so `--max-total-time <seconds>` bounds a whole question (default none; per
+fixture under `eval`). `--log-dir <path>` redirects the JSONL, which defaults to
+`<docs-root>/.logs/qa` — anchored at the corpus, not the process cwd, so `--docs-root ..` from
+`strata-qa/` logs to the repo root.
+
+One JSON object on stdout per run, carrying a `runId` that also stamps the log row alongside a
+`gitSha`; refusals (`no_match`, `low_confidence`) exit 0, operational failures exit non-zero
+(2 auth, 3 model, 4 docs, 5 lockdown, 6 parse, 7 transport, 8 timeout).
+
+A timed-out run is cancelled, not abandoned. When cancellation fails the run is still spending
+tokens: the CLI warns on stderr, and `eval` stops scheduling fixtures and prints `ABORTED after n/N`
+above the partial table — the loop's stand-in for the Lambda's container recycle. The bound itself
+(`withInvocationBudget`) and the cancel decision are shared with the Lambda; only `cli.ts` and
+`eval.ts` are CLI-only, and `.dockerignore` keeps them out of the image.
 
 ## Workflow
 

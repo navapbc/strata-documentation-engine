@@ -101,6 +101,45 @@ describe("runQa", () => {
     ]);
   });
 
+  // Run identity is what makes two loop runs over the same corpus comparable after
+  // the fact: docsVersion says which corpus answered, runId and gitSha say which
+  // run and which code. Both edges supply them (cli.ts generates a runId per
+  // question, lambda/handler.ts passes the caller's requestId), so the log rows
+  // join to the CLI's stdout object and to the handler's CloudWatch line.
+  test("query log carries the caller's runId and gitSha", async () => {
+    const root = makeDocsRoot();
+    const logDir = join(root, "logs");
+    await runQa({ ...opts(root, logDir), runId: "r-42", gitSha: "abc1234" }, fakeSeam());
+    const entry = JSON.parse(readFileSync(join(logDir, "queries.jsonl"), "utf8").trim());
+    expect(entry.runId).toBe("r-42");
+    expect(entry.gitSha).toBe("abc1234");
+  });
+
+  // A refusal is the row you most want to trace back to its stdout object.
+  test("refusal log carries the runId too", async () => {
+    const root = makeDocsRoot();
+    const logDir = join(root, "logs");
+    const block = answerBlock("ungrounded", [{ path: DOC_PATH, quote: "never appears" }]);
+    await runQa(
+      { ...opts(root, logDir), runId: "r-43" },
+      fakeSeam({ ask: async () => finished(block) }),
+    );
+    const entry = JSON.parse(readFileSync(join(logDir, "refusals.jsonl"), "utf8").trim());
+    expect(entry.runId).toBe("r-43");
+  });
+
+  // Guards the absent-vs-null choice rather than driving new behavior: the CLI can
+  // fail to resolve a gitSha (not a git checkout), and a logged `null` would then be
+  // a value a reader has to interpret instead of a key that simply is not there.
+  test("omitted run identity leaves the keys out of the record", async () => {
+    const root = makeDocsRoot();
+    const logDir = join(root, "logs");
+    await runQa(opts(root, logDir), fakeSeam());
+    const entry = JSON.parse(readFileSync(join(logDir, "queries.jsonl"), "utf8").trim());
+    expect("runId" in entry).toBe(false);
+    expect("gitSha" in entry).toBe(false);
+  });
+
   test("auth failure -> exit 2, status error", async () => {
     const root = makeDocsRoot();
     const out = await runQa(opts(root, join(root, "logs")), fakeSeam({ checkAuth: async () => false }));

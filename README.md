@@ -45,15 +45,32 @@ npm run qa -- "how does OSCER authenticate API requests?" --docs-root ..
 npm run qa -- eval --docs-root ..                # score fixtures/golden.json (live model)
 ```
 
-Live runs need `CURSOR_API_KEY` (a personal or service-account key). `--timeout <seconds>` bounds
-each live model call (default 60). Each run prints one JSON object to stdout; refusals (`no_match`,
-`low_confidence`) exit 0, operational failures exit non-zero (auth, model, docs, lockdown, parse,
-transport, timeout). Query and refusal logs land in `.logs/qa/` (gitignored).
+Live runs need `CURSOR_API_KEY` (a personal or service-account key). Each run prints one JSON object
+to stdout, carrying a `runId`; refusals (`no_match`, `low_confidence`) exit 0, operational failures
+exit non-zero (auth, model, docs, lockdown, parse, transport, timeout).
+
+| Flag | Effect |
+|---|---|
+| `--timeout <seconds>` | Bounds ONE agent call (default 60). A question can make two: retrieval, then a tool-less repair if the output will not parse. |
+| `--max-total-time <seconds>` | Bounds a whole question, both calls together (default none). In `eval` it applies per fixture. |
+| `--log-dir <path>` | JSONL destination (default `<docs-root>/.logs/qa`). Give a tuning experiment its own directory to keep its rows separable. |
+| `--model <id>`, `--docs-root <path>`, `--pretty` | Model override, corpus root, human-readable summary on stderr. |
+
+Query and refusal logs land in `<docs-root>/.logs/qa/` (gitignored), one row per question, stamped
+with the same `runId` printed on stdout plus a `gitSha` (`git describe --always --dirty`, or
+`STRATA_QA_GIT_SHA`) so rows from different code versions stay comparable across runs.
+
+Timed-out runs are cancelled rather than abandoned. If a run cannot be cancelled it is still
+spending tokens, which the CLI says so on stderr; `eval` stops scheduling fixtures at that point
+and prints `ABORTED after n/N` above the partial table rather than keeping an orphan company for
+the rest of the loop.
 
 ### Deploying strata-qa as a Lambda
 
 `strata-qa` can run as a container-image AWS Lambda behind an IAM-authed Function URL.
-The image bakes the docs + CLI in at build time; the build context is the repo root.
+The image bakes the docs and the handler in at build time; the build context is the repo root.
+The CLI edge does not ship — `.dockerignore` excludes `cli.ts` and `eval.ts`, which nothing the
+handler can reach imports.
 
 ```bash
 # First deploy — CURSOR_API_KEY creates the Secrets Manager secret
