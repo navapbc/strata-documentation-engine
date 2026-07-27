@@ -3,13 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "bin": { "strata-qa": "dist/cli.js" },
+  "bin": {
+    "strata-qa": "dist/cli.js"
+  },
   "scripts": {
     "test": "vitest run --passWithNoTests",
     "build": "tsc",
     "qa": "tsx src/cli.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1095.0",
     "@cursor/sdk": "1.0.24"
   },
   "devDependencies": {

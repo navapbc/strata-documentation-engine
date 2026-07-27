@@ -1,7 +1,8 @@
 # SDK smoke findings (@cursor/sdk 1.0.24) — consumed by src/agent.ts
 
-All facts below were observed on a live run (2026-07-22) via `scripts/smoke.ts`
-against `@cursor/sdk` 1.0.24, docs root = repo root, with a personal user API key.
+All facts below were observed on a live run (2026-07-22) against `@cursor/sdk` 1.0.24,
+docs root = repo root, with a personal user API key. The throwaway probe script that
+produced them has served its purpose and been removed; this file is the surviving record.
 
 - Import surface: `import { Cursor, Agent } from "@cursor/sdk"`;
   types `import type { ModelSelection, LocalAgentOptions, AgentModeOption, RunResult } from "@cursor/sdk"`.
@@ -52,19 +53,6 @@ against `@cursor/sdk` 1.0.24, docs root = repo root, with a personal user API ke
   (present on error, e.g. `{message:"[unknown] Invalid User API Key"}`). Every field except `id`/`status`
   is optional — agent.ts must null-guard `result`, `durationMs`, `usage`.
 
-## Implications for src/agent.ts (Task 8) — deviations from the plan's verbatim code
-
-The plan's Task 8 code is a TEMPLATE with two now-known-wrong spots; use these instead:
-1. `model` must be `{ id: model }` (ModelSelection object), not the bare `model` string.
-2. There is no `READ_ONLY_LOCAL_OPTIONS` object under `local:`. The read-only lockdown is
-   `mode: "plan"` at the top level. `ask()` and `reformat()` must pass
-   `{ model: { id: model }, apiKey: process.env.CURSOR_API_KEY, mode: "plan", local: { cwd: docsRoot } }`.
-3. `supportsReadOnlyLockdown()` should feature-detect that `mode:"plan"` lockdown is available —
-   the honest signal is that the SDK still accepts `mode:"plan"` (proven here); implement it so an SDK
-   upgrade that drops plan-mode read-only enforcement can be made to fail loud (exit 5).
-4. `checkAuth()` / `listModelIds()` use the REST client (`Cursor.me`, `Cursor.models.list`) which DO read
-   the env key; only `Agent.prompt` needs the explicit `apiKey`.
-
 ## Golden eval baseline — 2026-07-22, model gpt-5.6-luna, docsVersion 8e87a72
 
 Command: `cd strata-qa && npm run qa -- eval --docs-root ..` (live, 9 fixtures). Preceded by a graph
@@ -102,9 +90,48 @@ Observations:
   "Lambda portability notes"). The infra story MUST bound agent runtime (max-turns / wall-clock timeout).
   Ambiguous or barely-related questions are the slow path, not clear answers or clear refusals.
 - **Cost:** ~1.72M total tokens over 9 fixtures (~190k/question), consistent per-question.
-- Minor (test hygiene): `cli.test.ts` runs `main()` without an explicit `logDir`, so it wrote 6 stray
-  fake-seam entries (5 ms / 2 tokens / question "q") into `strata-qa/.logs/qa/queries.jsonl`. Harmless
-  (gitignored) but the CLI tests should pass a temp `logDir`.
-- Minor (log location): `run.ts` defaults `logDir` to `.logs/qa` relative to CWD, so invoking from
-  `strata-qa/` writes `strata-qa/.logs/qa/` rather than the repo-root `.logs/qa/` the spec describes.
-  Both are covered by the `.logs/` gitignore. Consider anchoring the default at the docs root.
+- Minor (log location, still open): the CLI's `DEFAULT_LOG_DIR` is `.logs/qa` relative to CWD, so
+  invoking from `strata-qa/` writes `strata-qa/.logs/qa/` rather than the repo-root `.logs/qa/` the
+  spec describes, and `cli.test.ts` — which calls `main()`, and so cannot override it — leaves stray
+  fake-seam entries there. Both paths are covered by the `.logs/` gitignore. Anchoring the default at
+  the docs root, or giving `main()` a log-dir seam, would close both.
+  (`runQa` itself no longer defaults `logDir`: each edge now states its own writable path.)
+
+## Run cancellation findings — 2026-07-27, @cursor/sdk 1.0.24
+
+Measured by a live throwaway probe, since removed; these are the surviving results.
+
+Answers the question the original handler comment assumed away ("there is nothing to cancel — the
+SDK exposes no AbortSignal"). True of `AbortSignal`; false of the SDK as a whole.
+
+- **`Agent.prompt` is a dead end for this.** Documented as "create an agent, run one prompt, and
+  close", and it resolves only when the run is over — there is never a handle to cancel. The
+  cancellable path is `Agent.create(options)` → `agent.send(msg, sendOptions)` → `Run`.
+- **`send()` returns while the run is live: 1643ms, `status: "running"`.** So there is a real window
+  in which to act.
+- **`run.supports("cancel") === true` for a LOCAL run.** `cancelRun` is not cloud-only, despite
+  `Agent.cancelRun`'s neighbours (`get`/`archive`/`delete`) being documented as cloud-only.
+  `supports("stream")` and `supports("wait")` are also true.
+- **`cancel()` resolved in 4ms**, `status` → `"cancelled"`, and a subsequent **`wait()` RESOLVES**
+  with that terminal status rather than rejecting. `usage` is `undefined` on a cancelled run, so a
+  partial token count is not recoverable.
+- **Work genuinely stops: 13 agent events before `cancel()`, 0 in the 4s after.** Measured via
+  `onStep`/`onDelta`, which is the honest signal here.
+- **No child process is spawned in plan mode.** Grepping for `cursor-agent`/`cursorsandbox` found
+  nothing even mid-run, and walking descendants by ppid confirmed the local runtime spawns nothing
+  at all under `mode: "plan"`. So "orphaned run" means in-process async work, not a stray pid —
+  there is nothing to `SIGKILL`, which also rules out the fork-and-kill fallback the handler comment
+  used to propose. (This is why the event count above, not the process tree, is the signal.)
+- **`SendOptions.local` is `LocalSendOptions`, a different and narrower type than
+  `LocalAgentOptions`.** `cwd` belongs on `Agent.create`, not on `send`; only `model` and `mode` are
+  worth restating per send.
+- Consequence for `lambda/handler.ts`: the container poison-and-recycle is now the FALLBACK, reached
+  when `supports("cancel")` is false, when `cancel()` throws, or when the wall clock fires before
+  `send()` has handed back a `Run` at all — the last case has nothing to cancel, so `runBounded`
+  keeps an uncancellable placeholder in the active set for that window. Which happened is reported by
+  `cancelActiveRuns()` — a run stays in `agent.ts`'s active set until it is known to have stopped,
+  so a non-empty set is what tells the handler the container is contaminated.
+- Corollary, since `send()` takes ~1.6s and `Agent.create` is a network call too: the per-call bound
+  has to span create + send + wait on ONE deadline. Bounding only `wait()` left both of those
+  unbounded, which is a CLI that hangs forever despite `--timeout` and a Lambda stall the recycle
+  decision cannot see.

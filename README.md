@@ -50,6 +50,67 @@ each live model call (default 60). Each run prints one JSON object to stdout; re
 `low_confidence`) exit 0, operational failures exit non-zero (auth, model, docs, lockdown, parse,
 transport, timeout). Query and refusal logs land in `.logs/qa/` (gitignored).
 
+### Deploying strata-qa as a Lambda
+
+`strata-qa` can run as a container-image AWS Lambda behind an IAM-authed Function URL.
+The image bakes the docs + CLI in at build time; the build context is the repo root.
+
+```bash
+# First deploy — CURSOR_API_KEY creates the Secrets Manager secret
+AWS_REGION=<region> CURSOR_API_KEY=<personal-or-service-account-key> ./strata-qa/deploy.sh
+
+# Every deploy after that. The key is NOT needed and the stored secret is untouched.
+AWS_REGION=<region> ./strata-qa/deploy.sh
+
+# Rotate the stored key, deliberately
+AWS_REGION=<region> ROTATE_SECRET=1 CURSOR_API_KEY=<new-key> ./strata-qa/deploy.sh
+```
+
+`deploy.sh` creates the ECR repo and the secret, creates the execution role, deploys the
+function from the image, caps reserved concurrency, and prints the Function URL. Writing
+the secret is opt-in after the first deploy (`ROTATE_SECRET=1`) so that a redeploy from a
+shell holding a stale `CURSOR_API_KEY` cannot overwrite a working key.
+
+Images are tagged by commit (`IMAGE_TAG` defaults to `git rev-parse HEAD`, suffixed
+`-dirty` for an uncommitted tree) and the function is deployed from that immutable tag, so
+its configuration records which code is answering questions and earlier images stay
+addressable — the script prints the `update-function-code` command to roll back to one.
+`latest` is pushed too, as a moving pointer for `docker pull`. An ECR lifecycle policy
+keeps the `ECR_KEEP_IMAGES` (default 10) most recent images. Since a function's
+architecture is fixed at creation, the script fails fast when `ARCH` disagrees with an
+existing function rather than after a full build and push.
+
+Invoke it with a SigV4-signed `POST` whose JSON body is `{"question": "..."}` (optional
+`model`, `requestId`, `replyTo`); the response body is the `QaResult` JSON the CLI emits
+plus `requestId`, and `error` on failures. Refusals return HTTP 200. Auth is `AWS_IAM`
+and no resource policy is attached, so the calling identity needs
+`lambda:InvokeFunctionUrl` on the function in its own IAM policy — without it the
+Function URL answers 403 before the handler ever runs.
+
+Config via env vars, split by who owns them. `deploy.sh` sets the per-deploy ones on the
+function: `AGENT_TIMEOUT_MS` (default 90000) and `CURSOR_API_KEY_SECRET_ID`. The
+container-shape ones are image `ENV`s in the Dockerfile, so a local `docker run` and the
+deployed function agree: `DOCS_ROOT` (`/opt/qa-root` — deliberately not the task root,
+since it becomes the retrieval agent's cwd and the task root also holds `node_modules`),
+`QA_LOG_DIR` (`/tmp/qa` — the only writable path), and `HOME` (`/tmp`). `QA_MODEL` (default `gpt-5.6-luna`) and
+`QA_ALLOWED_MODELS` (comma-separated allowlist for caller-supplied `model`) are read if
+set, but `deploy.sh` does not set them — and because `update-function-configuration`
+replaces the whole env map, a hand-set value is cleared on the next deploy.
+
+`AGENT_TIMEOUT_MS` bounds each agent call — the whole call, from opening the agent through
+waiting on the run, on one shared deadline — but not the request: `runQa` can make two (the
+retrieval call, then a repair) and the handler retries once on an auth failure, so per-call
+bounds do not add up to a request bound. The handler bounds the invocation separately from
+the Lambda context's remaining time, which is what guarantees a clean 504 instead of a
+hard kill with no response body.
+
+Two behaviours worth knowing. `docsVersion` is a `sha256:` hash rather than a git SHA
+(the image has no `.git`; `STRATA_QA_GIT_SHA` carries the commit). And a question that
+times out returns 504 and cancels the run, which normally leaves the container healthy
+for the next request; only work that cannot be cancelled forces the container to be
+recycled — a run the SDK refuses to cancel, or a timeout landing before the run handle
+exists at all — and then the next invocation pays a cold start.
+
 ## Developing
 
 ```bash

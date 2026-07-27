@@ -49,7 +49,7 @@ export function formatSummary(rows: EvalRow[]): string {
 }
 
 export async function runEval(
-  opts: { fixturesPath: string; model: string; docsRoot: string; timeoutMs: number; logDir?: string },
+  opts: { fixturesPath: string; model: string; docsRoot: string; timeoutMs: number; logDir: string },
   seam: AgentSeam,
   write: (s: string) => void,
 ): Promise<number> {

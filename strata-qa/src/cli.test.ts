@@ -1,9 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import type { AgentRun, AgentSeam } from "./agent.js";
-import { DEFAULT_MODEL, main, parseArgs, UsageError } from "./cli.js";
+import type { AgentSeam } from "./agent.js";
+import { main, parseArgs } from "./cli.js";
+import { BLOCK, fakeSeam, finished, makeDocsRoot as makeCorpus } from "./fixtures.js";
+import { DEFAULT_MODEL } from "./run.js";
 
 describe("parseArgs", () => {
   test("question with defaults", () => {
@@ -55,46 +54,17 @@ describe("parseArgs", () => {
 });
 
 describe("main", () => {
-  function makeDocsRoot(): string {
-    const root = mkdtempSync(join(tmpdir(), "strata-qa-cli-"));
-    mkdirSync(join(root, "docs", "sources", "s"), { recursive: true });
-    writeFileSync(
-      join(root, "docs", "graph.json"),
-      JSON.stringify({ nodes: [{ id: "a", path: "sources/s/d.md" }], edges: [] }),
-    );
-    writeFileSync(join(root, "docs", "INDEX.md"), "# i\n");
-    writeFileSync(join(root, "docs", "sources", "s", "d.md"), "---\nverified: ok\n---\nAlpha beta gamma.\n");
-    return root;
-  }
-
-  const BLOCK =
-    "```json\n" +
-    JSON.stringify({
-      status: "answered",
-      answer: "Alpha.",
-      citations: [{ path: "sources/s/d.md", quote: "Alpha beta" }],
-    }) +
-    "\n```";
+  const makeDocsRoot = () => makeCorpus({ prefix: "strata-qa-cli-" });
 
   function noisySeam(): AgentSeam {
-    const finished = (text: string): AgentRun => ({
-      ok: true,
-      text,
-      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-      durationMs: 5,
-    });
-    return {
-      checkAuth: async () => true,
-      listModelIds: async () => [DEFAULT_MODEL],
-      supportsReadOnlyLockdown: () => true,
+    return fakeSeam({
       ask: async () => {
         // Simulate SDK noise on both channels the contract must silence.
         console.log("sdk progress noise");
         process.stdout.write("raw stdout noise\n");
         return finished(BLOCK);
       },
-      reformat: async () => finished(BLOCK),
-    };
+    });
   }
 
   test("stdout carries exactly one JSON object; noise lands on stderr", async () => {

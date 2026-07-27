@@ -1,18 +1,16 @@
 import { describe, expect, test } from "vitest";
 import type { QaResult } from "./run.js";
+import { errorResult } from "./run.js";
 import { formatSummary, scoreFixture } from "./eval.js";
 
+// Built from run.ts's own errorResult so a new QaResult field is one edit there
+// rather than a silent divergence here.
 function result(status: QaResult["status"], quotesVerified = 1, citationsResolved = 1): QaResult {
   return {
-    schema_version: 1,
+    ...errorResult("m", "v", { inputTokens: 1, outputTokens: 1, totalTokens: 2 }, 100),
     status,
     answer: status === "answered" ? "yes" : null,
-    sources: [],
     grounding: { citationsTotal: citationsResolved, citationsResolved, quotesVerified, distinctDocs: 1, docsCited: 1 },
-    model: "m",
-    docsVersion: "v",
-    usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-    durationMs: 100,
   };
 }
 
