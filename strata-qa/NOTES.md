@@ -1,7 +1,8 @@
 # SDK smoke findings (@cursor/sdk 1.0.24) — consumed by src/agent.ts
 
-All facts below were observed on a live run (2026-07-22) via `scripts/smoke.ts`
-against `@cursor/sdk` 1.0.24, docs root = repo root, with a personal user API key.
+All facts below were observed on a live run (2026-07-22) against `@cursor/sdk` 1.0.24,
+docs root = repo root, with a personal user API key. The throwaway probe script that
+produced them has served its purpose and been removed; this file is the surviving record.
 
 - Import surface: `import { Cursor, Agent } from "@cursor/sdk"`;
   types `import type { ModelSelection, LocalAgentOptions, AgentModeOption, RunResult } from "@cursor/sdk"`.
@@ -96,7 +97,9 @@ Observations:
   the docs root, or giving `main()` a log-dir seam, would close both.
   (`runQa` itself no longer defaults `logDir`: each edge now states its own writable path.)
 
-## Run cancellation findings — 2026-07-27, @cursor/sdk 1.0.24, via `scripts/cancel-probe.ts`
+## Run cancellation findings — 2026-07-27, @cursor/sdk 1.0.24
+
+Measured by a live throwaway probe, since removed; these are the surviving results.
 
 Answers the question the original handler comment assumed away ("there is nothing to cancel — the
 SDK exposes no AbortSignal"). True of `AbortSignal`; false of the SDK as a whole.
@@ -114,14 +117,15 @@ SDK exposes no AbortSignal"). True of `AbortSignal`; false of the SDK as a whole
   partial token count is not recoverable.
 - **Work genuinely stops: 13 agent events before `cancel()`, 0 in the 4s after.** Measured via
   `onStep`/`onDelta`, which is the honest signal here.
-- **No child process is spawned in plan mode.** The first version of the probe grepped for
-  `cursor-agent`/`cursorsandbox` and found nothing even mid-run; walking descendants by ppid
-  confirms the local runtime spawns nothing at all under `mode: "plan"`. So "orphaned run" means
-  in-process async work, not a stray pid — there is nothing to `SIGKILL`, which also rules out the
-  fork-and-kill fallback the handler comment used to propose.
+- **No child process is spawned in plan mode.** Grepping for `cursor-agent`/`cursorsandbox` found
+  nothing even mid-run, and walking descendants by ppid confirmed the local runtime spawns nothing
+  at all under `mode: "plan"`. So "orphaned run" means in-process async work, not a stray pid —
+  there is nothing to `SIGKILL`, which also rules out the fork-and-kill fallback the handler comment
+  used to propose. (This is why the event count above, not the process tree, is the signal.)
 - **`SendOptions.local` is `LocalSendOptions`, a different and narrower type than
   `LocalAgentOptions`.** `cwd` belongs on `Agent.create`, not on `send`; only `model` and `mode` are
   worth restating per send.
 - Consequence for `lambda/handler.ts`: the container poison-and-recycle is now the FALLBACK, reached
-  only when `supports("cancel")` is false or `cancel()` throws. `TimeoutError.cancelled` carries
-  which happened.
+  only when `supports("cancel")` is false or `cancel()` throws. Which happened is reported by
+  `cancelActiveRuns()` — a run stays in `agent.ts`'s active set until it is known to have stopped,
+  so a non-empty set is what tells the handler the container is contaminated.

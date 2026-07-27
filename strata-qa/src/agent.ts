@@ -87,16 +87,15 @@ export function toRun(r: SdkRunResultLike): AgentRun {
   };
 }
 
-// Read-only lockdown mechanism per NOTES.md (Task 2 live smoke findings, 2026-07-22):
-// there is NO `READ_ONLY_LOCAL_OPTIONS` object under `local:` — that shape does not exist
-// in @cursor/sdk 1.0.24. The proven lockdown is the top-level `AgentOptions.mode: "plan"`
-// (type `AgentModeOption`). A live probe (prompt: run `whoami` and create PWNED.txt) showed
-// `mode` unset (default "agent") and `local.sandboxOptions.enabled` alone both let the agent
-// run shell + write files; only `mode: "plan"` denied both, while still preserving file reads
-// (a follow-up prompt to read docs/INDEX.md and quote its first heading succeeded in plan mode).
-// Exported so the probe scripts under scripts/ certify the mode production
-// actually uses, rather than a private copy of the literal that can drift from it.
-export const READ_ONLY_MODE: AgentModeOption = "plan";
+// Read-only lockdown mechanism, per the live SDK smoke findings recorded in NOTES.md
+// (2026-07-22): there is NO `READ_ONLY_LOCAL_OPTIONS` object under `local:` — that shape
+// does not exist in @cursor/sdk 1.0.24. The proven lockdown is the top-level
+// `AgentOptions.mode: "plan"` (type `AgentModeOption`). A live probe (prompt: run `whoami`
+// and create PWNED.txt) showed `mode` unset (default "agent") and `local.sandboxOptions.enabled`
+// alone both let the agent run shell + write files; only `mode: "plan"` denied both, while still
+// preserving file reads (a follow-up prompt to read docs/INDEX.md and quote its first heading
+// succeeded in plan mode).
+const READ_ONLY_MODE: AgentModeOption = "plan";
 
 // Named because runBounded passes it to Agent.create and then restates model+mode
 // on send; an inline literal would have to be repeated in both signatures.
@@ -107,7 +106,7 @@ export interface CursorAgentOptions {
   local: { cwd: string };
 }
 
-export function buildAgentOptions(model: string, cwd: string): CursorAgentOptions {
+function buildAgentOptions(model: string, cwd: string): CursorAgentOptions {
   return {
     model: { id: model }, // ModelSelection is an object, not a bare string (NOTES.md)
     // Agent.prompt's local runtime does NOT fall back to process.env.CURSOR_API_KEY the
@@ -195,8 +194,8 @@ export function createPreflightCache(
 // while it is still going, and that handle can be genuinely cancelled, which demotes
 // the recycle to a fallback.
 //
-// Verified live against @cursor/sdk 1.0.24 by scripts/cancel-probe.ts; the
-// measurements are recorded in NOTES.md, "Run cancellation findings" (2026-07-27).
+// Verified live against @cursor/sdk 1.0.24; the measurements are recorded in NOTES.md,
+// "Run cancellation findings" (2026-07-27).
 //
 // supports("cancel") is re-checked per run rather than assumed, so a future SDK that
 // returns false leaves the run in the active set and the handler recycles instead.
