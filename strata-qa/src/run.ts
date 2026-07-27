@@ -59,7 +59,10 @@ const EMPTY_GROUNDING: GroundingCounts = {
   docsCited: 0,
 };
 
-function errorResult(
+// Exported for lambda/handler.ts, which has to synthesize the outcome runQa
+// never got to return when the invocation wall clock cuts it off. Duplicating
+// the shape there would let the two drift as QaResult grows.
+export function errorResult(
   model: string,
   docsVersion: string,
   usage: AgentUsage | null,

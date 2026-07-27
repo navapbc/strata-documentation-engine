@@ -10,12 +10,14 @@ import {
   errorResponse,
   handleEvent,
   handler,
+  invocationBudgetMs,
   loadConfig,
   parseJob,
   toHttpResponse,
   type FunctionUrlEvent,
   type HandleEventDeps,
   type KeyLoader,
+  type LambdaContext,
 } from "./handler.js";
 
 const silent = () => {};
@@ -346,6 +348,54 @@ describe("handleEvent", () => {
     expect(recycled).toBe(0);
   });
 
+  // The invocation budget exists to beat Lambda's hard kill, which is the one
+  // path that returns no body AND never recycles. A slow seam stands in for
+  // runQa's two per-call-bounded agent calls summing past the Lambda timeout.
+  test("the invocation budget returns 504 and recycles when the whole run overruns", async () => {
+    let recycled = 0;
+    const seam = fakeSeam({ ask: () => new Promise(() => {}) }); // never settles
+    const r = await ask({ question: "q" }, seam, { budgetMs: 20, recycle: () => void (recycled += 1) });
+    expect(r.statusCode).toBe(504);
+    expect(recycled).toBe(1);
+    const body = JSON.parse(r.body);
+    expect(body.error).toMatch(/invocation exceeded its 20ms budget/);
+    expect(body.status).toBe("error");
+    expect(body.requestId).toBeDefined();
+  });
+
+  test("the budget covers the auth retry, not just the first attempt", async () => {
+    // First attempt fails auth instantly; the retry hangs. Bounding only one
+    // attempt would let this run past the deadline.
+    let attempts = 0;
+    const seam = fakeSeam({
+      checkAuth: async () => {
+        attempts += 1;
+        return attempts > 1;
+      },
+      ask: () => new Promise(() => {}),
+    });
+    const keys: KeyLoader = { ensure: async () => {}, invalidate: () => {} };
+    const r = await ask({ question: "q" }, seam, { budgetMs: 20, recycle: () => {} }, keys);
+    expect(attempts).toBe(2);
+    expect(r.statusCode).toBe(504);
+  });
+
+  test("the synthesized timeout result reports the model the job asked for", async () => {
+    const seam = fakeSeam({ ask: () => new Promise(() => {}) });
+    const r = await ask({ question: "q", model: "claude-sonnet-5" }, seam, { budgetMs: 20, recycle: () => {} });
+    expect(JSON.parse(r.body).model).toBe("claude-sonnet-5");
+  });
+
+  test("a run that finishes inside its budget is untouched", async () => {
+    let recycled = 0;
+    const r = await ask({ question: "q" }, fakeSeam(), {
+      budgetMs: 10_000,
+      recycle: () => void (recycled += 1),
+    });
+    expect(r.statusCode).toBe(200);
+    expect(recycled).toBe(0);
+  });
+
   test("an unexpected throw becomes a 500 with no stack", async () => {
     const seam = fakeSeam({
       listModelIds: async () => {
@@ -353,6 +403,25 @@ describe("handleEvent", () => {
       },
     });
     expect((await ask({ question: "q" }, seam)).body).not.toContain("SECRET STACK LINE");
+  });
+});
+
+describe("invocationBudgetMs", () => {
+  test("derives the budget from the remaining time less the response reserve", () => {
+    expect(invocationBudgetMs({ getRemainingTimeInMillis: () => 120_000 })).toBe(117_000);
+  });
+
+  test("clamps to a positive budget when almost no time is left", () => {
+    expect(invocationBudgetMs({ getRemainingTimeInMillis: () => 500 })).toBe(1);
+  });
+
+  test.each([
+    ["no context at all (RIE, direct invoke)", undefined],
+    ["a context without the method", {}],
+    ["a non-numeric remaining time", { getRemainingTimeInMillis: () => NaN }],
+    ["an exhausted clock", { getRemainingTimeInMillis: () => 0 }],
+  ])("returns null for %s, leaving runQa's per-call bounds in charge", (_label, context) => {
+    expect(invocationBudgetMs(context as LambdaContext | undefined)).toBeNull();
   });
 });
 

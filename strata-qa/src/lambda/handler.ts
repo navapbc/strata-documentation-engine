@@ -1,8 +1,8 @@
 // strata-qa/src/lambda/handler.ts
 import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import { randomUUID } from "node:crypto";
-import { createCursorSeam, type AgentSeam } from "../agent.js";
-import { DEFAULT_MODEL, EXIT, type QaResult, type RunOutcome } from "../run.js";
+import { createCursorSeam, TimeoutError, withTimeout, type AgentSeam } from "../agent.js";
+import { DEFAULT_MODEL, EXIT, errorResult, type QaResult, type RunOutcome } from "../run.js";
 import { handleQuestion, type QaConfig } from "./core.js";
 
 export interface LambdaResponse {
@@ -204,9 +204,71 @@ export function createKeyLoader(env: NodeJS.ProcessEnv, fetchSecret: SecretFetch
   };
 }
 
+// --- Invocation wall clock ---------------------------------------------------
+//
+// config.timeoutMs bounds ONE agent call, and per-call bounds do not sum to an
+// invocation bound: runQa can make two (ask, then the tool-less repair at
+// run.ts:203), and handleEvent runs the whole thing again on an auth retry. With
+// AGENT_TIMEOUT_MS=90000 a single request can therefore legitimately spend 180s
+// against deploy.sh's TIMEOUT_S of 120 — reachable, because the repair only runs
+// when ask already SUCCEEDED, so ask at 60s plus a repair hanging to 90s is 150s.
+//
+// That matters more than the lost answer. A Lambda hard-kill is the one path that
+// returns no 504 AND never reaches recycle(), which leaves the orphaned agent
+// alive in exactly the container the recycle exists to replace. So bound the
+// invocation here, at the only layer that knows the real deadline, and beat
+// Lambda to it.
+const RESPONSE_RESERVE_MS = 3_000;
+
+// The slice of the Lambda context this handler uses. Declared locally rather than
+// pulling in @types/aws-lambda for one method.
+export interface LambdaContext {
+  getRemainingTimeInMillis?: () => number;
+}
+
+// Returns null when there is no deadline to beat — the Runtime Interface Emulator
+// and direct `lambda invoke` in tests pass no context, and nothing is going to
+// hard-kill those, so runQa's per-call bounds are sufficient there.
+export function invocationBudgetMs(context?: LambdaContext): number | null {
+  const remaining = context?.getRemainingTimeInMillis?.();
+  if (typeof remaining !== "number" || !Number.isFinite(remaining) || remaining <= 0) return null;
+  // Leave enough to serialize the 504 and let the recycle's delayed exit land
+  // after the response is flushed.
+  return Math.max(remaining - RESPONSE_RESERVE_MS, 1);
+}
+
+// Reuses withTimeout (a Promise.race that leaves the work running) deliberately:
+// there is nothing to cancel — the SDK exposes no AbortSignal — and the TIMEOUT
+// this produces routes straight into recycle(), which kills the container the
+// orphan is running in. A late emit() from the orphaned handleQuestion may reach
+// the log stream in the ~250ms before that exit; it is one stray line, and the
+// alternative is the hard-kill this function exists to prevent.
+async function withInvocationBudget(
+  work: () => Promise<RunOutcome>,
+  budgetMs: number | null | undefined,
+  model: string,
+): Promise<RunOutcome> {
+  if (typeof budgetMs !== "number") return work();
+  try {
+    return await withTimeout(work(), budgetMs);
+  } catch (e) {
+    if (!(e instanceof TimeoutError)) throw e;
+    // docsVersion stays "" for the same reason runQa's own preflight bailout
+    // leaves it empty: we cannot know it from out here.
+    return {
+      result: errorResult(model, "", null, null),
+      exitCode: EXIT.TIMEOUT,
+      errorMessage: `invocation exceeded its ${budgetMs}ms budget before the agent returned`,
+    };
+  }
+}
+
 export interface HandleEventDeps {
   emit?: (line: string) => void;
   recycle?: () => void;
+  // Whole-invocation wall clock in ms, or null/undefined for none. `handler`
+  // derives it from the Lambda context; tests pass a number directly.
+  budgetMs?: number | null;
 }
 
 export async function handleEvent(
@@ -216,7 +278,7 @@ export async function handleEvent(
   keys: KeyLoader,
   deps: HandleEventDeps = {},
 ): Promise<LambdaResponse> {
-  const { emit, recycle = scheduleRecycle } = deps;
+  const { emit, recycle = scheduleRecycle, budgetMs } = deps;
 
   // A caller-supplied requestId is echoed even on a 400 (parseJob carries it on
   // the error); fall back to a generated one when the body never parsed.
@@ -234,15 +296,26 @@ export async function handleEvent(
 
   try {
     await keys.ensure();
-    let outcome = await handleQuestion(job, seam, config, emit);
+    // The budget wraps the auth retry too, not just one attempt — two attempts is
+    // exactly one of the ways an invocation overruns.
+    const outcome = await withInvocationBudget(
+      async () => {
+        let o = await handleQuestion(job, seam, config, emit);
 
-    // A rotated key looks exactly like a bad key from here. Drop the cached
-    // value and try once more before declaring an auth failure.
-    if (outcome.exitCode === EXIT.AUTH) {
-      keys.invalidate();
-      await keys.ensure();
-      outcome = await handleQuestion(job, seam, config, emit);
-    }
+        // A rotated key looks exactly like a bad key from here. Drop the cached
+        // value and try once more before declaring an auth failure. Cheap: AUTH
+        // only comes from runQa's preflight checkAuth (run.ts:132), before any
+        // model call, so the first attempt spent no tokens.
+        if (o.exitCode === EXIT.AUTH) {
+          keys.invalidate();
+          await keys.ensure();
+          o = await handleQuestion(job, seam, config, emit);
+        }
+        return o;
+      },
+      budgetMs,
+      job.model ?? config.defaultModel,
+    );
 
     if (outcome.exitCode === EXIT.TIMEOUT) recycle();
     return toHttpResponse(outcome, requestId);
@@ -274,10 +347,12 @@ export async function handleEvent(
 // Either way one invocation is lost per timeout. Timeouts are rare (NOTES.md:
 // 9-14s typical), so that is the accepted cost.
 //
-// If the recycle proves unreliable in practice, switch to the fallback in
-// docs/superpowers/specs/2026-07-24-strata-qa-lambda-design.md: fork a worker per
-// invocation and SIGKILL it on timeout, which is true cancellation at the cost
-// of a ~100ms spawn.
+// FALLBACK, if this ever proves unreliable in production: fork a child process per
+// invocation, run the agent there, and SIGKILL it on timeout. That is true
+// cancellation rather than abandonment — no orphan, no poisoned container, no
+// invocation sacrificed — at the cost of a ~100ms spawn on every request and an
+// IPC hop for the result. It was rejected here only because the recycle is far
+// less machinery for a path that should almost never run.
 const RECYCLE_DELAY_MS = 250;
 let poisoned = false;
 
@@ -300,9 +375,11 @@ const fetchFromSecretsManager: SecretFetcher = async (secretId) => {
 
 const keyLoader = createKeyLoader(process.env, fetchFromSecretsManager);
 
-export async function handler(event: FunctionUrlEvent): Promise<LambdaResponse> {
+export async function handler(event: FunctionUrlEvent, context?: LambdaContext): Promise<LambdaResponse> {
   // The delayed exit did not win the race and the container thawed first. Refuse
   // rather than serve an invocation contaminated by an orphaned agent run.
   if (poisoned) process.exit(1);
-  return handleEvent(event, createCursorSeam(), loadConfig(process.env), keyLoader);
+  return handleEvent(event, createCursorSeam(), loadConfig(process.env), keyLoader, {
+    budgetMs: invocationBudgetMs(context),
+  });
 }
