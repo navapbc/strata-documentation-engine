@@ -11,7 +11,18 @@ set -euo pipefail
 AWS_REGION="${AWS_REGION:-us-east-1}"
 FUNCTION_NAME="${FUNCTION_NAME:-strata-qa}"
 ECR_REPO="${ECR_REPO:-strata-qa-lambda}"
-IMAGE_TAG="${IMAGE_TAG:-latest}"
+# Tagged by commit, not `latest`, and the commit-tagged URI is what gets deployed:
+# the function's own configuration is then the record of which code is answering
+# questions, and a previous image stays addressable for rollback. `latest` is still
+# pushed as a moving pointer for a plain `docker pull`.
+GIT_SHA="$(git rev-parse HEAD)"
+# A dirty tree ships content no commit describes, so it must not borrow a clean
+# commit's identity — in the tag or in STRATA_QA_GIT_SHA, which lands in every log line.
+if [[ -n "$(git status --porcelain)" ]]; then GIT_SHA="${GIT_SHA}-dirty"; fi
+IMAGE_TAG="${IMAGE_TAG:-$GIT_SHA}"
+# Immutable tags mean every deploy adds an image instead of replacing one, so the
+# repo needs a ceiling. Keep enough history to roll back through.
+ECR_KEEP_IMAGES="${ECR_KEEP_IMAGES:-10}"
 ARCH="${ARCH:-arm64}"                       # arm64 | x86_64
 DOCKER_PLATFORM="linux/${ARCH/x86_64/amd64}"
 MEMORY_MB="${MEMORY_MB:-2048}"
@@ -42,28 +53,76 @@ fi
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 ECR_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
 IMAGE_URI="${ECR_URI}:${IMAGE_TAG}"
-GIT_SHA="$(git rev-parse HEAD)"
+LATEST_URI="${ECR_URI}:latest"
+
+# A function's architecture is fixed when it is created, so a changed ARCH cannot be
+# applied to an existing one — update-function-code rejects the image with an opaque
+# manifest error, after a full build and push have already been paid for. Check now.
+EXISTING_ARCH="$(aws lambda get-function --function-name "$FUNCTION_NAME" --region "$AWS_REGION" \
+  --query 'Configuration.Architectures[0]' --output text 2>/dev/null || true)"
+if [[ -n "$EXISTING_ARCH" && "$EXISTING_ARCH" != "None" && "$EXISTING_ARCH" != "$ARCH" ]]; then
+  echo "${FUNCTION_NAME} already exists as ${EXISTING_ARCH}; ARCH=${ARCH} cannot be applied to it." >&2
+  echo "Either set ARCH=${EXISTING_ARCH}, or delete the function first:" >&2
+  echo "  aws lambda delete-function --function-name ${FUNCTION_NAME} --region ${AWS_REGION}" >&2
+  exit 1
+fi
 
 echo "==> ECR repo"
 aws ecr describe-repositories --repository-names "$ECR_REPO" --region "$AWS_REGION" >/dev/null 2>&1 \
   || aws ecr create-repository --repository-name "$ECR_REPO" --region "$AWS_REGION" >/dev/null
+# Idempotent, and re-applied every deploy so a changed ECR_KEEP_IMAGES takes effect.
+aws ecr put-lifecycle-policy --repository-name "$ECR_REPO" --region "$AWS_REGION" \
+  --lifecycle-policy-text "{
+    \"rules\":[{
+      \"rulePriority\":1,
+      \"description\":\"Keep the ${ECR_KEEP_IMAGES} most recent images\",
+      \"selection\":{
+        \"tagStatus\":\"any\",
+        \"countType\":\"imageCountMoreThan\",
+        \"countNumber\":${ECR_KEEP_IMAGES}
+      },
+      \"action\":{\"type\":\"expire\"}
+    }]
+  }" >/dev/null
+
+# A live credential must never reach argv: it is world-readable in `ps` for the life
+# of the call. The aws CLI expands file:// itself, so the key goes through a 0600 temp
+# file that the trap always removes — including on the set -e path out of a failed API
+# call, which is exactly when a forgotten `rm` would leave a key on disk.
+SECRET_TMP=""
+cleanup_secret_tmp() {
+  if [[ -n "$SECRET_TMP" ]]; then rm -f "$SECRET_TMP"; fi
+}
+trap cleanup_secret_tmp EXIT
+
+# Sets SECRET_TMP in the caller's shell — deliberately not a subshell, or the trap
+# above would have nothing to clean up. printf, not echo, so no trailing newline
+# becomes part of the key.
+stage_secret() {
+  SECRET_TMP="$(mktemp)"
+  chmod 600 "$SECRET_TMP"
+  printf '%s' "$CURSOR_API_KEY" >"$SECRET_TMP"
+}
 
 echo "==> Secret"
 if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" --region "$AWS_REGION" >/dev/null 2>&1; then
   if [[ "$ROTATE_SECRET" == "1" ]]; then
     : "${CURSOR_API_KEY:?ROTATE_SECRET=1 needs CURSOR_API_KEY exported (personal or service-account key)}"
+    stage_secret
     aws secretsmanager put-secret-value --secret-id "$SECRET_NAME" \
-      --secret-string "$CURSOR_API_KEY" --region "$AWS_REGION" >/dev/null
+      --secret-string "file://${SECRET_TMP}" --region "$AWS_REGION" >/dev/null
     echo "    rotated ${SECRET_NAME}"
   else
     echo "    keeping stored ${SECRET_NAME} (ROTATE_SECRET=1 to overwrite)"
   fi
 else
   : "${CURSOR_API_KEY:?export CURSOR_API_KEY (personal or service-account key) to create ${SECRET_NAME}}"
+  stage_secret
   aws secretsmanager create-secret --name "$SECRET_NAME" \
-    --secret-string "$CURSOR_API_KEY" --region "$AWS_REGION" >/dev/null
+    --secret-string "file://${SECRET_TMP}" --region "$AWS_REGION" >/dev/null
   echo "    created ${SECRET_NAME}"
 fi
+cleanup_secret_tmp
 SECRET_ARN="$(aws secretsmanager describe-secret --secret-id "$SECRET_NAME" \
   --region "$AWS_REGION" --query ARN --output text)"
 
@@ -89,8 +148,11 @@ echo "==> Build & push image (${DOCKER_PLATFORM}, context = repo root)"
 aws ecr get-login-password --region "$AWS_REGION" \
   | docker login --username AWS --password-stdin "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 docker build -f strata-qa/Dockerfile --platform "$DOCKER_PLATFORM" \
-  --build-arg GIT_SHA="$GIT_SHA" -t "$IMAGE_URI" .
+  --build-arg GIT_SHA="$GIT_SHA" -t "$IMAGE_URI" -t "$LATEST_URI" .
 docker push "$IMAGE_URI"
+# The moving pointer, for a plain `docker pull`. The function is deployed from the
+# commit-tagged URI above, never from this one.
+if [[ "$IMAGE_URI" != "$LATEST_URI" ]]; then docker push "$LATEST_URI"; fi
 
 # Only what the deploy knows. HOME, DOCS_ROOT, and QA_LOG_DIR are image ENVs
 # (see Dockerfile) — restating them here would hardcode /var/task and let the
@@ -141,8 +203,11 @@ aws lambda get-function-url-config --function-name "$FUNCTION_NAME" --region "$A
 FUNCTION_URL="$(aws lambda get-function-url-config --function-name "$FUNCTION_NAME" \
   --region "$AWS_REGION" --query FunctionUrl --output text)"
 
-echo "==> Deployed ${GIT_SHA:0:12}. Function URL: ${FUNCTION_URL}"
+echo "==> Deployed ${IMAGE_TAG}. Function URL: ${FUNCTION_URL}"
 echo "    Invoke with SigV4, e.g.:"
 echo "    awscurl --service lambda --region ${AWS_REGION} -X POST \\"
 echo "      -d '{\"question\":\"What does the nava-platform CLI wrap to install templates?\"}' \\"
 echo "      ${FUNCTION_URL}"
+echo "    Roll back to an earlier image without rebuilding (tags: aws ecr list-images --repository-name ${ECR_REPO}):"
+echo "    aws lambda update-function-code --function-name ${FUNCTION_NAME} \\"
+echo "      --image-uri ${ECR_URI}:<previous-tag> --region ${AWS_REGION}"

@@ -42,12 +42,16 @@ export class TimeoutError extends Error {
   }
 }
 
-// Wall-clock bound around a promise. `@cursor/sdk`'s `AgentOptions` exposes no
-// timeout or AbortSignal (NOTES.md), so this is best-effort: on timeout we reject
-// with a TimeoutError while the underlying Agent.prompt keeps running until the
-// process exits. The CLI exits immediately after, so the orphaned run is
-// harmless; Promise.race keeps the slow promise "handled" (no unhandled rejection
-// if it later settles).
+// Wall-clock bound around a promise. `@cursor/sdk` exposes no timeout or
+// AbortSignal on its options (NOTES.md), so this only ever ABANDONS the work it
+// bounds — rejecting with a TimeoutError while the underlying promise runs on.
+// Promise.race keeps that promise "handled", so a late settle is not an unhandled
+// rejection.
+//
+// Abandoning is not the end of the story, though, and callers must not assume it
+// is: `runBounded` pairs every bound with the active-run set below, which is what
+// turns "abandoned" into either "cancelled, nothing left running" or "still going,
+// contain it". See `cancelActiveRuns`.
 export async function withTimeout<T>(work: Promise<T>, timeoutMs: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
   const bound = new Promise<never>((_, reject) => {
@@ -213,6 +217,33 @@ export interface CancellableRun {
 // container, so this is unambiguous there; the CLI only ever has one in flight too.
 const activeRuns = new Set<CancellableRun>();
 
+// A stand-in for work that is in flight but has no `Run` handle yet. `Agent.create`
+// and `agent.send` are both network calls (send measured at 1643ms in NOTES.md), and
+// until send resolves there is nothing to cancel and nothing to name — so an empty
+// active set during that window would read as "container is clean" while an
+// abandoned send() waited to resume inside the next invocation. That is the very
+// orphan the recycle exists for, reported as its opposite.
+//
+// It therefore declares itself uncancellable: a wall clock that fires before the
+// handle arrives leaves this behind, cancelActiveRuns() reports false, and the
+// handler recycles. Being unable to name the work is exactly the case where the
+// container, not the run, is the only thing that can be stopped.
+//
+// Built per call rather than shared: one module-level singleton would be a single
+// Set entry for two concurrent runs, and whichever finished first would clear the
+// other's signal.
+function pendingRun(): CancellableRun {
+  return {
+    status: "running",
+    supports: () => false,
+    // Unreachable — stopRun checks supports() first — but the type needs it, and a
+    // throw is the honest body for "this cannot be cancelled".
+    cancel: async () => {
+      throw new Error("agent work with no run handle cannot be cancelled");
+    },
+  };
+}
+
 // Best-effort: a failed cancel must not mask the original outcome, so this reports
 // success rather than throwing. `false` means the run may still be going, which is
 // the signal to fall back to the container recycle.
@@ -255,15 +286,37 @@ export function resetActiveRuns(): void {
   activeRuns.clear();
 }
 
+// ONE wall clock across create + send + wait, not one per phase. Bounding only
+// wait() left the two network calls ahead of it unbounded, which broke the timeout
+// contract at both edges: the CLI would hang indefinitely on a stalled send()
+// despite --timeout, and on Lambda that stall was invisible to the recycle decision
+// because the run it would have cancelled did not exist yet.
+//
+// The shared deadline also means `timeoutMs` bounds a whole logical agent call, which
+// is what the handler's invocation budget assumes when it reasons about two calls
+// plus a retry.
 async function runBounded(message: string, options: CursorAgentOptions, timeoutMs: number): Promise<AgentRun> {
-  const agent = await Agent.create(options);
+  const deadline = Date.now() + timeoutMs;
+  // Floored at 1ms: a 0 or negative budget makes withTimeout reject on a timer that
+  // fires before the work gets its first turn, which would report a spurious timeout
+  // in place of the real one a moment later.
+  const remaining = () => Math.max(deadline - Date.now(), 1);
+
+  // Registered before the first await, so the handle-less window carries its signal
+  // from its first moment; swapped for the real run the instant send() yields one.
+  const pending = pendingRun();
+  activeRuns.add(pending);
+
+  let agent: Awaited<ReturnType<typeof Agent.create>> | undefined;
   try {
+    agent = await withTimeout(Agent.create(options), remaining());
     // cwd lives on the agent (LocalAgentOptions); SendOptions.local is a different,
     // narrower shape, so only model + mode are restated per send.
-    const run = await agent.send(message, { model: options.model, mode: options.mode });
+    const run = await withTimeout(agent.send(message, { model: options.model, mode: options.mode }), remaining());
     activeRuns.add(run);
+    activeRuns.delete(pending);
     try {
-      const settled = toRun((await withTimeout(run.wait(), timeoutMs)) as SdkRunResultLike);
+      const settled = toRun((await withTimeout(run.wait(), remaining())) as SdkRunResultLike);
       activeRuns.delete(run); // wait() resolved, so the run reached a terminal state
       return settled;
     } catch (e) {
@@ -275,8 +328,22 @@ async function runBounded(message: string, options: CursorAgentOptions, timeoutM
       if (await stopRun(run)) activeRuns.delete(run);
       throw e;
     }
+  } catch (e) {
+    // The placeholder is retained ONLY when the wall clock abandoned work that is
+    // still going. A create or send that failed on its own left nothing running, so
+    // its window is clean — retaining it there would throw away a healthy container
+    // on every bad API key.
+    if (!(e instanceof TimeoutError)) activeRuns.delete(pending);
+    throw e;
   } finally {
-    agent.close();
+    // close() now runs with a send still in flight on the timeout path, which could
+    // not happen while that await was unbounded. Guarded so a close() that objects to
+    // being called mid-send cannot replace the TimeoutError the caller has to see.
+    try {
+      agent?.close();
+    } catch {
+      // Nothing actionable: either the run settled, or the container is on its way out.
+    }
   }
 }
 

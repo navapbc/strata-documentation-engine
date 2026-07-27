@@ -58,6 +58,8 @@ npm run qa -- eval --docs-root ..                # score golden fixtures (live)
 ./strata-qa/deploy.sh                            # build, push, deploy, print the Function URL
 CURSOR_API_KEY=<key> ./strata-qa/deploy.sh       # first deploy: also creates the secret
 ROTATE_SECRET=1 CURSOR_API_KEY=<key> ./strata-qa/deploy.sh   # overwrite the stored key
+# Images are tagged by commit and the function is deployed from that tag, so the
+# script prints an update-function-code line for rolling back to an earlier one.
 
 # Build the image only. --platform is required: the function is arm64, so an x86
 # host silently produces an amd64 image the function cannot run.

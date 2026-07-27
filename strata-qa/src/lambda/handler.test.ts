@@ -233,6 +233,37 @@ describe("createKeyLoader", () => {
     expect(env.CURSOR_API_KEY).toBe("new");
   });
 
+  // A key that came from the environment has no source to re-fetch from, so
+  // discarding it on the auth retry would not refresh anything — it would leave the
+  // container with no key at all for the rest of its life, from what may well have
+  // been one transient Cursor.me() failure.
+  test("invalidate keeps an env-supplied key, which it could never re-fetch", async () => {
+    const env = { CURSOR_API_KEY: "from-env" } as NodeJS.ProcessEnv;
+    let calls = 0;
+    const loader = createKeyLoader(env, async () => {
+      calls += 1;
+      return "fetched";
+    });
+    await loader.ensure();
+    loader.invalidate();
+    await loader.ensure();
+    expect(env.CURSOR_API_KEY).toBe("from-env");
+    expect(calls).toBe(0);
+  });
+
+  // ...and the same guard must not block a real rotation on the second round trip.
+  test("invalidate still re-fetches repeatedly when the key is ours", async () => {
+    const env = { CURSOR_API_KEY_SECRET_ID: "sid" } as unknown as NodeJS.ProcessEnv;
+    const keys = ["first", "second", "third"];
+    const loader = createKeyLoader(env, async () => keys.shift()!);
+    await loader.ensure();
+    loader.invalidate();
+    await loader.ensure();
+    loader.invalidate();
+    await loader.ensure();
+    expect(env.CURSOR_API_KEY).toBe("third");
+  });
+
   test("no key and no secret id leaves the env unset for runQa to fail loud", async () => {
     const env = {} as NodeJS.ProcessEnv;
     await createKeyLoader(env, async () => "x").ensure();

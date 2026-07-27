@@ -15,6 +15,11 @@ const sdk = vi.hoisted(() => ({
   closes: 0,
   createdWith: [] as unknown[],
   sentWith: [] as unknown[],
+  // The two awaits that happen BEFORE a Run handle exists. Both are network calls,
+  // so both can hang or fail, and the two cases must be contained differently:
+  // "hang" is abandoned work that is still going, "fail" left nothing running.
+  createBehavior: "ok" as "ok" | "hang" | "fail",
+  sendBehavior: "ok" as "ok" | "hang" | "fail",
 }));
 
 interface FakeRunLike {
@@ -29,10 +34,14 @@ vi.mock("@cursor/sdk", () => ({
   Agent: {
     create: async (options: unknown) => {
       sdk.createdWith.push(options);
+      if (sdk.createBehavior === "hang") await new Promise(() => {});
+      if (sdk.createBehavior === "fail") throw new Error("create failed");
       return {
         agentId: "agent-test",
         send: async (_message: string, options: unknown) => {
           sdk.sentWith.push(options);
+          if (sdk.sendBehavior === "hang") await new Promise(() => {});
+          if (sdk.sendBehavior === "fail") throw new Error("send failed");
           return sdk.run;
         },
         close: () => {
@@ -84,6 +93,8 @@ describe("cancellable agent runs", () => {
     sdk.closes = 0;
     sdk.createdWith = [];
     sdk.sentWith = [];
+    sdk.createBehavior = "ok";
+    sdk.sendBehavior = "ok";
   });
 
   test("a completed run is mapped, forgotten, and its agent closed", async () => {
@@ -141,6 +152,42 @@ describe("cancellable agent runs", () => {
     await expect(createCursorSeam().ask("q", "gpt-5.6-luna", "/docs", 5_000)).rejects.toThrow("socket hang up");
     expect(run.cancelCalls).toBe(0);
     expect(activeRunCount()).toBe(0);
+  });
+
+  // The window before a Run handle exists. Both awaits used to sit outside every
+  // wall clock, so a stall here produced no TimeoutError at all — and once bounded,
+  // an empty active set would have reported the container clean while the abandoned
+  // call waited to resume in the next invocation.
+  test("a hung create() is bounded, and retained because it cannot be named", async () => {
+    sdk.createBehavior = "hang";
+    await expect(createCursorSeam().ask("q", "gpt-5.6-luna", "/docs", 20)).rejects.toBeInstanceOf(TimeoutError);
+    expect(activeRunCount()).toBe(1);
+    await expect(cancelActiveRuns()).resolves.toBe(false); // -> the handler recycles
+    expect(sdk.closes).toBe(0); // no agent was ever handed back to close
+  });
+
+  test("a hung send() is bounded, and retained because it cannot be named", async () => {
+    sdk.sendBehavior = "hang";
+    await expect(createCursorSeam().ask("q", "gpt-5.6-luna", "/docs", 20)).rejects.toBeInstanceOf(TimeoutError);
+    expect(activeRunCount()).toBe(1);
+    await expect(cancelActiveRuns()).resolves.toBe(false);
+    expect(sdk.closes).toBe(1); // the agent does exist here, so it is still closed
+  });
+
+  // The other half of the placeholder's contract: a failure is not an abandonment,
+  // so it must not cost a healthy container. Otherwise a bad API key recycles.
+  test("a create() that fails on its own leaves nothing to contain", async () => {
+    sdk.createBehavior = "fail";
+    await expect(createCursorSeam().ask("q", "gpt-5.6-luna", "/docs", 5_000)).rejects.toThrow("create failed");
+    expect(activeRunCount()).toBe(0);
+    await expect(cancelActiveRuns()).resolves.toBe(true);
+  });
+
+  test("a send() that fails on its own leaves nothing to contain", async () => {
+    sdk.sendBehavior = "fail";
+    await expect(createCursorSeam().ask("q", "gpt-5.6-luna", "/docs", 5_000)).rejects.toThrow("send failed");
+    expect(activeRunCount()).toBe(0);
+    expect(sdk.closes).toBe(1);
   });
 
   test("cancelActiveRuns is clean and a no-op when nothing is in flight", async () => {

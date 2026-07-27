@@ -15,8 +15,8 @@ const JSON_HEADERS: Record<string, string> = { "content-type": "application/json
 
 // Server misconfiguration (auth/docs/lockdown) -> 500; upstream model
 // interaction (model/parse/transport) -> 502; wall-clock cutoff -> 504.
-// EXIT.LOCKDOWN is unreachable at runtime — supportsReadOnlyLockdown()
-// (agent.ts:131) is a compile-time tautology — and EXIT.USAGE is a CLI-only
+// EXIT.LOCKDOWN is unreachable at runtime — agent.ts's supportsReadOnlyLockdown()
+// is a compile-time tautology — and EXIT.USAGE is a CLI-only
 // argv failure, but both are mapped because the type below is exhaustive over
 // EXIT on purpose: adding an exit code to run.ts must be a compile error here,
 // not a silent fall-through to the 500 in toHttpResponse.
@@ -38,7 +38,7 @@ export function errorResponse(statusCode: number, message: string, requestId: st
   return { statusCode, headers: JSON_HEADERS, body: JSON.stringify({ error: message, requestId }) };
 }
 
-// errorMessage lives on RunOutcome, not QaResult (run.ts:44-48), so returning
+// errorMessage lives on run.ts's RunOutcome, not on QaResult, so returning
 // the bare QaResult would make every failure an opaque {"status":"error"} with
 // no way to tell an unreachable model from unparseable output. Never include a
 // stack — this body is caller-visible.
@@ -175,7 +175,7 @@ export interface KeyLoader {
 }
 
 // Populates process.env.CURSOR_API_KEY, because the unchanged createCursorSeam()
-// reads that env var at ask() time (agent.ts:101) rather than taking the key as
+// reads that env var when it builds its agent options rather than taking the key as
 // an argument. Threading apiKey through RunOptions is the cleaner fix and is
 // out of scope for this slice.
 //
@@ -183,6 +183,14 @@ export interface KeyLoader {
 // would otherwise brick every warm container until it recycles.
 export function createKeyLoader(env: NodeJS.ProcessEnv, fetchSecret: SecretFetcher): KeyLoader {
   let pending: Promise<void> | null = null;
+  // Whether the value now in env.CURSOR_API_KEY is one THIS loader fetched, so
+  // invalidate() only ever discards its own cache. A key supplied directly in the
+  // environment (a local `docker run`, the Runtime Interface Emulator) has no source
+  // to re-fetch from, so deleting it would not refresh anything — it would brick the
+  // container for the rest of its life. And the auth retry cannot tell the two apart
+  // on its own: checkAuth() reports a transient Cursor.me() failure and a genuinely
+  // bad key identically, as false.
+  let fetched = false;
   return {
     async ensure(): Promise<void> {
       if (env.CURSOR_API_KEY && env.CURSOR_API_KEY.trim() !== "") return;
@@ -192,6 +200,7 @@ export function createKeyLoader(env: NodeJS.ProcessEnv, fetchSecret: SecretFetch
       if (!secretId) return;
       pending ??= fetchSecret(secretId).then((key) => {
         env.CURSOR_API_KEY = key;
+        fetched = true;
       });
       try {
         await pending;
@@ -201,7 +210,13 @@ export function createKeyLoader(env: NodeJS.ProcessEnv, fetchSecret: SecretFetch
       }
     },
     invalidate(): void {
+      // A no-op for an env-supplied key. The retry that follows then re-runs against
+      // the same credential, which is not wasted: agent.ts's preflight cache stores
+      // only successes, so the retry genuinely re-probes and a transient auth blip
+      // gets its second chance.
+      if (!fetched) return;
       pending = null;
+      fetched = false;
       delete env.CURSOR_API_KEY;
     },
   };
@@ -210,8 +225,8 @@ export function createKeyLoader(env: NodeJS.ProcessEnv, fetchSecret: SecretFetch
 // --- Invocation wall clock ---------------------------------------------------
 //
 // config.timeoutMs bounds ONE agent call, and per-call bounds do not sum to an
-// invocation bound: runQa can make two (ask, then the tool-less repair at
-// run.ts:203), and handleEvent runs the whole thing again on an auth retry. With
+// invocation bound: runQa can make two (ask, then the tool-less repair through
+// seam.reformat), and handleEvent runs the whole thing again on an auth retry. With
 // AGENT_TIMEOUT_MS=90000 a single request can therefore legitimately spend 180s
 // against deploy.sh's TIMEOUT_S of 120 — reachable, because the repair only runs
 // when ask already SUCCEEDED, so ask at 60s plus a repair hanging to 90s is 150s.
@@ -240,12 +255,16 @@ export function invocationBudgetMs(context?: LambdaContext): number | null {
   return Math.max(remaining - RESPONSE_RESERVE_MS, 1);
 }
 
-// Reuses withTimeout (a Promise.race that leaves the work running) deliberately:
-// there is nothing to cancel — the SDK exposes no AbortSignal — and the TIMEOUT
-// this produces routes straight into recycle(), which kills the container the
-// orphan is running in. A late emit() from the orphaned handleQuestion may reach
-// the log stream in the ~250ms before that exit; it is one stray line, and the
-// alternative is the hard-kill this function exists to prevent.
+// Reuses withTimeout, which races but does not cancel, so this abandons the run
+// rather than stopping it. Stopping it is handleEvent's job on the EXIT.TIMEOUT
+// branch below: this is the one timeout source that leaves a run genuinely in
+// flight, and cancelActiveRuns() is what reaches the handle to end it — falling back
+// to the container recycle only when the run cannot be cancelled.
+//
+// Either way the abandoned handleQuestion may still emit() its own line before the
+// container returns or exits. That stray line is the accepted cost; the alternative
+// is the Lambda hard-kill this function exists to prevent, which returns no response
+// at all and never reaches the cleanup.
 async function withInvocationBudget(
   work: () => Promise<RunOutcome>,
   budgetMs: number | null | undefined,
@@ -309,17 +328,20 @@ export async function handleEvent(
   const { requestId } = job;
 
   try {
-    await keys.ensure();
     // The budget wraps the auth retry too, not just one attempt — two attempts is
-    // exactly one of the ways an invocation overruns.
+    // exactly one of the ways an invocation overruns. It also wraps keys.ensure(),
+    // which is otherwise the one unbounded await on the request path: a Secrets
+    // Manager round trip that outlives the Lambda timeout is the same no-504,
+    // no-cleanup hard kill the budget exists to beat, just with a different cause.
     const outcome = await withInvocationBudget(
       async () => {
+        await keys.ensure();
         let o = await handleQuestion(job, seam, config, emit);
 
         // A rotated key looks exactly like a bad key from here. Drop the cached
-        // value and try once more before declaring an auth failure. Cheap: AUTH
-        // only comes from runQa's preflight checkAuth (run.ts:132), before any
-        // model call, so the first attempt spent no tokens.
+        // value and try once more before declaring an auth failure. Cheap: AUTH only
+        // comes from runQa's preflight checkAuth, before any model call, so the first
+        // attempt spent no tokens.
         if (o.exitCode === EXIT.AUTH) {
           keys.invalidate();
           await keys.ensure();

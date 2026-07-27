@@ -126,6 +126,12 @@ SDK exposes no AbortSignal"). True of `AbortSignal`; false of the SDK as a whole
   `LocalAgentOptions`.** `cwd` belongs on `Agent.create`, not on `send`; only `model` and `mode` are
   worth restating per send.
 - Consequence for `lambda/handler.ts`: the container poison-and-recycle is now the FALLBACK, reached
-  only when `supports("cancel")` is false or `cancel()` throws. Which happened is reported by
+  when `supports("cancel")` is false, when `cancel()` throws, or when the wall clock fires before
+  `send()` has handed back a `Run` at all — the last case has nothing to cancel, so `runBounded`
+  keeps an uncancellable placeholder in the active set for that window. Which happened is reported by
   `cancelActiveRuns()` — a run stays in `agent.ts`'s active set until it is known to have stopped,
   so a non-empty set is what tells the handler the container is contaminated.
+- Corollary, since `send()` takes ~1.6s and `Agent.create` is a network call too: the per-call bound
+  has to span create + send + wait on ONE deadline. Bounding only `wait()` left both of those
+  unbounded, which is a CLI that hangs forever despite `--timeout` and a Lambda stall the recycle
+  decision cannot see.
