@@ -15,9 +15,11 @@ __pycache__
 # corpus root is its cwd. It stays in git; it just does not ship.
 docs/.verification
 docs/.curation
-# Untracked local scratch: superpowers writes plans and specs here. Nothing in
-# git today, so this is insurance against a dev's working notes bloating the
-# image (and widening that search space) rather than an exclusion of the corpus.
+# Design specs and plans, not corpus: superpowers writes them here and they are
+# committed, so this is a real exclusion rather than insurance. They live under
+# docs/ for proximity to the work, but the retrieval agent must never search
+# them — the corpus root is its cwd, and extra search space is the main cost
+# driver. Keeping them out also stops a spec's prose being cited as a source.
 docs/superpowers
 
 # Tests never run in the image, and compiling them would put modules that
