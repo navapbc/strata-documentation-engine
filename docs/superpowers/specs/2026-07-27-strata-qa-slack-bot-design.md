@@ -1,7 +1,10 @@
 # Design: reach strata-qa from Slack
 
 Date: 2026-07-27
-Status: approved, not yet implemented
+Status: approved, not yet implemented. On hold pending #42, which tests whether a Claude Tag skill
+carrying deterministic gates can serve the same audience without the gateway designed here. See
+`2026-07-28-claude-tag-gate-spike-findings.md`; if that direction is adopted, this spec is superseded
+rather than merely unbuilt.
 
 ## Problem
 
