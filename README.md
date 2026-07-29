@@ -104,6 +104,23 @@ and no resource policy is attached, so the calling identity needs
 `lambda:InvokeFunctionUrl` on the function in its own IAM policy — without it the
 Function URL answers 403 before the handler ever runs.
 
+For debugging, `aws lambda invoke` calls the function directly and skips SigV4, but needs
+two things a Function URL request gets for free. First, the handler reads `event.body`, so
+the payload must be the same envelope the Function URL sends: `{"body": "{\"question\":
+\"...\"}"}` — a bare `{"question": "..."}` event 400s. Second, pass
+`--cli-binary-format raw-in-base64-out`; aws-cli v2 otherwise assumes `--payload` (inline or
+`file://`) is already base64 and tries to decode it, corrupting a plain-JSON payload into
+invalid UTF-8 before it reaches Lambda (`InvalidRequestContentException`, cryptically). Also
+useful: `--cli-read-timeout 180`, since botocore's 60s default read timeout is shorter than
+the function's 120s timeout.
+
+```bash
+aws lambda invoke \
+  --function-name strata-qa --region <region> \
+  --cli-read-timeout 180 --cli-binary-format raw-in-base64-out \
+  --payload file:///path/to/payload.json /tmp/response.json
+```
+
 Config via env vars, split by who owns them. `deploy.sh` sets the per-deploy ones on the
 function: `AGENT_TIMEOUT_MS` (default 90000) and `CURSOR_API_KEY_SECRET_ID`. The
 container-shape ones are image `ENV`s in the Dockerfile, so a local `docker run` and the
