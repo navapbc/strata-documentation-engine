@@ -31,29 +31,21 @@ this protocol exists to test.
 
 ## Preconditions
 
-Two are blocking. Do not start the pilot before both are confirmed.
+Scoped to internal work, so retention and Grid topology are out of scope here rather than blocking;
+`claude-tag-kit/SETUP.md` records both for anyone who later reuses the kit on client work.
 
-1. **Zero Data Retention.** Claude Tag retains channel memory and session transcripts and is
-   unavailable to organizations with ZDR enabled. Confirm Nava's Claude organization does not
-   require it.
-2. **Enterprise Grid topology.** On a Grid whose workspaces pair to different Claude organizations,
-   one organization's settings govern the entire grid and restrictions set here may not be enforced.
-   Confirm the topology.
-
-Then:
-
-3. A **public** channel, with Claude invited and its scope set to the New version. Public because a
+1. A **public** channel, with Claude invited and its scope set to the New version. Public because a
    hosted page's visibility follows the channel, and being seen is the point of an adoption pilot.
    The content here is a public repository's public documentation, so the memory-leak risk that
    would otherwise argue for private is negligible. Check for Slack guests: Claude is off by default
    in any channel containing one.
-4. `navapbc/strata-documentation-engine` granted in a bundle attached **to that channel only**.
-5. A **per-channel spend limit** set before the first mention, so cost is measured rather than
+2. `navapbc/strata-documentation-engine` granted in a bundle attached **to that channel only**.
+3. A **per-channel spend limit** set before the first mention, so cost is measured rather than
    discovered.
-6. A **non-engineer driver.** If an engineer drives, the pilot learns nothing about the audience.
-7. An engineer available as spot-checker — not to do the work, but to independently judge whether
+4. A **non-engineer driver.** If an engineer drives, the pilot learns nothing about the audience.
+5. An engineer available as spot-checker — not to do the work, but to independently judge whether
    accepted output was actually correct. Hypothesis 2 cannot be measured without this.
-8. `claude-tag-kit/SETUP.md` walked end to end, with every step that was wrong, missing, or
+6. `claude-tag-kit/SETUP.md` walked end to end, with every step that was wrong, missing, or
    confusing recorded. The guide is under test alongside the flow.
 
 ## Deliverable and phases
@@ -61,6 +53,11 @@ Then:
 The pilot builds something real rather than an exercise: this repository already generates an
 agent-queryable knowledge base but has no human-browsable surface, so the site is genuinely useful
 output. That matters — a driver doing real work surfaces real failure modes.
+
+The kit targets demos and internal tools, and these have different success tests. A demo succeeds if
+it convinces once; an internal tool succeeds if it survives and keeps working. **This pilot builds an
+internal tool** — people will use the site to find things — which is the harder case and the better
+one to test against.
 
 **Phase 1 — hosted page.** Claude publishes a page rendering the knowledge base and keeps it
 current. No infrastructure, no admin, and it directly tests the living-page hypothesis. This is also
@@ -146,6 +143,11 @@ handle in prose** ships as channel-instruction boilerplate rather than code; **n
 dropped and recorded as dropped, so it is not rediscovered and rebuilt later.
 
 The kit is written only after this, and only from confirmed rows.
+
+**One deferred check, worth scheduling.** Because the pilot builds an internal tool rather than a
+demo, ask again a month after the pilot ends: is the site still current, is anyone still using it,
+and did it survive without the channel? A tool that decays the moment attention moves on is a finding
+about the kit, not about the driver — and it is invisible inside a two-week window.
 
 ## What would falsify the whole idea
 

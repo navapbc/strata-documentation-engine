@@ -6,18 +6,27 @@ Claude Tag and evaluate the result themselves.
 Roles are marked on each step: **[Owner]** needs the Owner role in your Claude organization,
 **[Repo]** needs write access to the repository, **[Anyone]** is any channel member.
 
+## Scope: demos and internal tools
+
+This kit is for **demos and internal tools** — things Nava builds for itself. It is deliberately not
+written for client-facing work or anything handling client data, and it omits the controls that would
+need.
+
+Two platform constraints are therefore treated as out of scope rather than removed. Revisit both
+before any client use:
+
+- **Retention.** Claude Tag retains channel memory and session transcripts, and is unavailable to
+  organizations with Zero Data Retention enabled. ZDR is not self-serve; Anthropic's account team
+  enables it per organization.
+- **Enterprise Grid.** On a Grid whose workspaces pair to different Claude organizations, one
+  organization's settings govern the entire grid, so restrictions set here may not be enforced. This
+  matters when you are relying on restrictions to protect something. For internal work, you mostly
+  are not.
+
 ## Before you start
 
 Claude Tag is Team and Enterprise only, on Anthropic's first-party service, and your Claude
 organization must be paired to your Slack workspace.
-
-**Two hard blockers.** Confirm both before spending time on setup:
-
-- **Zero Data Retention.** Claude Tag retains channel memory and session transcripts, so it is
-  unavailable to organizations with ZDR enabled.
-- **Enterprise Grid.** On a Grid whose workspaces pair to *different* Claude organizations, one
-  organization's access settings govern the entire grid, and restrictions you set may not be
-  enforced in your own workspaces.
 
 ## 1. Link GitHub — once per organization
 
@@ -42,8 +51,12 @@ Choosing public or private is a real trade-off, not a formality:
 | Who can open a hosted page Claude publishes | Everyone in the workspace | Channel members only |
 | Where memory goes | Workspace memory, readable from every other channel | This channel's own store |
 
-For a demo whose purpose is being seen, public is usually right. For anything touching sensitive
-material, private. Note that memory saved while a channel is private does **not** move to the
+**For demos and internal tools, default to public.** Being seen is usually the point, and a hosted
+page nobody can open is a wasted deliverable. Choose private only for a specific reason — an
+unannounced project, or material you would not put in an all-company channel.
+
+Two things to know either way: what Claude learns in a public channel becomes workspace memory
+readable from other channels, and memory saved while a channel is private does **not** move to the
 workspace store if the channel is later made public.
 
 Two things you cannot change: Claude never operates in Slack Connect channels shared with another
@@ -128,6 +141,15 @@ default.
 4. **After any configuration change, start a new top-level thread.** A thread locks in its skills,
    plugins, and instructions when it starts. Connections and domain rules do apply mid-thread, but
    nothing else does.
+
+## 8. Decide now who owns it
+
+Skip this for a throwaway demo. Do not skip it for an internal tool.
+
+A demo succeeds if it convinces someone once. An internal tool succeeds if it still works in six
+months, which means someone has to own it after the person who built it moves on. Before the tool has
+users, write into `PROJECT.md`: who owns it, what breaks it, and how to run it locally without Claude
+Tag. A tool that only its channel can maintain is a tool with one point of failure.
 
 ## Gotchas worth knowing up front
 

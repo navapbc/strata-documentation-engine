@@ -1,8 +1,11 @@
 # Claude Tag project kit
 
 Files and skills that turn a Slack channel plus a GitHub repository into a place where
-**non-engineers can build a project with Claude Tag** and get a result they can evaluate
-themselves.
+**non-engineers can build a demo or an internal tool with Claude Tag** and get a result they can
+evaluate themselves.
+
+Scoped to work Nava builds for itself. Not written for client-facing work or client data, and it
+omits the controls that would need — see the scope note in `SETUP.md`.
 
 ## Status: under pilot, not yet a deliverable
 
