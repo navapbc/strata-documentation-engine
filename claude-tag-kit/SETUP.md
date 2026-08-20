@@ -171,5 +171,11 @@ Most confusion in a new channel traces to one of these.
   channel under a scope, use a skills repository registered as a plugin marketplace.
 - **Claude may reply without being mentioned** when it judges a reply is warranted. Tell it to stay
   quiet in a thread if that's unwanted.
+- **A Grid-shared channel silently ignores your channel settings.** On Slack Enterprise Grid, a
+  channel shared across workspaces takes its access, instructions, and memory from **Default Slack
+  access** only — anything you set on the workspace or the channel does not reach it, with no
+  per-channel override. Your instructions appear saved and are not in effect. Use a plain
+  single-workspace channel. If the workspaces belong to different Claude organizations, Claude
+  refuses to reply at all.
 - **Treat channel content as untrusted input.** Claude reads the conversation and may follow
   instructions found in it, so keep the channel's membership deliberate.
