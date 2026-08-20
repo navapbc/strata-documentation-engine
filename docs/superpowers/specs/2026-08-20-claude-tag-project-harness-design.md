@@ -1,7 +1,10 @@
 # Claude Tag project harness — design
 
 - **Date:** 2026-08-20
-- **Status:** approved design, not yet planned
+- **Status:** deferred pending pilot. Scoped for an engineering team on one repo; the audience
+  has since been reframed to non-engineers using Claude Tag company-wide. Revisit only if an
+  engineering team asks for this heavier variant. See
+  `2026-08-20-claude-tag-pilot-protocol.md`.
 - **First consumer:** `navapbc/strata-documentation-engine` (this repo)
 - **Work store:** [rebar](https://github.com/navapbc/rebar), CLI and library
 
