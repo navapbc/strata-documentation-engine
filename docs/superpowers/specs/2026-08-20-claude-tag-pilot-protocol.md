@@ -5,6 +5,9 @@
 - **Audience under test:** non-engineers building a project or demo via Claude Tag in Slack
 - **Goal:** learn which failure modes are real and severe, so a distributable kit packages only
   what demonstrably worked
+- **Pilot project:** a live, browsable site built from this repository's existing knowledge base
+  (`docs/INDEX.md`, `docs/graph.json`, `docs/sources/` — nine documented sources)
+- **Kit under test:** `claude-tag-kit/`
 
 ## Why a pilot instead of a build
 
@@ -39,46 +42,49 @@ Two are blocking. Do not start the pilot before both are confirmed.
 
 Then:
 
-3. A **private** channel, with Claude invited and its scope set to the New version.
-4. One repository granted in the bundle attached to that channel and nowhere broader.
+3. A **public** channel, with Claude invited and its scope set to the New version. Public because a
+   hosted page's visibility follows the channel, and being seen is the point of an adoption pilot.
+   The content here is a public repository's public documentation, so the memory-leak risk that
+   would otherwise argue for private is negligible. Check for Slack guests: Claude is off by default
+   in any channel containing one.
+4. `navapbc/strata-documentation-engine` granted in a bundle attached **to that channel only**.
 5. A **per-channel spend limit** set before the first mention, so cost is measured rather than
    discovered.
 6. A **non-engineer driver.** If an engineer drives, the pilot learns nothing about the audience.
-7. A **real project with a real deadline.** Toy projects do not surface these failure modes.
-8. An engineer available as spot-checker — not to do the work, but to independently judge whether
+7. An engineer available as spot-checker — not to do the work, but to independently judge whether
    accepted output was actually correct. Hypothesis 2 cannot be measured without this.
+8. `claude-tag-kit/SETUP.md` walked end to end, with every step that was wrong, missing, or
+   confusing recorded. The guide is under test alongside the flow.
+
+## Deliverable and phases
+
+The pilot builds something real rather than an exercise: this repository already generates an
+agent-queryable knowledge base but has no human-browsable surface, so the site is genuinely useful
+output. That matters — a driver doing real work surfaces real failure modes.
+
+**Phase 1 — hosted page.** Claude publishes a page rendering the knowledge base and keeps it
+current. No infrastructure, no admin, and it directly tests the living-page hypothesis. This is also
+the artifact you show the company.
+
+**Phase 2 — GitHub Pages.** A real public URL. The repository is public so Pages is free, but three
+constraints apply and none can be widened: a repository admin must enable Pages (it is off today),
+the workflow must trigger on `push` or `pull_request` because Claude cannot `workflow_dispatch`, and
+the `github-pages` environment must carry no protection rules because Claude cannot approve a pending
+deployment.
+
+Phase 2 only begins once phase 1's loop works. If phase 1 fails, phase 2 would only add
+infrastructure to a broken flow.
 
 ## The scaffold
 
 ### Channel instructions
 
-Set at the channel scope, with **Channel member edits** blocked so they outrank memory and members
-cannot erode them. This is the pilot's main instrument: it encodes the intake and evidence
-discipline as prose, testing hypotheses 1 and 2 with nothing built.
+Use the pilot version in `claude-tag-kit/channel-instructions.md`, set at the channel scope. This is
+the pilot's main instrument: it encodes the intake-brief and evidence-first discipline as prose,
+testing hypotheses 1 and 2 with nothing built.
 
-```text
-This channel builds <project>. The repository is <org/repo>; always work there.
-
-Before doing any substantial work, write a short brief and wait for a reply:
-what you will build, what you are deliberately leaving out, and up to three
-questions you need answered. Do not begin until someone answers.
-
-Every task states, before starting, how it will prove it worked — a screenshot,
-a clickable URL, test output, or a checklist you will walk. Deliver that proof
-with the result. Never report success on the basis of your own summary alone.
-
-Keep PROJECT.md current: what is done, what is in flight, what was decided and
-when, and what is blocked. Update it in the same task that changes it, never
-as a separate cleanup.
-
-Maintain one hosted page for this project and keep it current rather than
-posting a new one. Put its link in the channel topic.
-
-Say plainly when you are unsure, blocked, or guessing. A clear "I could not do
-this" is more useful here than a confident partial answer.
-
-Never mark a pull request ready for review and never merge one.
-```
+Leave **Channel member edits** unblocked for this pilot and record any edits members make. What they
+change is a finding — it shows where the instructions read as friction rather than help.
 
 ### State file
 
@@ -87,7 +93,8 @@ simplest thing that could work. Sections: Done, In flight, Decisions (dated), Bl
 
 ### Living page
 
-Ask Claude once to create a hosted page rendering `PROJECT.md` and keep it current, then link it in
+Ask Claude once to create a hosted page rendering the knowledge base and `PROJECT.md`, and to keep it
+current, then link it in
 the channel topic. This tests the highest-value adoption idea with no build at all.
 
 ### Preview deploy
