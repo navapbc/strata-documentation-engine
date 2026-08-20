@@ -3,6 +3,7 @@
 - **Date:** 2026-08-20
 - **Status:** ready to run, pending preconditions
 - **Audience under test:** non-engineers building a project or demo via Claude Tag in Slack
+- **Shape:** Phase 0 engineer-led capability check, then Phase 1 non-engineer pilot
 - **Goal:** learn which failure modes are real and severe, so a distributable kit packages only
   what demonstrably worked
 - **Pilot project:** a live, browsable site built from this repository's existing knowledge base
@@ -42,9 +43,11 @@ Scoped to internal work, so retention and Grid topology are out of scope here ra
 2. `navapbc/strata-documentation-engine` granted in a bundle attached **to that channel only**.
 3. A **per-channel spend limit** set before the first mention, so cost is measured rather than
    discovered.
-4. A **non-engineer driver.** If an engineer drives, the pilot learns nothing about the audience.
-5. An engineer available as spot-checker — not to do the work, but to independently judge whether
-   accepted output was actually correct. Hypothesis 2 cannot be measured without this.
+4. **Phase 1 only:** a **non-engineer driver.** If an engineer drives, the pilot learns nothing
+   about the audience.
+5. **Phase 1 only:** an engineer available as spot-checker — not to do the work, but to
+   independently judge whether accepted output was actually correct. Hypothesis 2 cannot be measured
+   without this.
 6. `claude-tag-kit/SETUP.md` walked end to end, with every step that was wrong, missing, or
    confusing recorded. The guide is under test alongside the flow.
 
@@ -59,9 +62,29 @@ it convinces once; an internal tool succeeds if it survives and keeps working. *
 internal tool** — people will use the site to find things — which is the harder case and the better
 one to test against.
 
-**Phase 1 — hosted page.** Claude publishes a page rendering the knowledge base and keeps it
-current. No infrastructure, no admin, and it directly tests the living-page hypothesis. This is also
-the artifact you show the company.
+**Phase 0 — capability check, engineer-led.** Two engineers establish whether the loop works at
+all, and produce the hosted page. Explicitly *not* measured against the hypotheses below: engineers
+compensate for exactly the things those hypotheses test, so running them here would return false
+negatives. Phase 0's real output is a working flow and a corrected `claude-tag-kit/SETUP.md` — two
+engineers walking that guide will find its errors faster than anyone else.
+
+Verify each of these, and record what broke:
+
+- Channel instructions are actually in effect — Claude writes a brief before working, and refuses to
+  begin until answered. If it dives straight in, the instructions are not reaching the session.
+- Naming the repository in the first message clones it, and `.claude/skills/` and `CLAUDE.md` load
+  on the following turn.
+- Python 3.13 and `scripts/requirements.txt` install in the sandbox. There is no setup script, so
+  this happens per session on `CLAUDE.md` guidance — confirm it works and note how long it takes.
+- `lint_manifest`, `lint_docs`, and `build_graph` run and print their sentinels.
+- A hosted page gets created, and a *later thread* updates that same page rather than posting a new
+  one.
+- `PROJECT.md` written in one thread is picked up by a second thread.
+- Cost per task, from the per-channel usage page.
+
+**Phase 1 — non-engineer pilot.** The hypotheses, the log, and the decision rule below. Runs only
+against a flow Phase 0 showed to work; measuring a non-engineer's experience of a broken flow teaches
+nothing about non-engineers.
 
 **Phase 2 — GitHub Pages.** A real public URL. The repository is public so Pages is free, but three
 constraints apply and none can be widened: a repository admin must enable Pages (it is off today),
@@ -69,8 +92,9 @@ the workflow must trigger on `push` or `pull_request` because Claude cannot `wor
 the `github-pages` environment must carry no protection rules because Claude cannot approve a pending
 deployment.
 
-Phase 2 only begins once phase 1's loop works. If phase 1 fails, phase 2 would only add
-infrastructure to a broken flow.
+Pull Phase 2 forward into Phase 0 if the capability check goes smoothly — a clickable public URL is a
+better deliverable for the non-engineer phase than a claude.ai-hosted page. Otherwise leave it last,
+since adding deploy infrastructure to a flow that does not yet work only obscures which part failed.
 
 ## The scaffold
 
