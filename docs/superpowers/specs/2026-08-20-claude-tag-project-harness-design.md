@@ -40,6 +40,9 @@ threads editing the same files, and no answer to what the project's actual state
 | One private channel, no tiers. | Claude Tag cannot express per-person authority inside a channel. Channel membership *is* the authority list; that is made explicit and reviewed rather than worked around. |
 | Every gate is on the artifact, not the requester. | The platform controls ingestion, not us. A gate that asks "who sent this" is unenforceable; a gate that asks "is this diff allowed" is enforceable. |
 | Enforcement is executable, never prose. | Hooks, CI checks, branch protection, and Agent Proxy hold whether or not the model cooperates. Custom instructions are advisory, so nothing important lives only there. |
+| Rebar as a bare store. None of its own gate stack. | Rebar's project `rebar.toml` enables plan-review and completion-verification gates that require the `[agents]` extra plus AWS Bedrock or Anthropic credentials. Those are per-project opt-ins defaulting to `false`, and this sandbox deliberately holds no model credentials. |
+| Identity passed explicitly, never ambient. | Rebar's `.env-id` and op-cert signing key cannot persist in an ephemeral sandbox, so attribution is a data field the harness writes, not a signature rebar verifies. |
+| Pinned `nava-rebar`, no extras. | `nava-rebar==0.12.0` (Apache-2.0, `requires-python >=3.11`) has three core runtime dependencies. Eighteen releases inside 0.x at roughly monthly cadence means upgrades must be deliberate pull requests. |
 | Rebar via CLI and library, never MCP. | A repository's `.mcp.json` is never loaded by a Claude Tag session, and connections come only from the Access bundle. Rebar's store is a git branch, so the CLI is sufficient. |
 | Split delivery: skills repository plus in-repo spine. | Repository skills load only after Claude clones that repo, and the skills-repo pattern adds auto-sync with mandatory human merge. The platform's loading order forces the split. |
 | Never mark a PR ready for review, never merge. | The one authority the harness must not hold. Human review is the last gate and it stays human. |
@@ -103,7 +106,7 @@ what makes work that arrived by injection stand out — it has no such history.
 | `config.py` | Load harness config; check the `PAUSED` file; confirm repo and channel identity | filesystem |
 | `provenance.py` | Split a session's input into task and evidence; flag imperatives found in evidence | pure |
 | `diff_policy.py` | Path denylist plus change budget, returning pass or a named refusal | pure |
-| `tickets.py` | Rebar adapter; stamps every write with requester and thread permalink | rebar |
+| `tickets.py` | Rebar adapter; stamps each write with requester and thread permalink, and confirms the write reached `origin/tickets` before reporting success | rebar |
 | `report.py` | Rebar event log replayed into thread-ready markdown | rebar |
 | `gate.py` | Run the ladder; print `GATE_OK` or `GATE_REFUSED: <reason>` | orchestrator |
 
@@ -121,6 +124,39 @@ not read at all.
 **Layering rule**, recorded in `rules/harness.md` with `paths:` frontmatter so it auto-loads: skills
 may ask the spine, never re-implement its checks. A skill that decides for itself whether a path is
 allowed has defeated the design.
+
+## Using rebar from an ephemeral sandbox
+
+Rebar was built for parallel agents on persistent local checkouts. Its *store* suits Claude Tag
+well; its *identity and attestation layer* assumes an environment that survives between runs, and
+that assumption does not hold here. The split matters, because adopting rebar wholesale would fail
+quietly rather than loudly.
+
+**What works unchanged.** Events are `${timestamp}-${uuid}-${TYPE}.json` — globally unique,
+union-merging, deterministically replayed. Nothing about that needs persistence. Crucially, claim
+safety does not depend on distinct actor identities either: it is optimistic concurrency with
+UUID-based deterministic fork resolution, where the lexically-lower UUID wins and, on a
+synchronized tracker, the loser gets a `ConcurrencyError` (exit 10) before the claim commits. Two
+threads sharing one service identity therefore still cannot both claim the same ticket, which is the
+property this design depends on most.
+
+**What does not work.** Rebar expects four git-ignored files to be carried across clones —
+`.env-id`, `.opcert-key`, `.opcert-key.pub`, `.ensure-applied` — plus per-ticket `.cache.json` and
+`.rebar/rebar-push-pending`. A Claude Tag sandbox is per-thread and keeps nothing, and there is
+nowhere to hold a mode-`0600` private key. Consequences, each handled deliberately:
+
+| Rebar assumption | What happens here | Handling |
+|---|---|---|
+| `.env-id` persists | Every session mints a new environment identity, orphaning prior attestations. Rebar warns and proceeds rather than failing, so this accumulates silently. | Identity verification stays off. Attribution comes from the harness's own stamp. |
+| Op-cert signing key persists | No verifiable attestations are possible. | The whole attestation-dependent gate stack stays off, as a documented exclusion. |
+| Caches persist | Rebuilt every session. | Accepted cost; measured, not assumed. |
+| `.rebar/rebar-push-pending` persists | A push failing at session end loses the record of the failure — a silently dropped write to the system of record. | `tickets.py` confirms every write on `origin/tickets` before reporting success, and fails closed otherwise. |
+
+**Do not copy rebar's own `rebar.toml`.** It is that project dogfooding its heaviest configuration:
+`require_completion_verification_for_close`, `require_plan_review_for_claim`,
+`require_plan_review_for_close`, and `enforce_plan_material_pins` all on, with a Bedrock-first
+`[llm]` table. Every one of those needs model credentials this sandbox does not have and should not
+be given. The harness writes its own minimal config.
 
 ## Enforcement stack
 
@@ -188,8 +224,9 @@ so standing work stays visible rather than accumulating unseen.
    `.claude/rules/*.md`, `.claude/skills/`, and `.claude/settings.json` hooks load on the next turn.
 3. The verb runs. `config.py` checks `PAUSED` and repository identity first; `provenance.py`
    separates task from evidence.
-4. Ticket writes go through `tickets.py` to the rebar event log on the `tickets` branch, each stamped
-   with requester and thread permalink, auto-committed and pushed.
+4. Ticket writes go through `tickets.py` to the rebar event log on the `tickets` branch, each
+   stamped with requester and thread permalink — a data field the harness writes, not a signature
+   rebar verifies — then auto-committed, pushed, and confirmed on `origin/tickets`.
 5. Code work claims a ready ticket first. Concurrent threads cannot claim the same ticket, and
    recorded file impacts keep them off the same files.
 6. Before any durable artifact, `gate.py` runs and must print `GATE_OK`. Hooks refuse the action
@@ -205,6 +242,9 @@ so standing work stays visible rather than accumulating unseen.
 - Claims carry a lease. A sandbox released mid-work leaves a reclaimable ticket rather than a wedged
   one.
 - A `tickets` branch push conflict retries once on rebar's union merge, then reports.
+- A write is not done until it is confirmed on `origin/tickets`. Rebar's push-pending marker cannot
+  survive the sandbox, so an unconfirmed write is treated as a hard failure and reported in the
+  thread rather than assumed delivered.
 - Exceeding the change budget is a handoff, not an error: post the branch and diffstat, and ask a
   human to open the pull request.
 - `harness/PAUSED`, committed, stops the harness in a one-line pull request that any contributor can
@@ -223,8 +263,9 @@ convention.
   case variants; change budget boundaries.
 - `test_gate.py`: ladder ordering and short-circuit behavior; exact sentinel strings.
 - `test_report.py`: rendered numbers match a deterministic replay of a fixture event log.
-- `test_tickets.py`: every write carries a requester and thread-permalink stamp; a push
-  conflict retries exactly once; a rebar error refuses rather than proceeding.
+- `test_tickets.py`: every write carries a requester and thread-permalink stamp; a push conflict
+  retries exactly once; an unconfirmed push fails closed rather than reporting success; a rebar
+  error refuses rather than proceeding.
 - `tests/fixtures/injections/`: a corpus of injection attempts that provenance and gate must all
   classify as evidence. This is the regression suite for the security model, and every incident adds
   a case.
@@ -247,12 +288,22 @@ These are external facts to confirm, not undecided design. Each one can change t
 2. **Enterprise Grid pairing.** On a Grid whose workspaces pair to different Claude organizations,
    one organization's access settings govern the entire grid, so restrictions set here may not be
    enforced. Confirm Nava's Grid topology.
-3. **Environment and setup script.** The cloud environments and customize documentation describe a
-   per-scope Environment setting selecting an organization-shared environment with setup scripts,
-   environment variables, and network levels. The GitHub configuration page states there is no setup
-   script or custom image and directs dependency installs to `CLAUDE.md`, re-run each session.
-   Resolve which applies to Claude Tag channel sessions. If no setup script is available, rebar
-   installs per session from PyPI on `CLAUDE.md` guidance, which is slower and only advisory —
-   worth measuring before committing to the design's latency assumptions.
-4. **Rebar availability.** `nava-rebar` must be installable from the sandbox's allowed egress, and
-   pinned to a known version.
+3. **Environment and setup script — now a capability question, not a latency one.** The cloud
+   environments and customize documentation describe a per-scope Environment setting selecting an
+   organization-shared environment with setup scripts, environment variables, and network levels.
+   The GitHub configuration page states there is no setup script or custom image and directs
+   dependency installs to `CLAUDE.md`, re-run each session and followed as guidance rather than
+   unconditionally. Resolve which applies to Claude Tag channel sessions. If environments *do*
+   apply, a stable `.env-id` becomes injectable and attestation is at least conceivable; if they do
+   not, identity churn is permanent and rebar installs from PyPI on every mention.
+4. **Clone cost as the tickets branch grows.** Rebar notes it "cannot filter a clone it does not
+   perform," and Claude Tag performs the clone, so the filter is not ours to choose. Measure
+   per-session fetch cost early rather than discovering it at a thousand tickets.
+
+Resolved since the first draft: `nava-rebar` is published (v0.12.0, 18 releases, latest
+2026-08-16), Apache-2.0, `requires-python >=3.11` against this repo's 3.13, with `pyyaml`,
+`jsonschema`, and `referencing` as its only core dependencies. PyPI is already in the default
+Trusted-access allowlist, so no Domains entry is needed. Install plain `nava-rebar==0.12.0` — not
+`[mcp]` (never loaded) and not `[agents]` (`review-draft` covers review). Note
+`Development Status :: 4 - Beta`, and that upstream fixes go through Gerrit rather than a pull
+request against the GitHub mirror.
