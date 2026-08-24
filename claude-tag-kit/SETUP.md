@@ -4,9 +4,11 @@ How to stand up a Slack channel plus GitHub repository where non-engineers can b
 Claude Tag and evaluate the result themselves.
 
 Roles are marked on each step: **[GitHub org]** needs owner access to the GitHub organization,
-**[Eden]** goes through an Eden ticket rather than a console you control, **[Owner]** needs the Owner
-role in your Claude organization, **[Repo]** needs write access to the repository, **[Anyone]** is any
-channel member.
+**[Eden]** goes through an Eden ticket rather than a console you control, **[Repo]** needs write
+access to the repository, **[Anyone]** is any channel member.
+
+No step here needs the Owner role in your Claude organization. Everything that does is gathered into
+one table under step 2, as things to request rather than things to do.
 
 ## Scope: demos and internal tools
 
@@ -74,43 +76,47 @@ the second half is a ticket, not a click, so it carries a lead time the rest of 
 1. **[GitHub org]** Configure the Claude GitHub App on the GitHub organization and grant it the
    repository. This is what lets the repository be reached by Claude at all.
 2. **[Eden]** File an Eden ticket to add that repository to the Claude Tag access bundle for this
-   channel. This is what lets *this channel's* Claude see it. Name the channel in the ticket, and
-   ask that the bundle be attached **to this channel only** — not to the workspace, and not to
-   Default Slack access. Isolation comes from where a bundle is attached, not from the bundle
-   itself, and a bundle on a *public* channel grants its access to anyone who joins.
+   channel. This is what lets *this channel's* Claude see it.
 
-Granting only the GitHub side leaves Claude unable to clone. Granting only the Claude Tag side
-leaves it able to name the repository and unable to read it. Both failures look like "Claude cannot
-find the repo," so check both before debugging anything else.
+The ticket must name both sides of the pairing, or it cannot be actioned:
 
-## 3. Configure the channel scope
+- **The Slack channel name.** Exactly as it appears in Slack.
+- **The GitHub repository**, by name or URL.
+- **That the bundle be attached to this channel only** — not to the workspace, and not to Default
+  Slack access. Isolation comes from where a bundle is attached, not from the bundle itself, and a
+  bundle on a *public* channel grants its access to anyone who joins.
 
-**[Owner]** At [`claude.ai/admin-settings/claude-tag`](https://claude.ai/admin-settings/claude-tag),
-on the scope for this channel:
+**[Anyone]** Verify by asking in the channel: `@Claude what can you access from this channel?`
 
-1. On the bundle's **Domains** tab, add only hosts the project genuinely needs. Egress is
-   default-deny, and a new environment's Trusted access level already covers common package
-   registries.
-2. Set the channel scope's **Claude Tag version** to **New**.
-3. Set a **per-channel spend limit**. Work that would exceed it is declined rather than silently
-   truncated.
+You do not have to guess which half is missing. Claude Tag reports access failures with enough
+detail to tell you where the fix belongs — with the Claude admin, or with the owner of the GitHub
+repository — so ask in the channel first and take the answer to whichever of the two it names.
 
-**[Owner]** Optional, Enterprise only: name **channel managers** so a non-Owner can add repositories
-and credentials for this channel, and turn on the RBAC restriction toggle if only members holding the
-**Claude Tag in Slack** capability should be able to invoke Claude.
+### What only the Claude admin can change
 
-**[Anyone]** Verify by asking in the channel: `@Claude what can you access from this channel?` If the
-repository is missing here, one of the two grants in step 2 has not landed.
+Everything below is set by a Claude organization Owner at
+[`claude.ai/admin-settings/claude-tag`](https://claude.ai/admin-settings/claude-tag), not by you. It
+is listed here so that when Claude reports a limit, you know what to ask for by name in an Eden
+ticket rather than describing a symptom.
 
-## 4. Set channel instructions
+| Setting | Ask for it when |
+|---|---|
+| **Repositories** on the bundle | Claude cannot see a repository it should |
+| **Domains** on the bundle | A build needs a host that egress blocks. Egress is default-deny, though a new environment's Trusted level already covers common package registries, so ask only for what is genuinely needed |
+| **Claude Tag version** set to **New** | The channel behaves like the older version |
+| **Per-channel spend limit** | Before the first mention. Work that would exceed it is declined rather than silently truncated, so this bounds cost rather than surprising you with it |
+| **Channel member edits** set to **Block** | Channel instructions must not be edited away by members |
+| **Channel managers**, and the RBAC restriction toggle | Enterprise only. A non-Owner needs to add repositories and credentials for this channel, or only members holding the **Claude Tag in Slack** capability should be able to invoke Claude |
 
-**[Owner or Anyone]** Paste from `channel-instructions.md`. Instructions outrank channel memory,
+## 3. Set channel instructions
+
+**[Anyone]** Paste from `channel-instructions.md`. Instructions outrank channel memory,
 which makes them the right place for anything that must hold.
 
-**[Owner]** If they must not be edited away, set the scope's **Channel member edits** to **Block** —
+If they must not be edited away, request **Channel member edits: Block** per the table above —
 otherwise any channel member can change them from the Configure page.
 
-## 5. Prepare the repository
+## 4. Prepare the repository
 
 **[Repo]** A session starts with **no repository checked out** and clones one when a request names
 it. Once cloned, `CLAUDE.md`, `.claude/CLAUDE.md`, `.claude/rules/*.md`, `.claude/skills/`, and the
@@ -129,11 +135,12 @@ hooks in `.claude/settings.json` all load on the next turn.
    Hooks execute in the session; instructions only advise.
 
 A flat `PROJECT.md` rather than a work-tracking tool is a deliberate choice, not an oversight. Rebar
-is the alternative, and it expects `.env-id` and an op-cert signing key to persist across clones —
-which a per-thread sandbox cannot do. The pilot protocol states the conditions under which the flat
-file counts as having failed; adopt something heavier when one of those is observed, not before.
+is the obvious alternative, and it expects `.env-id` and an op-cert signing key to persist across
+clones — which a per-thread sandbox cannot do, since it keeps nothing between sessions. The pilot
+protocol states the conditions under which the flat file counts as having failed; adopt something
+heavier when one of those is observed, not before.
 
-## 6. Give non-engineers something clickable
+## 5. Give non-engineers something clickable
 
 A pull request is not a deliverable for someone who won't read a diff. Close that gap with a
 **hosted page** Claude publishes and keeps current. No infrastructure, no admin, no repository
@@ -168,7 +175,7 @@ preview whose migration fails. Answer that before wiring anything; a preview env
 silently serves a stale or half-migrated schema is worse than no preview, because it looks
 authoritative.
 
-## 7. First run
+## 6. First run
 
 **[Anyone]**
 
@@ -181,7 +188,7 @@ authoritative.
    plugins, and instructions when it starts. Connections and domain rules do apply mid-thread, but
    nothing else does.
 
-## 8. Decide now who owns it
+## 7. Decide now who owns it
 
 Skip this for a throwaway demo. Do not skip it for an internal tool.
 

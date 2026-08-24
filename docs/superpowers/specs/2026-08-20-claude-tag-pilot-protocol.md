@@ -12,11 +12,13 @@
 
 ## Why a pilot instead of a build
 
-The harness design in `2026-08-20-claude-tag-project-harness-design.md` was scoped for an
-engineering team and aimed at engineering risk: escalation through workflow files, unreviewed
-diffs, credential scope. For a non-engineer building a demo, that is not what goes wrong. What goes
-wrong is wasted effort and false confidence, and a draft pull request — that design's deliverable —
-is a dead end for someone who will never read a diff.
+This started as a harness design for an engineering team, aimed at engineering risk: escalation
+through workflow files, unreviewed diffs, credential scope. For a non-engineer building a demo, that
+is not what goes wrong. What goes wrong is wasted effort and false confidence, and a draft pull
+request — that design's deliverable — is a dead end for someone who will never read a diff. The
+design was removed rather than kept as a deferred document; it is recoverable from git history if an
+engineering-focused harness is ever wanted, and rebuilding it against a fresh reading of the
+platform would beat inheriting assumptions from a scope we did not pursue.
 
 Rather than redesign on a fresh guess about a different audience, run the flow natively and find out.
 
@@ -41,11 +43,13 @@ Scoped to internal work, so retention and Grid topology are out of scope here ra
    would otherwise argue for private is negligible. Check for Slack guests: Claude is off by default
    in any channel containing one.
 2. `navapbc/strata-documentation-engine` granted **from both directions**: the Claude GitHub App
-   configured on the GitHub organization with access to the repository, and an Eden ticket filed to
-   add that repository to a bundle attached **to that channel only**. Start this first. The second
-   half is a ticket rather than a console click, so it sets the pilot's earliest start date.
-3. A **per-channel spend limit** set before the first mention, so cost is measured rather than
-   discovered.
+   configured on the GitHub organization with access to the repository, and an Eden ticket to add
+   that repository to a bundle attached **to that channel only**. Start this first. The second half
+   is a ticket rather than a console click, so it sets the pilot's earliest start date.
+3. The same Eden ticket also asks for the channel's **Claude Tag version** set to **New** and a
+   **per-channel spend limit** in place before the first mention, so cost is measured rather than
+   discovered. Bundle these into one request rather than discovering them one at a time; each
+   round-trip costs another lead time.
 4. **Phase 1 only:** a **non-engineer driver.** If an engineer drives, the pilot learns nothing
    about the audience.
 5. **Phase 1 only:** an engineer available as spot-checker — not to do the work, but to
@@ -86,8 +90,12 @@ Verify each of these, and record what broke:
   than rendering only finished work.
 - `PROJECT.md` written in one thread is picked up by a second thread.
 - Cost per task, from the per-channel usage page.
-- How long the Eden ticket in precondition 2 took, end to end. That lead time belongs in
-  `claude-tag-kit/SETUP.md` so the next person plans around it instead of discovering it.
+- How long the Eden ticket in preconditions 2 and 3 took, end to end, and whether one ticket
+  covered everything or a second was needed. That lead time belongs in `claude-tag-kit/SETUP.md` so
+  the next person plans around it instead of discovering it.
+- Whether Claude's own error messages were specific enough to say which side of the grant was
+  missing. `SETUP.md` tells the reader to ask in the channel rather than guess; confirm that
+  actually works before a non-engineer depends on it.
 
 **Phase 1 — non-engineer pilot.** The hypotheses, the log, and the decision rule below. Runs only
 against a flow Phase 0 showed to work; measuring a non-engineer's experience of a broken flow teaches
@@ -124,9 +132,15 @@ A committed `PROJECT.md` in the repository is the state store for the pilot — 
 simplest thing that could work. Sections: Done, In flight, Decisions (dated), Blocked.
 
 Rebar is the obvious alternative and is deliberately not used here. Substituting it now would spend
-the finding this pilot exists to produce, and would import the ephemeral-sandbox problems the
-deferred harness design records: `.env-id` churn on every session, no place to hold an op-cert
-signing key, and a per-session install cost.
+the finding this pilot exists to produce, and would import problems a per-thread sandbox cannot
+solve. Rebar carries identity across runs in git-ignored files — `.env-id`, an op-cert signing key
+and its public half, `.ensure-applied` — and a Claude Tag sandbox keeps nothing between sessions and
+offers nowhere to hold a mode-`0600` private key. So every session mints a fresh environment
+identity, orphaning prior attestations; rebar warns and proceeds rather than failing, which means
+this degrades quietly rather than loudly. Its *store* would work unchanged — events are globally
+unique, union-merging, and deterministically replayed, and claim safety comes from UUID fork
+resolution rather than actor identity, so threads sharing one service identity still cannot double
+claim. It is the identity layer that does not survive, plus a per-session install cost.
 
 So state the tripwire in advance, rather than deciding after the fact whether the file "felt" like
 enough. The flat file has failed, and rebar is justified, if any of these shows up in the log:
