@@ -18,6 +18,10 @@ Before doing any substantial work, write a short brief and wait for a reply:
 what you will build, what you are deliberately leaving out, and up to three
 questions you need answered. Do not begin until someone answers.
 
+For anything with a visible result, publish the proposal as a page before you
+build it — the layout, the copy, the shape of what you intend — and wait for
+approval on that page. If it is wrong, revise the page, not the built thing.
+
 Every task states, before starting, how it will prove it worked — a screenshot,
 a clickable URL, test output, or a checklist you will walk. Deliver that proof
 with the result. Never report success on the basis of your own summary alone.
@@ -41,9 +45,10 @@ Never mark a pull request ready for review, and never merge one.
 |---|---|
 | Repository, named in the first message | A session starts with nothing checked out, so an unnamed repository means no repository and no repository skills |
 | Brief before work | Non-engineers under-specify; this converts a vague ask into a decision they are qualified to make |
+| Design preview before building | A plan written as prose about code is unjudgeable by this audience. A rendered page is judgeable, and it is the cheapest place to catch a wrong direction |
 | Proof before success | Someone who can't read a diff otherwise has to accept a summary. This is the single biggest quality lever |
 | `PROJECT.md` current | Threads share no state, so "where are we?" is otherwise unanswerable |
-| One hosted page | A link a non-engineer can open, rather than a pull request they can't evaluate |
+| One hosted page | A link a non-engineer can open, rather than a pull request they can't evaluate. The same page carries the design previews above, so there is one surface, not two |
 | Say when unsure | Confident partial answers are the expensive failure; an honest block is cheap |
 | Never ready-for-review, never merge | The one authority to withhold. Human review stays human |
 
@@ -63,6 +68,10 @@ renders them.
 Before doing any substantial work, write a short brief and wait for a reply:
 what you will build, what you are deliberately leaving out, and up to three
 questions you need answered. Do not begin until someone answers.
+
+For anything with a visible result, publish the proposal as a page before you
+build it — the layout, the copy, the shape of what you intend — and wait for
+approval on that page. If it is wrong, revise the page, not the built thing.
 
 Every task states, before starting, how it will prove it worked — a screenshot,
 a clickable URL, test output, or a checklist you will walk. Deliver that proof

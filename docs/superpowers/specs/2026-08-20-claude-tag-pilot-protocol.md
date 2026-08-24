@@ -40,7 +40,10 @@ Scoped to internal work, so retention and Grid topology are out of scope here ra
    The content here is a public repository's public documentation, so the memory-leak risk that
    would otherwise argue for private is negligible. Check for Slack guests: Claude is off by default
    in any channel containing one.
-2. `navapbc/strata-documentation-engine` granted in a bundle attached **to that channel only**.
+2. `navapbc/strata-documentation-engine` granted **from both directions**: the Claude GitHub App
+   configured on the GitHub organization with access to the repository, and an Eden ticket filed to
+   add that repository to a bundle attached **to that channel only**. Start this first. The second
+   half is a ticket rather than a console click, so it sets the pilot's earliest start date.
 3. A **per-channel spend limit** set before the first mention, so cost is measured rather than
    discovered.
 4. **Phase 1 only:** a **non-engineer driver.** If an engineer drives, the pilot learns nothing
@@ -79,22 +82,30 @@ Verify each of these, and record what broke:
 - `lint_manifest`, `lint_docs`, and `build_graph` run and print their sentinels.
 - A hosted page gets created, and a *later thread* updates that same page rather than posting a new
   one.
+- Claude will render a *proposed* change as a page and hold for approval before building it, rather
+  than rendering only finished work.
 - `PROJECT.md` written in one thread is picked up by a second thread.
 - Cost per task, from the per-channel usage page.
+- How long the Eden ticket in precondition 2 took, end to end. That lead time belongs in
+  `claude-tag-kit/SETUP.md` so the next person plans around it instead of discovering it.
 
 **Phase 1 — non-engineer pilot.** The hypotheses, the log, and the decision rule below. Runs only
 against a flow Phase 0 showed to work; measuring a non-engineer's experience of a broken flow teaches
 nothing about non-engineers.
 
-**Phase 2 — GitHub Pages.** A real public URL. The repository is public so Pages is free, but three
-constraints apply and none can be widened: a repository admin must enable Pages (it is off today),
-the workflow must trigger on `push` or `pull_request` because Claude cannot `workflow_dispatch`, and
-the `github-pages` environment must carry no protection rules because Claude cannot approve a pending
-deployment.
+There is no third phase. GitHub Pages was scoped as one and is dropped: it needs a repository admin
+to enable it, a workflow on `push` or `pull_request` because Claude cannot `workflow_dispatch`, and a
+`github-pages` environment with no protection rules because Claude cannot approve a pending
+deployment — and after all that it delivers a URL that a Claude-published hosted page already
+delivers to this audience. Adding deploy infrastructure to a flow whose value is still unproven only
+obscures which part failed.
 
-Pull Phase 2 forward into Phase 0 if the capability check goes smoothly — a clickable public URL is a
-better deliverable for the non-engineer phase than a claude.ai-hosted page. Otherwise leave it last,
-since adding deploy infrastructure to a flow that does not yet work only obscures which part failed.
+What replaces it is a gate rather than a destination, and it costs nothing to add. Claude renders the
+*proposed* change as a page first — layout, copy, the shape of the thing — and waits for approval
+before building it. This is a strictly better instrument than the prose brief for the audience under
+test: a non-engineer can judge a rendered page, and cannot judge a paragraph describing code they
+will never read. It is also the cheapest possible correction point, since a wrong direction is caught
+before the work rather than after it.
 
 ## The scaffold
 
@@ -112,18 +123,46 @@ change is a finding — it shows where the instructions read as friction rather 
 A committed `PROJECT.md` in the repository is the state store for the pilot — deliberately the
 simplest thing that could work. Sections: Done, In flight, Decisions (dated), Blocked.
 
-### Living page
+Rebar is the obvious alternative and is deliberately not used here. Substituting it now would spend
+the finding this pilot exists to produce, and would import the ephemeral-sandbox problems the
+deferred harness design records: `.env-id` churn on every session, no place to hold an op-cert
+signing key, and a per-session install cost.
 
-Ask Claude once to create a hosted page rendering the knowledge base and `PROJECT.md`, and to keep it
-current, then link it in
-the channel topic. This tests the highest-value adoption idea with no build at all.
+So state the tripwire in advance, rather than deciding after the fact whether the file "felt" like
+enough. The flat file has failed, and rebar is justified, if any of these shows up in the log:
 
-### Preview deploy
+- Two threads write conflicting state and a person has to reconcile `PROJECT.md` by hand.
+- A decision recorded in `PROJECT.md` is contradicted by a later thread that had read it.
+- The driver stops trusting the file — asks a person instead of reading it — for reasons other than
+  not knowing it exists.
 
-If the project can support it, wire the preview deploy to the `pull_request` trigger. Claude Tag
-cannot `workflow_dispatch` or approve a held run, but it *can* trigger `push` and `pull_request`
-workflows by opening a pull request. That turns "Claude opened a PR" into a clickable URL, which is
-the actual deliverable for this audience.
+None of those appearing across the logged tasks is evidence *for* the flat file, and it should be
+reported as such rather than passed over in silence.
+
+### Design preview and living page
+
+One hosted page, doing two jobs, with no build at all.
+
+**As a gate.** Before any substantial change, Claude renders the proposal as a page and waits for
+approval. What the driver approves or rejects at this step is the pilot's most direct read on
+hypothesis 1 — and rejections here are the valuable rows, because each one is a wrong direction that
+cost nothing.
+
+**As the deliverable.** The same page renders the knowledge base and `PROJECT.md`, kept current
+rather than reposted, linked from the channel topic.
+
+### Preview deploy — recorded, not built
+
+Out of scope for the pilot and worth keeping on the record, because the pilot's own zero-build rule
+forbids it and the idea will come back.
+
+Claude cannot `workflow_dispatch` or approve a held run, but it *can* trigger `push` and
+`pull_request` workflows by opening a pull request, so a per-pull-request preview deploy would turn
+"Claude opened a PR" into a clickable URL. The blocker is state rather than triggers: a demo app
+backed by a database needs migrations run against each preview environment, and there is no answer
+yet for who runs them or what happens when one fails half-applied. A preview serving a
+half-migrated schema is worse than no preview, since it looks authoritative. Resolve that before
+building this.
 
 ## What to record
 
@@ -133,6 +172,7 @@ One row per task, in a spreadsheet the driver owns. Ten tasks is a usable sample
 |---|---|
 | What was asked, verbatim | Distinguishes vague asks from precise ones |
 | Did the brief change the scope | Hypothesis 1 |
+| Was a design preview approved as-is, revised, or rejected | Hypothesis 1, and the cheapest correction point in the flow |
 | What proof was delivered | Hypothesis 2 |
 | Driver's verdict: worked / partly / no | Perceived quality |
 | Spot-checker's verdict, judged independently | Actual quality. The gap between these two columns is the finding. |
@@ -148,15 +188,16 @@ that needed an admin.
 
 | # | Hypothesis | Signal that confirms it | Signal that kills it |
 |---|---|---|---|
-| 1 | Non-engineers under-specify, and a forced brief fixes it | Briefs routinely change scope before work starts | Briefs are rubber-stamped and add only latency |
+| 1 | Non-engineers under-specify, and a forced brief plus a rendered design preview fixes it | Briefs change scope before work starts, or previews get revised or rejected | Both are rubber-stamped and add only latency |
 | 2 | They cannot tell whether it worked, and evidence-first fixes it | Driver and spot-checker verdicts diverge often; the gap narrows once proof is required | Verdicts agree, so the discipline is unnecessary |
 | 3 | Context is re-explained because threads share nothing | Frequent re-explaining, or Claude working from stale context | Channel memory and thread history suffice |
 | 4 | Decisions evaporate and get re-decided differently | Observed contradictions of earlier decisions | The decision log in `PROJECT.md` is never actually consulted |
 | 5 | Nobody can answer "where are we" unaided | Driver cannot answer it without asking Claude | The hosted page answers it and gets used |
-| 6 | Setup friction blocks adoption | Multiple admin round-trips before first result | Setup is self-service and quick |
+| 6 | Setup friction blocks adoption | Admin round-trips *beyond* the two structural ones — the GitHub App grant and the Eden ticket — before a first result | Nothing beyond those two, and both clear quickly |
 
-A flat `PROJECT.md` is itself under test. Concurrent edits conflicting, or two threads duplicating
-work, is the evidence that would justify rebar. Its absence is evidence against.
+A flat `PROJECT.md` is itself under test, against the tripwire stated under **State file** above.
+Judge it against those three conditions rather than against a general impression, and report their
+absence as evidence for the flat file rather than passing over it.
 
 ## Duration and decision rule
 

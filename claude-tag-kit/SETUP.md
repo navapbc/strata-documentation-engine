@@ -3,8 +3,10 @@
 How to stand up a Slack channel plus GitHub repository where non-engineers can build a project with
 Claude Tag and evaluate the result themselves.
 
-Roles are marked on each step: **[Owner]** needs the Owner role in your Claude organization,
-**[Repo]** needs write access to the repository, **[Anyone]** is any channel member.
+Roles are marked on each step: **[GitHub org]** needs owner access to the GitHub organization,
+**[Eden]** goes through an Eden ticket rather than a console you control, **[Owner]** needs the Owner
+role in your Claude organization, **[Repo]** needs write access to the repository, **[Anyone]** is any
+channel member.
 
 ## Scope: demos and internal tools
 
@@ -28,21 +30,22 @@ before any client use:
 Claude Tag is Team and Enterprise only, on Anthropic's first-party service, and your Claude
 organization must be paired to your Slack workspace.
 
-## 1. Link GitHub — once per organization
+Two organization-level steps are done once and are **already done at Nava**: GitHub is linked at
+[`claude.ai/admin-settings/github`](https://claude.ai/admin-settings/github), and the Claude Tag
+usage balance is funded with an organization spend limit at
+[`claude.ai/admin-settings/usage/claude-tag`](https://claude.ai/admin-settings/usage/claude-tag).
+Confirm the balance is funded before you start, because on Team plans Claude will not respond in a
+channel at all until it is. Neither step is repeated per channel.
 
-**[Owner]** At [`claude.ai/admin-settings/github`](https://claude.ai/admin-settings/github), connect
-Claude to GitHub. The person completing this must be **both** an owner of the GitHub organization and
-an Admin in the Claude organization. A greyed-out **Link** button means you aren't a GitHub org
-owner; the page has a **Copy message** button to send someone who is.
+## 1. Create the channel
 
-**[Owner]** Fund the usage balance and set an organization spend limit at
-[`claude.ai/admin-settings/usage/claude-tag`](https://claude.ai/admin-settings/usage/claude-tag). On
-Team plans Claude won't respond in channels at all until the balance is funded.
+**[Anyone]** Create a **new** Slack channel with `claude-tag` in its name, then `/invite @Claude`.
 
-## 2. Create the channel
-
-**[Anyone]** Create the Slack channel, then `/invite @Claude`. Installing the app adds Claude to no
-channels; it responds only where it has been invited and addressed.
+Both halves of that matter. Create a new channel rather than reusing one, because access is granted
+by attaching a bundle to a channel: point one at a busy existing channel and everyone already in it
+inherits that access. Put `claude-tag` in the name so the channel is unmistakable next to
+similarly-named ones and its purpose is legible to anyone who finds it. Installing the app adds
+Claude to no channels; it responds only where it has been invited and addressed.
 
 Choosing public or private is a real trade-off, not a formality:
 
@@ -63,25 +66,41 @@ Two things you cannot change: Claude never operates in Slack Connect channels sh
 company, and it is off by default in any channel containing a Slack guest (allow it explicitly per
 scope if needed, though workspace search stays unavailable there).
 
-## 3. Give the channel access
+## 2. Grant the repository — from both directions
 
-**[Owner]** At [`claude.ai/admin-settings/claude-tag`](https://claude.ai/admin-settings/claude-tag):
+Repository access has to be set from two sides, and neither one alone is enough. Start this early:
+the second half is a ticket, not a click, so it carries a lead time the rest of the setup does not.
 
-1. Create an Access bundle and attach it **to this channel only** — not to the workspace, and not to
-   Default Slack access. Isolation comes from where you attach a bundle, not from the bundle itself.
-   A bundle on a *public* channel grants its access to anyone who joins.
-2. On the bundle's **Repositories** tab, add the repository.
-3. On the **Domains** tab, add only hosts the project genuinely needs. Egress is default-deny, and a
-   new environment's Trusted access level already covers common package registries.
-4. Set the channel scope's **Claude Tag version** to **New**.
-5. Set a **per-channel spend limit**. Work that would exceed it is declined rather than silently
+1. **[GitHub org]** Configure the Claude GitHub App on the GitHub organization and grant it the
+   repository. This is what lets the repository be reached by Claude at all.
+2. **[Eden]** File an Eden ticket to add that repository to the Claude Tag access bundle for this
+   channel. This is what lets *this channel's* Claude see it. Name the channel in the ticket, and
+   ask that the bundle be attached **to this channel only** — not to the workspace, and not to
+   Default Slack access. Isolation comes from where a bundle is attached, not from the bundle
+   itself, and a bundle on a *public* channel grants its access to anyone who joins.
+
+Granting only the GitHub side leaves Claude unable to clone. Granting only the Claude Tag side
+leaves it able to name the repository and unable to read it. Both failures look like "Claude cannot
+find the repo," so check both before debugging anything else.
+
+## 3. Configure the channel scope
+
+**[Owner]** At [`claude.ai/admin-settings/claude-tag`](https://claude.ai/admin-settings/claude-tag),
+on the scope for this channel:
+
+1. On the bundle's **Domains** tab, add only hosts the project genuinely needs. Egress is
+   default-deny, and a new environment's Trusted access level already covers common package
+   registries.
+2. Set the channel scope's **Claude Tag version** to **New**.
+3. Set a **per-channel spend limit**. Work that would exceed it is declined rather than silently
    truncated.
 
 **[Owner]** Optional, Enterprise only: name **channel managers** so a non-Owner can add repositories
 and credentials for this channel, and turn on the RBAC restriction toggle if only members holding the
 **Claude Tag in Slack** capability should be able to invoke Claude.
 
-**[Anyone]** Verify by asking in the channel: `@Claude what can you access from this channel?`
+**[Anyone]** Verify by asking in the channel: `@Claude what can you access from this channel?` If the
+repository is missing here, one of the two grants in step 2 has not landed.
 
 ## 4. Set channel instructions
 
@@ -109,25 +128,45 @@ hooks in `.claude/settings.json` all load on the next turn.
 4. **`.claude/settings.json` hooks**, if anything must be refused rather than merely discouraged.
    Hooks execute in the session; instructions only advise.
 
+A flat `PROJECT.md` rather than a work-tracking tool is a deliberate choice, not an oversight. Rebar
+is the alternative, and it expects `.env-id` and an op-cert signing key to persist across clones —
+which a per-thread sandbox cannot do. The pilot protocol states the conditions under which the flat
+file counts as having failed; adopt something heavier when one of those is observed, not before.
+
 ## 6. Give non-engineers something clickable
 
-A pull request is not a deliverable for someone who won't read a diff. Two ways to close that gap:
+A pull request is not a deliverable for someone who won't read a diff. Close that gap with a
+**hosted page** Claude publishes and keeps current. No infrastructure, no admin, no repository
+settings; visibility follows the channel, per step 1.
 
-**A hosted page**, published by Claude and kept current. No infrastructure and no admin. Visibility
-follows the channel, per step 2. Start here.
+Use it twice, for two different jobs:
 
-**A deployed preview.** Claude can trigger `push` and `pull_request` workflows by pushing a branch or
-opening a pull request, so a preview deploy behind those triggers turns a pull request into a URL.
-Two constraints, both fixed and unwidenable:
+- **Before building**, as the design gate. Ask for the proposed change rendered as a page — the
+  layout, the copy, the shape of the thing — and approve that before any code is written. A
+  non-engineer can judge a rendered page; they cannot judge a plan written as prose about code.
+- **After building**, as the living deliverable. One page per project, updated rather than reposted,
+  linked from the channel topic.
 
-- Claude **cannot** dispatch a workflow. Never put the deploy behind `workflow_dispatch` or
-  `repository_dispatch`.
-- Claude **cannot** approve a run awaiting approval or a pending deployment. If the deploy
-  environment has protection rules or required reviewers, every deploy hangs until a person clicks
-  approve. Leave it unprotected, or accept the manual step.
+That is the whole clickable story for a demo or an internal tool. Deliberately no GitHub Pages: it
+needs a repository admin to enable it, a workflow on `push` or `pull_request`, and an unprotected
+`github-pages` environment, and it buys nothing a hosted page does not already give this audience.
 
-**[Repo]** For GitHub Pages specifically, a repository admin must enable Pages once; it is off by
-default.
+### Possible future deliverable: a preview deploy
+
+Recorded here rather than built, because it is genuinely useful and genuinely unresolved.
+
+Claude can trigger `push` and `pull_request` workflows by pushing a branch or opening a pull
+request, so a per-pull-request preview deploy would turn a pull request into a URL. Two constraints
+are fixed and unwidenable: Claude **cannot** dispatch a workflow, so the deploy must never sit
+behind `workflow_dispatch` or `repository_dispatch`; and Claude **cannot** approve a run awaiting
+approval or a pending deployment, so a deploy environment with protection rules or required
+reviewers hangs until a person clicks approve.
+
+The unresolved part is state, not triggers. A demo app backed by a database needs migrations run
+against each preview environment, and nothing here says who runs them, when, or what happens to a
+preview whose migration fails. Answer that before wiring anything; a preview environment that
+silently serves a stale or half-migrated schema is worse than no preview, because it looks
+authoritative.
 
 ## 7. First run
 
