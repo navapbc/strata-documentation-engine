@@ -110,11 +110,12 @@ ticket rather than describing a symptom.
 
 ## 3. Set channel instructions
 
-**[Anyone]** Paste from `channel-instructions.md`. Instructions outrank channel memory,
-which makes them the right place for anything that must hold.
+**[Anyone]** Ask Claude in the channel for the link: `@Claude link me to this channel's Configure
+page so I can set channel instructions`. It replies with a direct link to the Configure page for
+this channel, which is faster and less error-prone than navigating claude.ai by hand. Open the link
+and paste the text from `channel-instructions.md` into the instructions field — not into memory.
 
-If they must not be edited away, request **Channel member edits: Block** per the table above —
-otherwise any channel member can change them from the Configure page.
+Instructions outrank channel memory, which makes them the right place for anything that must hold.
 
 ## 4. Prepare the repository
 
