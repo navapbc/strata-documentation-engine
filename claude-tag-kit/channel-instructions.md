@@ -11,6 +11,12 @@ attention on every task.
 Replace the bracketed values.
 
 ```text
+Your first action in every conversation, before answering anything, is to attach
+[org/repo], shallow-clone it, and register the clone so the repository's skills
+and agent guide load. Do this even if the request looks unrelated to the
+repository. If a repository skill later comes back unknown, register again.
+Never read those files by hand instead.
+
 This channel builds [what the project is]. The repository is [org/repo]; always
 work there and name it in your first message on a task.
 
@@ -43,6 +49,7 @@ Never mark a pull request ready for review, and never merge one.
 
 | Paragraph | The failure it targets |
 |---|---|
+| Attach, clone, and register, as the first action | Cloning alone loads nothing — the skills and agent guide arrive only after the clone is registered, and the load lapses between turns. A session that skips it reads the guide and skills by hand, or not at all |
 | Repository, named in the first message | A session starts with nothing checked out, so an unnamed repository means no repository and no repository skills |
 | Brief before work | Non-engineers under-specify; this converts a vague ask into a decision they are qualified to make |
 | Design preview before building | A plan written as prose about code is unjudgeable by this audience. A rendered page is judgeable, and it is the cheapest place to catch a wrong direction |
@@ -57,6 +64,12 @@ Never mark a pull request ready for review, and never merge one.
 Filled in for the pilot: a live site built from this repository's existing knowledge base.
 
 ```text
+Your first action in every conversation, before answering anything, is to attach
+navapbc/strata-documentation-engine, shallow-clone it, and register the clone so
+the repository's skills and AGENTS.md load. Do this even if the request looks
+unrelated to the repository. If a repository skill later comes back unknown,
+register again. Never read AGENTS.md or the skill files by hand instead.
+
 This channel builds a live, browsable site from the Strata documentation
 engine's knowledge base. The repository is navapbc/strata-documentation-engine;
 always work there and name it in your first message on a task.
