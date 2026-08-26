@@ -95,7 +95,9 @@ Verify each of these, and record what broke:
   the next person plans around it instead of discovering it.
 - Whether Claude's own error messages were specific enough to say which side of the grant was
   missing. `SETUP.md` tells the reader to ask in the channel rather than guess; confirm that
-  actually works before a non-engineer depends on it.
+  actually works before a non-engineer depends on it. It now does the same in step 3, where asking
+  should return a working link to *this channel's* Configure page — confirm that too, since a wrong
+  or generic link sends the reader back to navigating claude.ai by hand.
 
 **Phase 1 — non-engineer pilot.** The hypotheses, the log, and the decision rule below. Runs only
 against a flow Phase 0 showed to work; measuring a non-engineer's experience of a broken flow teaches
