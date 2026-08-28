@@ -129,8 +129,14 @@ hooks in `.claude/settings.json` all load on the next turn.
 2. **`PROJECT.md`** — the project's state: what's done, what's in flight, what was decided and when,
    what's blocked. This is what makes "where are we?" answerable across threads, since threads share
    no state.
-3. **Branch protection on the default branch** — require a pull request, a human approval, and
-   passing checks; no force-push.
+3. **Branch protection on the default branch** — require a pull request and passing checks; no
+   force-push. Deliberately do **not** require an approving review. The channel instructions let
+   Claude mark a pull request ready and merge it once a dispatched Opus subagent has reviewed the
+   branch, and a required approval blocks that merge — the pull request then sits until an engineer
+   happens by, which is the stall this audience cannot absorb. Required checks are the gate that
+   still works, because they judge the artifact rather than who pushed it. If you want a human
+   approval instead, that is a defensible choice: reinstate it here and drop the merge paragraph
+   from `channel-instructions.md`, so the two do not contradict each other.
 4. **`.claude/settings.json` hooks**, if anything must be refused rather than merely discouraged.
    Hooks execute in the session; instructions only advise.
 
