@@ -119,8 +119,10 @@ otherwise any channel member can change them from the Configure page.
 ## 4. Prepare the repository
 
 **[Repo]** A session starts with **no repository checked out** and clones one when a request names
-it. Once cloned, `CLAUDE.md`, `.claude/CLAUDE.md`, `.claude/rules/*.md`, `.claude/skills/`, and the
-hooks in `.claude/settings.json` all load on the next turn.
+it. Cloning alone loads nothing, though: the session must also register the clone, after which
+`CLAUDE.md`, `.claude/CLAUDE.md`, `.claude/rules/*.md`, `.claude/skills/`, and the hooks in
+`.claude/settings.json` load on the next turn. That load can lapse after a few turns, so a session
+may have to register the clone again mid-task.
 
 1. **`CLAUDE.md`** — write dependency installs as preconditions of the work they support ("install
    the SDK before building or running tests"). There is no setup script and the sandbox is fresh
@@ -185,8 +187,9 @@ authoritative.
 
 **[Anyone]**
 
-1. **Name the repository in the first message** of any code task. Claude clones what the request
-   names, and repository skills don't exist in the session until it does.
+1. **Name the repository in the first message** of any code task. Claude attaches and clones what
+   the request names and then registers the clone; repository skills don't exist in the session
+   until it has.
 2. Ask for something small and verifiable, and check that the reply includes proof rather than a
    claim.
 3. Confirm the model in the footer of Claude's reply.
@@ -219,7 +222,9 @@ Most confusion in a new channel traces to one of these.
 - **Editing a message does not steer Claude.** It reads a note about the edit and won't act on it.
   Say the change in a new reply instead.
 - **`.mcp.json` is never loaded.** Connections come only from the Access bundle.
-- **Repository skills apply only in sessions that cloned that repository.** To give a skill to every
+- **Cloning a repository does not load its skills — the session must also register the clone.**
+  Repository skills apply only in the session that did both, and the load can lapse between turns:
+  when a repository skill comes back unknown, register the clone again. To give a skill to every
   channel under a scope, use a skills repository registered as a plugin marketplace.
 - **Claude may reply without being mentioned** when it judges a reply is warranted. Tell it to stay
   quiet in a thread if that's unwanted.
