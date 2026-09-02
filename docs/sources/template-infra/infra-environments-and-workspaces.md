@@ -2,6 +2,7 @@
 id: infra-environments-and-workspaces
 title: Environments, Workspaces, and Temporary Environments
 source: template-infra
+verified: ok
 doc_type: guide
 tags: [infra, environments, workspaces, pull-request-environments, terraform, deployment]
 related: [infra-overview, infra-module-architecture, infra-getting-started, infra-database]
@@ -9,7 +10,7 @@ integrates_with: [template-application-rails]
 summary: The standing dev/staging/prod environments plus the temporary environments — Terraform workspaces, per-pull-request environments, and how out-of-band resources are shared or excluded.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: d2b569e3eef126514745b0e0e5d92a8739d0c6f2
+  ref: 80a7cc8ec802c442098933f65280175b8453c659
   paths:
     - infra/README.md
     - docs/infra/staging-and-production-environments.md
@@ -17,8 +18,7 @@ source_ref:
     - docs/infra/pull-request-environments.md
     - docs/infra/temporary-environments-and-out-of-band-resources.md
     - docs/infra/destroy-infrastructure.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Environments, Workspaces, and Temporary Environments

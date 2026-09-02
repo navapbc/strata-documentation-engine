@@ -100,4 +100,3 @@ end
 The `submit_application` method, along with the `submitted?`, `status`, and `submitted_at`
 accessors used by the show/review/index views, comes from `Strata::ApplicationForm` — they are not
 defined in the app.
-</content>

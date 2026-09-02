@@ -5,8 +5,23 @@ Source: .sources/template-infra-azure
 
 ## Result
 
-No unsupported, inaccurate, or outdated claims found. The doc is fully supported
-by its eight cited source files.
+One low-severity staleness finding (inherited from the source doc). The doc is
+otherwise fully supported by its eight cited source files.
+
+### Finding 1 — Workflow name `ci-vulnerability-scans` does not match repo files (low)
+
+- **Claim:** "a `ci-vulnerability-scans` GitHub workflow scans Docker images before
+  they are pushed."
+- **Issue:** Faithful to the source doc (vulnerability-management.md says
+  "named `ci-vulnerability-scans`"), but the checkout has no such file. The
+  reusable workflow is `.github/workflows/vulnerability-scans.yml` (display name
+  "Vulnerability Scans"), invoked per app by the templated
+  `ci-{{app_name}}-vulnerability-scans.yml.jinja` caller.
+- **Evidence:** `.github/workflows/vulnerability-scans.yml:6`;
+  `.github/workflows/ci-{{app_name}}-vulnerability-scans.yml.jinja`.
+- **Suggested fix:** Describe the scans as running via the reusable
+  `vulnerability-scans.yml` workflow, invoked per app by a
+  `ci-<app_name>-vulnerability-scans` caller.
 
 Spot-checks performed:
 

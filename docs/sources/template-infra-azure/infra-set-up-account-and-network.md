@@ -2,6 +2,7 @@
 id: infra-azure-set-up-account-and-network
 title: Set up the Azure account and network
 source: template-infra-azure
+verified: ok
 doc_type: guide
 tags: [infra, azure, terraform, account, network, github, oidc, setup]
 related: [infra-azure-overview, infra-azure-domains-and-https, infra-azure-set-up-database-and-service, infra-azure-access-control-and-operations]
@@ -9,7 +10,7 @@ integrates_with: [template-application-rails]
 summary: How to install developer tools and stand up the account layer (Terraform backend, GitHub OIDC, container registry) and network layer (VNet, subnets, private DNS, Container App Environment) for the Azure infra template.
 source_ref:
   repo: https://github.com/navapbc/template-infra-azure
-  ref: f930f2ba39be8ab6a55eaa0b538ad96def2e331b
+  ref: e10a383c4871d6eab3999baf63a01e5bd5a81f4c
   paths:
     - docs/infra/set-up-infrastructure-tools.md
     - docs/infra/set-up-azure-account.md
@@ -17,9 +18,9 @@ source_ref:
     - docs/infra/set-up-network.md
     - infra/accounts/main.tf
     - infra/project-config/main.tf.jinja
+    - infra/project-config/networks.tf
     - Makefile
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Set up the Azure account and network
@@ -122,9 +123,9 @@ network. (Source: `docs/infra/set-up-network.md`.)
 [custom domains](infra-azure-domains-and-https.md) and [HTTPS support](infra-azure-domains-and-https.md)
 are configured; networks are defined in `infra/project-config/networks.tf`; and the app is configured
 in `infra/<APP_NAME>/app-config/main.tf`, where you must set `has_database` (true/false — controls
-whether VPC endpoints for the database layer are created) and `network_name` per environment (so each
-network receives the right app configuration; an incorrect `network_name` can cause the network layer
-to miss settings like `has_database`).
+whether the endpoints needed by the database layer are created) and `network_name` per environment (so
+each network receives the right app configuration; an incorrect `network_name` can cause the network
+layer to miss settings like `has_database`).
 
 ### Network configuration
 
@@ -162,5 +163,3 @@ network **before** updating or deploying the downstream database/service layers.
 With the account and network in place, proceed per application to
 [set up the database and service](infra-azure-set-up-database-and-service.md). Custom domains and
 TLS are covered in [domains and HTTPS](infra-azure-domains-and-https.md).
-</content>
-</invoke>

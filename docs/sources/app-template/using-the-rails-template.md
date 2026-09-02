@@ -2,26 +2,25 @@
 id: app-template-using-the-rails-template
 title: Using the Rails application template
 source: app-template
+verified: ok
 doc_type: guide
 tags: [rails, template, copier, nava-platform, scaffold]
 related: [app-template-setting-up-a-new-rails-project]
 component_keys: [template-application-rails]
-integrates_with: [template-infra]
+integrates_with: [template-infra, template-infra-azure]
 summary: How to install, configure, and update the Nava Rails application template into a project using the nava-platform CLI.
 source_ref:
   repo: https://github.com/navapbc/template-application-rails
-  ref: 29a54e3206e36018997b54b74bdd2349ddfad984
+  ref: 6cc244340dff39d0cdb333ea5e10abf6cfcd7722
   paths:
     - README.md
     - copier.yml
     - template/{{app_name}}/README.md.jinja
     - template/{{app_name}}/Makefile.jinja
     - template/{{app_name}}/local.env.example.jinja
-    - template/{{app_name}}/config/database.yml
     - template/{{app_name}}/config/initializers/database_auth.rb
     - template-only-docs/Deployment.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Using the Rails application template
@@ -40,7 +39,8 @@ and a project may host more than one application (each installation is keyed by 
   generated `Makefile` uses `docker`; set `CONTAINER_CMD=finch` to override
   (`template/{{app_name}}/Makefile.jinja`).
 - For deployed environments using the default configuration: an AWS account with a Cognito User
-  Pool and App Client (the template configures authentication via AWS Cognito by default).
+  Pool and App Client (the template configures authentication via AWS Cognito by default), or an
+  Azure subscription as an alternative.
 
 ## Installing the template
 
@@ -104,11 +104,14 @@ lint` for CI tasks, and `make rails-generate GENERATE_COMMAND="..."` to run Rail
 
 ## Deploying
 
-The template is designed to deploy on the Nava Platform infrastructure template
-(`template-infra`); see `template-only-docs/Deployment.md`. Install the matching infra-app template
-with the **same `<APP_NAME>`** using the `nava-platform` CLI, then set the application's
-configuration (e.g. `enable_identity_provider`, `enable_https`, `SECRET_KEY_BASE`, and
-`DB_AUTH_METHOD`) in the generated `infra/<APP_NAME>/app-config/` Terraform.
+The template is designed to deploy on a Nava Platform infrastructure template — either the AWS
+template (`template-infra`) or the Azure template (`template-infra-azure`); see
+`template-only-docs/Deployment.md`. Install the matching infra-app template with the
+**same `<APP_NAME>`** using the `nava-platform` CLI, then set the application's configuration (e.g.
+`enable_identity_provider`, `enable_https`, `SECRET_KEY_BASE`, and `DB_AUTH_METHOD`) in the generated
+`infra/<APP_NAME>/app-config/` Terraform. `DB_AUTH_METHOD=aws_iam` selects RDS IAM auth on AWS;
+`DB_AUTH_METHOD=azure_entra` (plus `AZURE_DB_RESOURCE_URI`) selects Microsoft Entra ID auth on Azure
+(`template/{{app_name}}/config/initializers/database_auth.rb`).
 
 ## Updating the template
 

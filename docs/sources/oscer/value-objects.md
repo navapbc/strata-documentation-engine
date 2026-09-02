@@ -2,6 +2,7 @@
 id: example-oscer-value-objects
 title: OSCER — value objects
 source: oscer
+verified: ok
 doc_type: example
 tags: [example-app, oscer, value-object, immutable, equality]
 related:
@@ -9,21 +10,24 @@ related:
   - example-oscer-attributes
   - example-oscer-determinations
 demonstrates: [value-object]
-summary: How OSCER subclasses Strata::ValueObject for Member and MemberStatus, including the attribute-based equality/blank/serialization contract.
+integrates_with: [documentai-api]
+summary: How OSCER subclasses Strata::ValueObject for Member, MemberStatus, and DocAiResult, including the attribute-based equality/blank/serialization contract.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: a4fc94b35ed737d20ca4530efe20d579ce5f0d53
+  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
   paths:
     - reporting-app/app/models/member.rb
     - reporting-app/app/models/member_status.rb
-verified: ok
-last_documented: 2026-06-29
+    - reporting-app/app/models/doc_ai_result.rb
+    - reporting-app/app/adapters/doc_ai_adapter.rb
+last_documented: 2026-07-21
 ---
 
 # OSCER — value objects
 
-OSCER uses `Strata::ValueObject` for read-only domain values that are derived from aggregates rather
-than persisted on their own. Two examples are `Member` and `MemberStatus`.
+OSCER uses `Strata::ValueObject` for read-only domain values that are derived from aggregates (or
+from an external response) rather than persisted on their own. Three examples are `Member`,
+`MemberStatus`, and `DocAiResult`.
 
 ## Member
 
@@ -91,4 +95,38 @@ are defined over its `strata_attribute` set.
 
 Validations work as on any `ActiveModel` object, and the value object adds derived query methods
 (`dashboard_report_status`, `certification_period_completed?`) over its attributes.
-</content>
+
+## DocAiResult — wrapping an external response
+
+`DocAiResult < Strata::ValueObject` (`app/models/doc_ai_result.rb`) is a value object over a document
+extraction response returned by the `documentai-api` sidecar. `DocAiAdapter`
+(`app/adapters/doc_ai_adapter.rb`) posts a document to the sidecar's `v1/documents` endpoint, and
+`DocAiResult.from_response` dispatches the JSON envelope into the value object:
+
+```ruby
+class DocAiResult < Strata::ValueObject
+  include Strata::Attributes
+
+  strata_attribute :job_id, :string
+  strata_attribute :status, :string
+  strata_attribute :matched_document_class, :string
+  strata_attribute :message, :string
+  strata_attribute :created_at, :datetime
+  strata_attribute :completed_at, :datetime
+  strata_attribute :total_processing_time_seconds, :float
+  strata_attribute :error, :string           # present when status == "failed"
+  strata_attribute :additional_info, :string # present when status == "failed"
+
+  # Factory: dispatches to the registered subclass for the matchedDocumentClass
+  def self.from_response(response)
+    klass = REGISTRY.fetch(response["matchedDocumentClass"], DocAiResult)
+    klass.build(response)
+  end
+end
+```
+
+Beyond the `strata_attribute` envelope, `DocAiResult` keeps the raw extracted `fields` hash in a
+plain `attr_reader` (frozen in `build`) — the same "plain accessor for non-primitive data" pattern
+`MemberStatus` uses for `latest_determination`. It shows a value object used as the boundary type for
+an external integration rather than an internal projection. (The broader DocAI pipeline is
+app-specific and out of SDK scope; only the `Strata::ValueObject` usage is documented here.)

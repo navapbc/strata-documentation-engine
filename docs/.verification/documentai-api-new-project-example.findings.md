@@ -1,30 +1,33 @@
-# Verification findings for: documentai-api-new-project-example
+# Verification findings: documentai-api-new-project-example (round 2)
 
-**Round:** 2 (Final)
-**Source:** .sources/documentai-api (ref a8170b5ad1dedf652b65e93949c410a941a1d5e4)
-**Status:** All claims verified
+Doc: `docs/sources/documentai-api/new-project-example.md`
+Source: `.sources/documentai-api` @ `7c7f30c78f26f4d3708539b30cfb7acfd2ec2e7b`
 
 ## Summary
 
-This doc walks through installing and running the DocumentAI API template. After careful examination of the source files (copier.yml, Makefile, template structure, README, and source code), all claims in the documentation are supported by the source code.
+All claims in the doc are accurate and fully supported by the source. Round 1 finding has been resolved.
 
-## Verified claims
+Verified accurate:
 
-- Installation command (`nava-platform app install --template-uri ...`) matches README.md
-- Prompt variables (`app_name`, `app_local_port`) accurately reflect copier.yml configuration
-- Default port value of 8000 is correct (copier.yml line 15)
-- `app_name` regex pattern (`^[a-z0-9\-_]+$`) matches copier.yml validator (line 8)
-- Project structure accurately reflects template/ directory contents
-- Makefile commands (`make init`, `make start`) are accurately described
-- `make init` flow (setup-env → docker compose build) is correct
-- Local environment file includes `API_AUTH_INSECURE_SHARED_KEY=local-dev-key` (local.env.example.jinja line 4)
-- API endpoint path `/v1/documents` is correct (app.py)
-- API authentication header name `API-Key` is correct (constants.py)
-- Curl examples match the application's API design
-- Template files mentioned in frontmatter all exist at specified paths
-- docs/ and .github/ directories render correctly from template structure
-- All utility modules, services, jobs, and logging modules are present and correctly listed
+- Install command matches upstream `README.md` install section.
+- `copier.yml` declares exactly two answerable variables (`app_name`, `app_local_port`);
+  the `app_name` regex `^[a-z0-9\-_]+$` and `app_local_port` default `8000` are correct.
+- `_subdirectory: template` and the `_answers_file` disablement comment are accurate.
+- `make init` -> `setup-env` (`@test -f .env || cp local.env.example .env`) then
+  `docker compose build`; `make start` -> `docker compose up --renew-anon-volumes --detach`.
+  Matches `Makefile.jinja`.
+- `local.env.example.jinja` sets `API_AUTH_INSECURE_SHARED_KEY=local-dev-key` and
+  `PORT={{ app_local_port }}` (default 8000); localhost:8000 is correct.
+- Smoke-test: `POST /v1/documents`, `API-Key` header (`APIConfig.AUTH_KEY_HEADER_NAME`),
+  `category=income` (valid `DocumentCategory.INCOME`), async returns `jobId`
+  (camelCase alias of `job_id` via `BaseApiResponse`), poll `GET /v1/documents/{job_id}`.
+  All confirmed in `app.py`, `constants.py`, `api_responses.py`, `base.py`.
+- src tree (config, jobs, logging, models, services, schemas, utils, cli, app.py, main.py)
+  matches the actual source layout.
+- docs/ subtree (line 78): now correctly lists all rendered files including
+  `accessing-real-aws-resources-from-docker.md`, `api-authentication.md`,
+  `writing-tests.md`, `diagrams/`, and `media/`. Matches actual template structure.
 
-## No issues found
+## Findings
 
-The documentation is accurate and fully supported by the source repository.
+None. The document is fully verified and all claims are supported by the source.

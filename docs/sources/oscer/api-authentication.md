@@ -2,6 +2,7 @@
 id: example-oscer-api-authentication
 title: OSCER — HMAC API authentication
 source: oscer
+verified: ok
 doc_type: example
 tags: [example-app, oscer, auth, hmac, api]
 related:
@@ -11,14 +12,13 @@ demonstrates: [auth]
 summary: How OSCER authenticates inbound API requests with the SDK's HMAC strategy via Strata::ApiAuthenticator and Strata::Auth::Strategies::Hmac.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: a4fc94b35ed737d20ca4530efe20d579ce5f0d53
+  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
   paths:
     - reporting-app/app/controllers/concerns/api_hmac_authentication.rb
     - reporting-app/app/controllers/api_controller.rb
     - reporting-app/app/controllers/api/direct_uploads_controller.rb
     - reporting-app/app/models/api/client.rb
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # OSCER — HMAC API authentication
@@ -65,8 +65,8 @@ SDK pieces in use:
   clean `401` JSON body.
 
 On success the concern sets `@current_api_client = Api::Client.new`, an authenticated client
-principal (`Api::Client#state_system?` returns `true`) that Pundit uses as `pundit_user` for API
-authorization.
+principal (`Api::Client#state_system?` returns `true`; its `staff?`/`member?`/`admin?` all return
+`false`) that Pundit uses as `pundit_user` for API authorization.
 
 ## Why a shared concern
 
@@ -74,13 +74,13 @@ The concern is `include`d by two controllers with different base classes that ca
 inheritance chain:
 
 - `ApiController < ActionController::Metal` (`app/controllers/api_controller.rb`) — the main JSON API;
-  it sets `pundit_user` to `@current_api_client` and runs `before_action :authenticate_api_request!`.
+  it `include`s `Pundit::Authorization`, sets `pundit_user` to `@current_api_client`, and runs
+  `before_action :authenticate_api_request!`.
 - `Api::DirectUploadsController < ActiveStorage::DirectUploadsController`
   (`app/controllers/api/direct_uploads_controller.rb`) — presigned-upload endpoint; it
-  `skip_before_action :authenticate_user!` (so Devise session auth doesn't pre-empt) and runs the
-  same HMAC `before_action` instead.
+  `skip_before_action :authenticate_user!` (so a Devise `authenticate_user!` monkey-patched onto the
+  parent doesn't pre-empt HMAC) and runs the same HMAC `before_action` instead.
 
 This keeps a single HMAC entry point across both controller families while reusing the SDK's auth
 strategy and error types. (The member/staff Cognito/OIDC and Devise authentication under
 `app/adapters/auth/` and `app/forms/users/` is app-specific and not part of the SDK auth surface.)
-</content>

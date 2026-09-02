@@ -2,6 +2,7 @@
 id: infra-azure-set-up-database-and-service
 title: Set up the application database and service
 source: template-infra-azure
+verified: ok
 doc_type: guide
 tags: [infra, azure, terraform, database, postgres, service, container-apps, secrets, background-jobs]
 related: [infra-azure-overview, infra-azure-set-up-account-and-network, infra-azure-domains-and-https, infra-azure-access-control-and-operations]
@@ -9,17 +10,17 @@ integrates_with: [template-application-rails]
 summary: How to provision an application's per-environment database layer (PostgreSQL flexible server, role manager, Postgres roles) and service layer (Container App, migrations, environment variables, secrets, background jobs) with the Azure infra template.
 source_ref:
   repo: https://github.com/navapbc/template-infra-azure
-  ref: f930f2ba39be8ab6a55eaa0b538ad96def2e331b
+  ref: e10a383c4871d6eab3999baf63a01e5bd5a81f4c
   paths:
     - docs/infra/set-up-database.md
     - docs/infra/set-up-app-env.md
     - docs/infra/environment-variables-and-secrets.md
     - docs/infra/background-jobs.md
     - docs/infra/database-access-control.md
+    - docs/releases.md
     - infra/{{app_name}}/app-config/main.tf
     - Makefile
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Set up the application database and service
@@ -49,7 +50,7 @@ for the app must already exist.
 Steps:
 
 ```bash
-# 1. Configure the database backend (writes <ENVIRONMENT>.s3.tfbackend)
+# 1. Configure the database backend (writes the environment's tfbackend)
 make infra-configure-app-database APP_NAME=<APP_NAME> ENVIRONMENT=<ENVIRONMENT>
 
 # 2. Build and publish the role-manager image to the build repository
@@ -69,8 +70,10 @@ make infra-check-app-database-roles APP_NAME=<APP_NAME> ENVIRONMENT=<ENVIRONMENT
 ```
 
 `APP_NAME` is the app folder under `infra` (default `app`); `ENVIRONMENT` is the environment being
-created. (Note: the doc names the role manager step's underlying resource a "Lambda function" — that
-is AWS terminology carried over from the AWS template; on Azure it is a Container App Job.)
+created. (Note: `docs/infra/set-up-database.md` calls the role manager step's underlying resource a
+"Lambda function" and names backend files `<ENVIRONMENT>.s3.tfbackend` — both are AWS terms carried
+over from the AWS template; on Azure the role manager is a Container App Job and backends use the
+`azurerm` naming described in the overview.)
 
 ### Database roles and the table-permissions gotcha
 
@@ -108,7 +111,7 @@ environment in `infra/<APP_NAME>/app-config/<ENVIRONMENT>.tf` (e.g. `prod.tf` se
 network; and, if `has_database` is true, the database layer set up.
 
 ```bash
-# 1. Configure the service backend and tfvars (writes <ENVIRONMENT>.s3.tfbackend)
+# 1. Configure the service backend and tfvars (writes the environment's tfbackend)
 make infra-configure-app-service APP_NAME=<APP_NAME> ENVIRONMENT=<ENVIRONMENT>
 
 # 2. Build and publish the application image — either trigger the GitHub Actions
@@ -137,7 +140,7 @@ storage); applications declare their own extras and secrets in
   variable name, value = default across environments). Override per environment by passing
   `service_override_extra_environment_variables` to the `env-config` module from the environment's
   `app-config/<environment>.tf`. Do **not** put credentials here — these values are embedded in the
-  task definition and visible to anyone who can view it.
+  container/task definition and visible to anyone who can view it.
 - **Secrets:** add entries to the `secrets` map. Each entry's key is the environment variable name;
   `manage_method` is `"generated"` (Terraform generates and stores a random secret) or `"manual"`
   (Terraform references an existing secret you stored); `secret_name` is the Azure Key Vault location
@@ -158,10 +161,8 @@ interface for additional jobs; add more `azurerm_container_app_job` resources in
 
 To roll out a new application image to an environment, the release targets are
 `release-build` → `release-publish` → `release-run-database-migrations` → `release-deploy` (run with
-`APP_NAME` / `ENVIRONMENT` / image tag as appropriate; `Makefile`). Migrations run as the `migrator`
-role before the new image is deployed as the `app` role. See
-[making infra changes](infra-azure-overview.md) for the general change workflow and
+`APP_NAME` / `ENVIRONMENT` / image tag as appropriate; `Makefile`, `docs/releases.md`). Migrations run
+as the `migrator` role before the new image is deployed as the `app` role. See the general change
+workflow in the [overview](infra-azure-overview.md) and
 [access control and operations](infra-azure-access-control-and-operations.md) for isolated workspace
 testing.
-</content>
-</invoke>

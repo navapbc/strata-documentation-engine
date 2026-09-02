@@ -2,6 +2,7 @@
 id: infra-azure-overview
 title: Azure infra template overview
 source: template-infra-azure
+verified: ok
 doc_type: guide
 tags: [infra, azure, terraform, template, architecture]
 related: [infra-azure-set-up-account-and-network, infra-azure-set-up-database-and-service, infra-azure-domains-and-https, infra-azure-access-control-and-operations]
@@ -10,7 +11,7 @@ integrates_with: [template-application-rails]
 summary: The layer, environment, and configuration model of the Nava Platform Azure infrastructure template, plus the Makefile operator interface and how it is installed into an application.
 source_ref:
   repo: https://github.com/navapbc/template-infra-azure
-  ref: f930f2ba39be8ab6a55eaa0b538ad96def2e331b
+  ref: e10a383c4871d6eab3999baf63a01e5bd5a81f4c
   paths:
     - README.md
     - infra/README.md
@@ -22,11 +23,11 @@ source_ref:
     - Makefile
     - copier.yml
     - infra/project-config/main.tf.jinja
+    - infra/project-config/networks.tf
     - infra/accounts/main.tf
     - infra/accounts/container_registry.tf
     - infra/{{app_name}}/app-config/main.tf
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Azure infra template overview
@@ -75,14 +76,14 @@ The layers, deployed in dependency order:
 
 - **Account layer** (`infra/accounts/`) — per Azure subscription. Creates the Terraform backend
   storage (an Azure Storage Account + container with native state locking), the GitHub OIDC
-  application/identity in Microsoft Entra, a project Log Analytics Workspace, the project-wide Azure
+  application/identity in Microsoft Entra, a subscription-level (account-level) Log Analytics Workspace, the project-wide Azure
   Container Registry (in the shared account), and the certificate store. Must be deployed first
   because it creates the state backend the other layers use. (Source: `infra/accounts/main.tf`,
   `infra/accounts/container_registry.tf`.)
 - **Network layer** (`infra/networks/`) — per network (shared across apps, environments, and
   Terraform workspaces). Creates a Virtual Network, subnets (gateway / private-endpoints / database /
-  apps), Private DNS zones, and a Container App Environment used by the apps in that network.
-  (Source: `infra/README.md`, `docs/infra/module-architecture.md`.)
+  apps-private), Private DNS zones, and a Container App Environment used by the apps in that network.
+  (Source: `infra/networks/main.tf.jinja`, `docs/infra/module-architecture.md`.)
 - **Database layer** (`infra/<APP_NAME>/database/`) — per application environment, optional.
   Provisions the PostgreSQL flexible server, the `app` schema, Entra ID groups, and the "role
   manager" Container App Job. Skipped entirely when an app has no database.
@@ -118,8 +119,9 @@ Two patterns keep dependencies explicit (`docs/infra/module-dependencies.md`):
 ## The environment model
 
 A project has three application environments — `dev`, `staging`, `prod` — that share the same root
-modules but differ by configuration (`infra/README.md`,
-`infra/{{app_name}}/app-config/main.tf`'s `environments` local). Backend configuration is stored in
+modules but differ by configuration (`infra/README.md`;
+`infra/{{app_name}}/app-config/main.tf`'s `environments` local lists exactly these three). Backend
+configuration is stored in
 [`.tfbackend`](https://developer.hashicorp.com/terraform/language/backend#file) files: per-app
 service/database backends are named after the environment (e.g. `dev.azurerm.tfbackend`), resources
 shared across environments use `shared.azurerm.tfbackend`, and account-level resources use
@@ -136,14 +138,14 @@ statically-known values and create no resources (`docs/infra/infrastructure-conf
 
 - **Project config** (`infra/project-config/`) — project-level values: `project_name`, `owner`,
   `code_repository_url`, `default_region`, `tenant_id`, the `github_actions_azure_config` (GitHub
-  OIDC client/object ids per account), `infra_admins`, the default certificate contact email
-  (`infra/project-config/main.tf.jinja`), and the network/`domain_config` definitions
-  (`infra/project-config/networks.tf`).
-- **App config** (`infra/<APP_NAME>/app-config/`) — per-application values: the environment list,
-  `has_database` / `has_blob_storage` flags, the shared network name, and a reusable
-  `env-config` module instantiated three times (`source = "./env-config"`) from the `dev.tf`,
-  `staging.tf`, and `prod.tf` files with environment-specific parameters
-  (`infra/{{app_name}}/app-config/main.tf`).
+  OIDC client/object ids per account), `infra_admins`, and the default certificate contact email
+  (`infra/project-config/main.tf.jinja`), plus the `network_configs` / `domain_config` definitions
+  and `shared_account_name` / `shared_hosted_zone` (`infra/project-config/networks.tf`).
+- **App config** (`infra/<APP_NAME>/app-config/`) — per-application values: the `environments` list,
+  `has_database` / `has_blob_storage` / `has_incident_management_service` flags, the
+  `shared_network_name`, and a reusable `env-config` module wired up per environment via the
+  `dev.tf`, `staging.tf`, and `prod.tf` files (surfaced through the `environment_configs` map in
+  `infra/{{app_name}}/app-config/main.tf`).
 
 Config modules are used two ways: as **root modules** by shell scripts and CI/CD (which fetch values
 with `terraform apply -auto-approve` followed by `terraform output` — safe because the modules have
@@ -184,9 +186,9 @@ invokes `terraform` and is reused by the GitHub Actions workflows. (Source: `Mak
 ## First-time setup path
 
 For a brand-new project, the setup order (from `infra/README.md`) is: install the template →
-[set up infrastructure developer tools] → [set up GitHub] → [set up the Azure account] → [set up the
-network] → then per application: [set up the database] → [set up the application environment] →
-[configure environment variables and secrets] → [set up background jobs]. These steps are covered in
+set up infrastructure developer tools → set up GitHub → set up the Azure account → set up the
+network → then per application: set up the database → set up the application environment →
+configure environment variables and secrets → set up background jobs. These steps are covered in
 [set up account and network](infra-azure-set-up-account-and-network.md) and
 [set up database and service](infra-azure-set-up-database-and-service.md).
 
@@ -197,5 +199,3 @@ This template provides only infrastructure; it expects a compatible application 
 v1 Rails application template (`template-application-rails`) is the kind of app this infra is paired
 with, which is why setup steps reference building and deploying the application container image and
 running database migrations. (Source: `README.md` "Application Requirements".)
-</content>
-</invoke>

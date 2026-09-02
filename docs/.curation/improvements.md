@@ -9,6 +9,175 @@ ones under a dated section. The most recent pass is at the top.
 
 ---
 
+# Update-mode pass — 2026-07-21 (6 sources)
+
+This was an **update-mode** run. The engine re-documented exactly these 6 sources, and ONLY their
+distillation logs were curated as part of this run (the curator was handed the explicit source list —
+see the `.logs/` staleness item below, now confirmed mitigated):
+
+- **`app-template`** (rails-template) — re-documented at new SHA `6cc2443…`.
+- **`documentai-api`** (application-template) — re-documented at new SHA `7c7f30c…`.
+- **`oscer`** (example-app) — materially drifted; re-documented at new SHA `c53e711…`.
+- **`platform-cli`** (platform-cli) — re-documented at new SHA `57d5d5c…`.
+- **`template-infra`** (infra-template) — re-documented at new SHA `80a7cc8…`.
+- **`template-infra-azure`** (infra-template) — re-documented at new SHA `e10a383…`.
+
+**All 6 produced a distillation log. None were missing.** `.logs/` still holds 5 additional logs
+from prior runs (`strata-sdk`, `strata-template-rules-engine-catala`, `strata-unemployment`,
+`template-application-flask`, `template-application-nextjs`); those were NOT re-documented this run
+and were correctly excluded from this curation.
+
+## Registry health this run: clean
+
+Every cross-link key the 6 documenters used already existed; **no missing-key hard-fail, no new
+registry keys needed this run.** Notably `oscer` added a new `components` example doc, plus
+`attribute-types/array` (parity with `range`), `DocAiResult`, and `integrates_with: [documentai-api]`
+— all resolved against pre-seeded registry entries (oscer log lines 47-58, 81-92). The
+`platform-cli` `manages` edges to `template-application-nextjs`/`-flask` again surfaced as the
+intended `build_graph` `GAP:` lines (soft-deprecated canonical ids), not lint failures (platform-cli
+log lines 109-116) — consistent with the P3 below.
+
+---
+
+## P0 — Generated docs were silently corrupted by leaked tool-call XML; only caught by a documenter's eye
+
+`template-infra-azure`'s documenter found that **all 5 pre-existing docs ended with stray
+`</content></invoke>` tags leaked from a prior write** and had to strip them during the rewrite
+(azure log lines 20-22). Separately, the **`oscer` distillation log itself ends with a stray
+`</content>` tag** (oscer log line 93). The engine's doc-write path is emitting literal tool-call
+markup (`</invoke>`, `</content>`, `<parameter …>`) into the files it writes.
+
+This is a "never silently drop" violation: the corruption shipped in a prior cycle's output, sat
+undetected through lint + verify→fix + graph builds, and was only removed because *this* run happened
+to rewrite those files. A source that was skipped/unchanged would have kept the corruption
+indefinitely. `lint_docs` validates frontmatter but does not scan bodies for leaked markup.
+
+**Action (two parts):**
+1. Add a `lint_docs` check that hard-fails on stray tool-call XML in any doc body or distillation log
+   (`</invoke>`, `</content>`, `<parameter`, and a bare trailing `</...>` that isn't legitimate
+   HTML/markdown). This turns a silent corruption into a pipeline stop, per the invariant.
+2. Harden the `source-doc.md` write step so the agent never serializes tool-call scaffolding into
+   file content — the recurrence across azure (docs) and oscer (log) says this is systemic, not a
+   one-off fat-finger.
+
+## P1 — Update mode cannot diff: the prior `source_ref.ref` SHA is absent from the (shallow) clone
+
+Three of the six re-document runs could not compare old→new because the previously-documented commit
+was not in the local checkout:
+
+- **`template-infra`**: "the previously-documented SHA `d2b569e3…` is not present in this checkout's
+  object history (shallow/updated clone), so a direct `git diff` … was not possible" (line 17-19).
+- **`template-infra-azure`**: "shallow clone (depth 1); the previously-documented SHA `f930f2ba…` is
+  not present locally, so no upstream diff was possible" (lines 8-10).
+- **`oscer`**: material drift (exemption→exclusion rename, new three-step flow, expanded outcome
+  enum, new form base class) forced a **full rewrite of every doc** rather than a scoped edit (lines
+  22-44).
+
+The fallback in each case was to **re-verify every load-bearing claim by hand** against the working
+tree — expensive, and it puts the burden of catching drift on exhaustive manual reading rather than a
+diff. Update mode's whole premise (only touch what changed) is undercut when the documenter can't see
+what changed.
+
+**Action:** the setup/clone step should make the prior SHA diffable. Either clone with sufficient
+history (not `--depth 1`), or explicitly `git fetch` the prior `source_ref.ref` recorded in the
+existing docs before dispatching the documenter, so update-mode agents can run
+`git diff <prior-sha>..<new-sha> -- <subpaths>` to scope their re-verification. `source_delta`
+already reads the prior ref to classify drift; feed that same SHA into the clone so the documenter
+can act on it.
+
+## P1 — `components` feature key flipped run-over-run on the SAME app (prior P1 now confirmed unstable)
+
+The prior report (2026-06-29) flagged `components` as having no documented threshold, citing oscer
+DECLINING it for `CaseRowComponent`/`TaskRowComponent` as "incidental UI wiring." **This run oscer
+REVERSED that call** — it added a new `example-oscer-components` doc precisely for
+`CaseRowComponent`/`TaskRowComponent` (plus direct renders of `Strata::Cases::IndexComponent`,
+`Strata::US::AccordionComponent`, and `Strata::DateHelper` mix-ins) and wired it into the overview
+(oscer log lines 47-52, 92).
+
+The same app, same symbols, opposite decision two runs apart. This upgrades the prior finding from
+"inconsistent across apps" to "unstable within one app across runs" — the cross-link
+(`example-of` edge to the SDK components doc) is not reproducible. The prior report's proposed
+`feature-keys.md` clarification for `components` is **still unapplied** (or ineffective); it should be
+prioritized. Reinforcing, not re-raising: apply the one-line threshold clarification from the
+2026-06-29 section.
+
+## P1 — rails-template `integrates_with` also flip-flops on Azure; profile should settle it
+
+`app-template` this run **added `template-infra-azure` to the guide's `integrates_with`**, explicitly
+**reversing the prior run's decision to omit Azure** (app-template log lines 70-77). The reversal is
+well-grounded — Azure is now a first-class deploy target (`config/initializers/database_auth.rb`
+implements Entra ID token auth; `Deployment.md` documents deploying via the Nava Azure infra
+template) — but it is exactly the kind of per-run judgment churn a profile should remove.
+
+**Action:** state in `profiles/rails-template.md` that a Rails app template documenting shipped
+Entra/Azure DB-auth support should declare **both** `template-infra` and `template-infra-azure` in
+`integrates_with` (with the AWS-only walkthrough example free to name just `template-infra`). Stops
+the edge from oscillating between runs.
+
+## P2 — Azure infra AWS-terminology drift STILL recurring; prior profile caution not visibly effective
+
+The 2026-06-29 report recommended baking an "Azure docs carry AWS-terminology drift" caution into
+`profiles/infra-template.md`. This run's Azure documenter **again re-derived the same handling from
+scratch** — flagging `set-up-database.md`'s "Lambda function", the "ECS task definition"/"ECS task
+role" references, and `.s3.tfbackend` naming, and documenting the Azure reality (Container App Job,
+`azurerm` backends) inline instead (azure log lines 84-95, 96-107). It also again hit the missing
+`docs/decisions/` directory (line 98) the prior report's "ADRs if present" softening was meant to
+cover.
+
+Either those profile edits were never applied, or they aren't preventing re-derivation. **Action:**
+verify `profiles/infra-template.md` actually carries the two prior notes (AWS-term caution; `docs/decisions/*`
+"if present"); if present, tighten the wording so the next Azure run reads it as authoritative rather
+than reasoning independently.
+
+## P2 — New docs↔code mismatches worth filing to `upstream-issues.md`
+
+This run surfaced source-side defects the documenters correctly grounded around; they belong in the
+existing `upstream-issues.md` follow-up ledger (curator is advisory — recommending, not editing that
+file):
+
+- **documentai-api** (log lines 92-102): README "Installation" links to `…/demployment.md` (typo for
+  `deployment.md`); README "Processing Flow" names a `bda_output_processor` job that does not exist
+  (real entry point is `bda_result_processor`); `app.py create_document` defaults `timeout=180` while
+  its docstring and README curl example say `120`; `deployment.md` references
+  `aws_iam_policy.dynamodb_read_write.arn` where the declared resource is
+  `documentai_api_dynamodb_read_write` (copy-paste mismatch).
+- **platform-cli** (log lines 122-136): README carries two conflicting uv version floors — `0.6.15+`
+  (install) vs `0.5.8+` (development) — easy to conflate; `app update`'s `src_path` has no effect on
+  updates (upstream `navapbc/platform-cli#5`).
+- **app-template** (log lines 92-98): `decisions/README.md` and `template-only-docs/README.md` are
+  empty (ADRs expected, none ship); `code.json` has a malformed `…/strata/blob/…` URL path segment.
+- **template-infra-azure** (log lines 96-107): `background-jobs.md` documents a not-yet-implemented
+  worker-queue path; the tenant-level Cloud Application Administrator requirement is expected to be
+  removable by future work (issue #17). (Complements the AWS-terminology entries already filed.)
+
+## P2 — Empty `template-only-docs/README.md` / `docs/README.md` is a copier-family pattern
+
+Three of this run's copier-based sources note an empty template-author README: `app-template`
+(`template-only-docs/README.md`, line 94), `documentai-api` (`template-only-docs/README.md`, line
+78), and `template-infra-azure` (`docs/README.md`, line 97). Documenters skip them correctly, but
+each re-notes it as a "gap." **Action (minor):** add a one-liner to the `rails-template`,
+`application-template`, and `infra-template` profiles that an empty `template-only-docs/README.md` /
+`docs/README.md` is expected boilerplate — skip without flagging as a source gap.
+
+## P3 — `.logs/` staleness mitigation from the prior run WORKED (confirming, not re-raising)
+
+The 2026-06-29 report's P2 asked the skill to pass the curator the explicit list of sources
+re-documented this run (to avoid mis-attributing stale `.logs/` entries). **This run that mitigation
+was in effect** — the curator was handed the 6-source scope explicitly and correctly ignored the 5
+stale logs still sitting in `.logs/`. Recommend making this permanent in `SKILL.md` (document that
+`.logs/` is not run-scoped and the curator must receive/honor the re-documented source list), and
+optionally still prune obsolete logs for removed sources (flask/nextjs remain in `.logs/`).
+
+## P3 — Update-mode drift detection held up (informational)
+
+`oscer` is the strongest evidence the update path works end-to-end: it caught a material rename
+(`exemption`→`exclusion` ruleset), a new three-step automated flow, an expanded five-outcome
+determination enum, and a new `OscerApplicationForm` abstract base — all correctly re-grounded and
+re-pinned (oscer log lines 22-44). SHA-pinning at write time also held across all 6 sources (every
+doc re-pinned to its resolved SHA). No regression in the doc-write pinning discipline.
+
+---
+
 # Update-mode pass — 2026-06-29 (4 sources)
 
 This was an **update-mode** run, not a full rebuild. The engine re-documented exactly these 4

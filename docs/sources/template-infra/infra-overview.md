@@ -2,6 +2,7 @@
 id: infra-overview
 title: template-infra Overview
 source: template-infra
+verified: ok
 doc_type: guide
 tags: [infra, terraform, aws, template, layers, environments, configuration]
 related: [infra-module-architecture, infra-getting-started, infra-configuration, infra-environments-and-workspaces, infra-database, infra-security-and-access, infra-capabilities]
@@ -10,17 +11,17 @@ integrates_with: [template-application-rails]
 summary: The Nava Platform Terraform/AWS infrastructure template — its layer model, environment model, configuration model, and bin/ operator scripts.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: d2b569e3eef126514745b0e0e5d92a8739d0c6f2
+  ref: 80a7cc8ec802c442098933f65280175b8453c659
   paths:
     - README.md
     - infra/README.md
     - docs/system-architecture.md
     - docs/infra/module-architecture.md
+    - docs/infra/infrastructure-configuration.md
     - copier.yml
     - bin/
     - Makefile
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # template-infra Overview
@@ -117,12 +118,12 @@ Day-to-day operations run through Make targets in the root `Makefile`, which cal
 | `infra-set-up-account ACCOUNT_NAME=<n>` | Create backend + OIDC resources for the current AWS account |
 | `infra-configure-network NETWORK_NAME=<n>` / `infra-update-network NETWORK_NAME=<n>` | Configure / apply a network |
 | `infra-configure-app-build-repository APP_NAME=<a>` / `infra-update-app-build-repository APP_NAME=<a>` | Configure / apply the build repository |
-| `infra-configure-app-database` / `infra-update-app-database APP_NAME=<a> ENVIRONMENT=<e>` | Configure / apply a database |
-| `infra-update-app-database-roles` / `infra-check-app-database-roles` | Provision / verify DB roles via the role manager |
+| `infra-configure-app-database APP_NAME=<a> ENVIRONMENT=<e>` / `infra-update-app-database APP_NAME=<a> ENVIRONMENT=<e>` | Configure / apply a database |
+| `infra-update-app-database-roles APP_NAME=<a> ENVIRONMENT=<e>` / `infra-check-app-database-roles APP_NAME=<a> ENVIRONMENT=<e>` | Provision / verify DB roles via the role manager |
 | `infra-configure-app-service` / `infra-update-app-service APP_NAME=<a> ENVIRONMENT=<e>` | Configure / apply a service |
-| `release-build` / `release-publish` / `release-run-database-migrations` / `release-deploy` | Build, publish, migrate, deploy an application release |
+| `release-build APP_NAME=<a>` / `release-publish APP_NAME=<a>` / `release-run-database-migrations APP_NAME=<a> ENVIRONMENT=<e>` / `release-deploy APP_NAME=<a> ENVIRONMENT=<e>` | Build, publish, migrate, deploy an application release |
 | `infra-check-github-actions-auth ACCOUNT_NAME=<n>` | Verify GitHub Actions can authenticate to AWS |
-| `infra-lint`, `infra-format`, `infra-check-compliance`, `infra-test-service` | Lint, format, compliance (checkov/tfsec), and Terratest checks |
+| `infra-lint`, `infra-format`, `infra-check-compliance`, `infra-test-service APP_NAME=<a>` | Lint, format, compliance (checkov/tfsec), and Terratest checks |
 
 The underlying wrapper scripts (`bin/terraform-init`, `bin/terraform-apply`,
 `bin/terraform-init-and-apply`) take a module directory and an environment/backend name and handle

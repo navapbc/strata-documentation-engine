@@ -2,6 +2,7 @@
 id: platform-cli-app-commands
 title: nava-platform app command reference
 source: platform-cli
+verified: ok
 doc_type: guide
 tags: [platform-cli, app, application-template, commands, cli]
 related: [platform-cli-overview, platform-cli-mechanism, platform-cli-infra-commands]
@@ -9,15 +10,14 @@ manages: [template-application-rails, template-application-nextjs, template-appl
 summary: Reference for the nava-platform app command group (install, update, migrate-from-legacy) that installs and updates application templates such as template-application-rails, template-application-nextjs, and template-application-flask.
 source_ref:
   repo: https://github.com/navapbc/platform-cli
-  ref: e565096992407a70e73e5a85167421f9bd85addb
+  ref: 57d5d5c6c4626e0bd13ed81b469c91c2533498f0
   paths:
     - nava/platform/cli/commands/app.py
     - nava/platform/cli/commands/common.py
     - docs/adding-an-app.md
     - docs/getting-started/new-project.md
     - docs/getting-started/migrating-from-legacy-template.md
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # `nava-platform app` command reference

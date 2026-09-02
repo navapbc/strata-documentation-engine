@@ -2,13 +2,14 @@
 id: documentai-api-new-project-example
 title: "Example: scaffolding a new DocumentAI API project"
 source: documentai-api
+verified: ok
 doc_type: example
 tags: [documentai, example, copier, nava-platform, scaffold]
 related: [documentai-api-using-the-template]
 summary: A concrete walk-through of installing the DocumentAI template into a project, the prompts answered, and the resulting project tree.
 source_ref:
   repo: https://github.com/navapbc/strata-template-documentai-api
-  ref: a8170b5ad1dedf652b65e93949c410a941a1d5e4
+  ref: 7c7f30c78f26f4d3708539b30cfb7acfd2ec2e7b
   paths:
     - README.md
     - copier.yml
@@ -19,8 +20,7 @@ source_ref:
     - template/{{app_name}}/src/documentai_api/config/env.py
     - template/{{app_name}}/src/documentai_api/logging/audit.py
     - template/{{app_name}}/src/documentai_api/models/api_responses.py
-verified: ok
-last_documented: 2026-06-29
+last_documented: 2026-07-21
 ---
 
 # Example: scaffolding a new DocumentAI API project
@@ -76,7 +76,7 @@ doc-intake/                       # the FastAPI application
 ├── Makefile
 ├── pyproject.toml
 └── README.md
-docs/doc-intake/                  # api-authentication.md, writing-tests.md, diagrams/, media/
+docs/doc-intake/                  # accessing-real-aws-resources-from-docker.md, api-authentication.md, writing-tests.md, diagrams/, media/
 .github/workflows/ci-doc-intake.yml
 ```
 

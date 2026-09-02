@@ -1,25 +1,55 @@
-# Verification findings: documentai-api-overview (round 1)
+# Verification findings: documentai-api-overview (round 3)
 
 Doc: `docs/sources/documentai-api/overview.md`
-Source: `.sources/documentai-api`
-
-## Finding 1 — Low
-
-**Claim:** "the `bda_result_processor` job to parse the output and update a DynamoDB table"
-
-**Issue:** The architecture diagram (`template/docs/{{app_name}}/diagrams/architecture.mmd`) labels this same processing node as `bda-output-processor` / "BDA Output Processor", while `README.md.jinja` step 6 of the processing flow also calls it `bda_output_processor`. The doc uses `bda_result_processor`, which matches the actual job directory (`src/documentai_api/jobs/bda_result_processor/`) and the pyproject.toml entrypoint (`bda_result_processor = "documentai_api.jobs.bda_result_processor.main:app"`), but conflicts with the diagram label and the flow description in the app README.
-
-**Severity:** low
-
-**Evidence:**
-- `template/docs/{{app_name}}/diagrams/architecture.mmd` line 13: `service bda-output-processor(logos:aws-step-functions)[BDA Output Processor]`
-- `template/{{app_name}}/README.md.jinja` line 26: `` S3 event triggers `bda_output_processor` job ``
-- `template/{{app_name}}/pyproject.toml` line 41: `bda_result_processor = "documentai_api.jobs.bda_result_processor.main:app"` (authoritative entrypoint name)
-
-**Suggested fix:** Acknowledge the dual naming: the job's installed entrypoint and source directory is `bda_result_processor`, but the architecture diagram and README processing flow label it `bda_output_processor`. The doc is using the correct code-level name. Consider adding a parenthetical noting the alternative label to avoid confusion: "the `bda_result_processor` job (labeled 'BDA Output Processor' in the architecture diagram)".
-
----
+Source: `.sources/documentai-api` @ `7c7f30c78f26f4d3708539b30cfb7acfd2ec2e7b` (matches `source_ref.ref`)
 
 ## Summary
 
-The doc is largely accurate and well-supported by the source. The single finding is low-severity: the doc uses the authoritative code-level job name (`bda_result_processor`) while the architecture diagram and the app README's processing flow use a different label (`bda_output_processor` / "BDA Output Processor") for the same entity. All other claims — document categories, supported file formats, ECS + ALB architecture, S3-triggered processing flow, DynamoDB tracking, BDA integration, copier-based distribution, `nava-platform` CLI installation, and infra template integration — are fully supported by the source.
+Round 2 findings have been successfully applied. The phrasing issue ("most" vs "some other" Strata templates) is fixed. Comprehensive re-verification of all factual claims confirms the doc is accurate and fully supported by the source material. No new issues identified.
+
+## Round 2 Status
+
+### ✓ Finding 1 (resolved): "most vs some other" phrasing
+
+The doc previously stated "Unlike **most** Strata templates"; now correctly states "Unlike **some other** Strata templates" (line 28), matching the source exactly (README.md:21-22).
+
+**Before**: Line 30 incorrectly used "most"
+**After**: Line 28 correctly uses "some other"
+**Source**: README.md line 21-22
+
+### ⚠ Finding 2 (still valid): Job name label discrepancy in source
+
+- **Claim**: "the `bda_result_processor` job" (line 77)
+- **Status**: Unchanged but accurate
+- **Context**: Code-level name `bda_result_processor` is correct (deployment.md:36); source diagrams use variant labels ("BDA Output Processor" in architecture.mmd:13). Round 2 marked as low-severity source inconsistency. No fix required for doc accuracy.
+
+## Round 3 Full Verification
+
+All major claims verified against source files:
+
+| Claim | Line(s) | Source Evidence | Status |
+|-------|---------|-----------------|--------|
+| "Unlike some other Strata templates" | 28 | README.md:21-22 | ✓ |
+| "more of a complete application intended for use almost out of the box" (direct quote) | 30-31 | README.md:21-23 | ✓ |
+| copier-based template installed via nava-platform CLI | 33-35 | README.md:51; copier.yml presence (Round 2) | ✓ |
+| Document categories: income, expenses, legal_documents, employment_training | 48-49 | constants.py:52-56 | ✓ |
+| Upload formats: PDF, JPEG, PNG, TIFF | 49-50 | constants.py:60-65 | ✓ |
+| Python/FastAPI service (not Rails SDK) | 63-64 | README.md.jinja:8; project structure | ✓ |
+| "separately deployable, independently scalable" (replaces "sidecar") | 54 | Aligns with source design | ✓ (Round 2 resolved) |
+| ALB → ECS → FastAPI app architecture | 72-73 | architecture.mmd; README.md.jinja:10-15 | ✓ |
+| S3 input → document_processor → BDA → S3 output → bda_result_processor → DynamoDB flow | 74-78 | architecture.mmd; README.md.jinja:19-26 | ✓ |
+| enable_document_data_extraction = true | 58 | deployment.md:21 | ✓ |
+| Integration with template-infra | 54-61 | deployment.md:1-8; README.md.jinja | ✓ |
+
+## Notes
+
+- `template-only-docs/deployment.md` referenced in doc (line 55) is not in `source_ref.paths`, but exists in source checkout and was verified as accurate in Round 2 (line 42: verified claims including DDE module, job wiring, DynamoDB).
+- All source file paths in frontmatter are accessible and match documentation.
+- No contradictions or inaccuracies found between doc and source.
+- No new issues identified in Round 3.
+
+## Verdict
+
+**Status**: ✓ **VERIFIED — NO ISSUES**
+
+All claims are accurate and supported. Round 2 fixes have been successfully applied. Doc is ready for publication.

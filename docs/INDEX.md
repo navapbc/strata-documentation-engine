@@ -16,25 +16,26 @@
 - [Example: scaffolding a new DocumentAI API project](sources/documentai-api/new-project-example.md) — A concrete walk-through of installing the DocumentAI template into a project, the prompts answered, and the resulting project tree.
 
 ### guide
-- [DocumentAI API capability overview](sources/documentai-api/overview.md) — A deployable Strata capability — a document-processing sidecar that classifies and extracts data from uploaded documents using AWS Bedrock Data Automation.
+- [DocumentAI API capability overview](sources/documentai-api/overview.md) — A deployable Strata capability — a separately deployable, independently scalable document-processing service that classifies and extracts data from uploaded documents using AWS Bedrock Data Automation.
 - [Using and deploying the DocumentAI template](sources/documentai-api/using-the-template.md) — How to install the DocumentAI template with the nava-platform CLI, run it locally, and deploy it as a sidecar using the Strata AWS infrastructure template.
 
 ## oscer
 
 ### example
 - [OSCER — HMAC API authentication](sources/oscer/api-authentication.md) — How OSCER authenticates inbound API requests with the SDK's HMAC strategy via Strata::ApiAuthenticator and Strata::Auth::Strategies::Hmac.
-- [OSCER — application forms](sources/oscer/application-forms.md) — How OSCER subclasses Strata::ApplicationForm for its three member-submitted forms and ties each to a staff review task.
-- [OSCER — typed attributes and attribute types](sources/oscer/attributes.md) — How OSCER uses the strata_attribute DSL and the SDK's money, year-month, us-date, name, and range attribute types across forms, activities, and value objects.
+- [OSCER — application forms](sources/oscer/application-forms.md) — How OSCER subclasses Strata::ApplicationForm through an abstract OscerApplicationForm base for its three member-submitted forms, each tied to a staff review task.
+- [OSCER — typed attributes and attribute types](sources/oscer/attributes.md) — How OSCER uses the strata_attribute DSL and the SDK's money, year-month, us-date, name, range, and array attribute types across forms, activities, and value objects.
 - [OSCER — audit log and virtual actors](sources/oscer/audit-log-and-actors.md) — How OSCER writes Strata::AuditLog entries (write!, record block, add_line) and attributes system-initiated actions to Strata::VirtualActor services.
 - [OSCER — authorization policies](sources/oscer/authorization.md) — How OSCER builds on Strata::TaskPolicy and Strata::ApplicationFormPolicy for task and application-form authorization, including region-based query scoping.
 - [OSCER — certification business process and case](sources/oscer/business-process.md) — How OSCER models the Medicaid certification lifecycle as a Strata::BusinessProcess state machine driving a Strata::Case aggregate.
-- [OSCER — determinations and the Determinable concern](sources/oscer/determinations.md) — How OSCER extends Strata::Determination and includes Strata::Determinable to record automated and manual compliance/exemption decisions on the Certification aggregate.
-- [OSCER — rules engine (exemption eligibility)](sources/oscer/rules-engine.md) — How OSCER defines a Strata::Rules::MedicaidRuleset subclass and runs it through Strata::RulesEngine to compute age/pregnancy/AIAN/veteran exemption eligibility.
+- [OSCER — SDK view components](sources/oscer/components.md) — How OSCER extends the SDK's ViewComponents (case-row, task-row, index, accordion) and its DateHelper to render caseworker case and task views.
+- [OSCER — determinations and the Determinable concern](sources/oscer/determinations.md) — How OSCER extends Strata::Determination and includes Strata::Determinable to record automated and manual compliance/exclusion/exception/exemption decisions on the Certification aggregate.
+- [OSCER — rules engine (exclusion eligibility)](sources/oscer/rules-engine.md) — How OSCER defines a Strata::Rules::MedicaidRuleset subclass and runs it through Strata::RulesEngine to compute community-engagement exclusion eligibility.
 - [OSCER — tasks (applicant, staff, system)](sources/oscer/tasks.md) — How OSCER subclasses Strata::Task and declares applicant, staff, and system steps that the certification business process drives.
-- [OSCER — value objects](sources/oscer/value-objects.md) — How OSCER subclasses Strata::ValueObject for Member and MemberStatus, including the attribute-based equality/blank/serialization contract.
+- [OSCER — value objects](sources/oscer/value-objects.md) — How OSCER subclasses Strata::ValueObject for Member, MemberStatus, and DocAiResult, including the attribute-based equality/blank/serialization contract.
 
 ### guide
-- [OSCER — overview](sources/oscer/overview.md) — A Rails application that implements a Medicaid community-engagement certification workflow on top of the Strata SDK, exercising business processes, cases, tasks, application forms, determinations, the rules engine, audit logging, and HMAC API auth.
+- [OSCER — overview](sources/oscer/overview.md) — A Rails application that implements a Medicaid community-engagement certification workflow on top of the Strata SDK, exercising business processes, cases, tasks, application forms, determinations, the rules engine, audit logging, HMAC API auth, and SDK view components.
 
 ## platform-cli
 
