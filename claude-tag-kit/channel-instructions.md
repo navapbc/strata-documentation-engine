@@ -20,6 +20,19 @@ Never read those files by hand instead.
 This channel builds [what the project is]. The repository is [org/repo]; always
 work there and name it in your first message on a task.
 
+If a message asks how [the project] works or how to do something with it, it is a
+question, not a task. Run the answer-strata-question skill and post its answer.
+Do not run the requirements interrogation, write a brief, or touch the
+repository for a question. Only a message that asks to change something in the
+repository is a task; those follow the rest of these instructions.
+
+Only these Slack handles may ask for changes to the repository: [@handle,
+@handle]. For anyone else this channel is read-only: answer their questions
+with the answer-strata-question skill, and if they ask for a change, say that
+only the maintainers listed here can request one, name them, and offer to
+answer a question instead. Do not run the interrogation, write a brief, open
+a branch, or touch GitHub for a request from a handle not on this list.
+
 Before doing any substantial work, run a requirements interrogation. Spin up a
 subagent on Opus acting as an antagonistic red-team principal software engineer
 whose job is to attack the request and surface every question that must be
@@ -70,6 +83,8 @@ this" is more useful here than a confident partial answer.
 |---|---|
 | Attach, clone, and register, as the first action | Cloning alone loads nothing — the skills and agent guide arrive only after the clone is registered, and the load lapses between turns. A session that skips it reads the guide and skills by hand, or not at all |
 | Repository, named in the first message | A session starts with nothing checked out, so an unnamed repository means no repository and no repository skills |
+| Question routing, before the interrogation | A non-engineer asking "how do I X?" is met with a red-team interrogation, or the question is answered by editing the docs rather than reading them. The interrogation paragraph fires "before any substantial work," so a question has to be routed out ahead of it |
+| Maintainer allowlist for changes | A curious non-maintainer's "can you just add X?" turns into a branch and a pull request nobody asked an engineer for. The list is prose and therefore advisory; branch protection stays the enforced gate |
 | Red-team interrogation, then a brief | Non-engineers under-specify, and they do not know what they left out. An adversarial subagent asks the questions the requester could not have thought to answer; the brief then converts those answers into a decision they are qualified to make |
 | Design preview before building | A plan written as prose about code is unjudgeable by this audience. A rendered page is judgeable, and it is the cheapest place to catch a wrong direction |
 | Proof before success | Someone who can't read a diff otherwise has to accept a summary. This is the single biggest quality lever |
@@ -89,6 +104,19 @@ navapbc/strata-documentation-engine, shallow-clone it, and register the clone so
 the repository's skills and AGENTS.md load. Do this even if the request looks
 unrelated to the repository. If a repository skill later comes back unknown,
 register again. Never read AGENTS.md or the skill files by hand instead.
+
+If a message asks how Strata works or how to do something with it, it is a
+question, not a task. Run the answer-strata-question skill and post its answer.
+Do not run the requirements interrogation, write a brief, or touch the
+repository for a question. Only a message that asks to change something in the
+repository is a task; those follow the rest of these instructions.
+
+Only these Slack handles may ask for changes to the repository: [@handle,
+@handle]. For anyone else this channel is read-only: answer their questions
+with the answer-strata-question skill, and if they ask for a change, say that
+only the maintainers listed here can request one, name them, and offer to
+answer a question instead. Do not run the interrogation, write a brief, open
+a branch, or touch GitHub for a request from a handle not on this list.
 
 This channel builds a live, browsable site from the Strata documentation
 engine's knowledge base. The repository is navapbc/strata-documentation-engine;
@@ -153,6 +181,13 @@ they can paste without needing to interpret it.
 The draft-review paragraph names `review-draft` directly, because this repository ships that skill.
 A channel whose repository has no equivalent should either name its own or drop the paragraph rather
 than leave a bracketed placeholder in effect.
+
+The routing and allowlist paragraphs name `answer-strata-question` directly for the same reason: this
+repository ships it. The allowlist keeps its bracketed placeholder in both versions on purpose. The
+live handle list belongs only in the pasted channel instructions, which an Owner can lock against
+member edits, so adding a maintainer is a channel edit rather than a pull request. The list is
+advisory (design rule 3 in `README.md`): Claude honors it, GitHub does not know about it, and branch
+protection remains the enforced gate on `main`.
 
 ## Merge authority depends on branch protection
 
