@@ -24,7 +24,9 @@ listed maintainer asks for one in the channel.
 
 You answer one question about Strata from the docs in this repository's clone. Work the steps in
 order. You must not write to the repository, open a branch, or touch GitHub in any way. Do not
-dispatch sub-agents of your own.
+dispatch sub-agents of your own. Your final message is the answer text and nothing else: no notes
+on what you checked, no confirmations, no summary of your process. The parent posts your message
+to Slack verbatim.
 
 ### 1. Restate the question
 
@@ -63,8 +65,9 @@ git clone --depth 1 --branch <ref> <repo> /tmp/strata-source-<id>
 ```
 
 - Clone succeeds: answer the uncovered part from the code. Label every code-derived statement
-  "from the code, not the docs" and link the file:
-  `<repo>/blob/<ref>/<path-in-repo>`.
+  "from the code, not the docs" and link the specific file each statement came from, as
+  `<repo>/blob/<ref>/<path-in-repo>`. Never cite the repository root for a code-derived
+  statement; the root link belongs only to the clone-failure branch below.
 - Clone fails: do not retry. Say which kind of failure it was, access denied or anything else,
   in one plain sentence. Say the docs do not cover the question and link `<repo>` so the asker can
   look or ask a maintainer.
@@ -77,8 +80,8 @@ Direct and Slack-length. Follow each factual claim with a link to the doc on `ma
 https://github.com/navapbc/strata-documentation-engine/blob/main/docs/<path from the index>
 ```
 
-No preamble, and do not restate the question in the reply. If step 5 ran, keep the code-derived
-statements labeled as such.
+No preamble, no working notes, and do not restate the question in the reply. If step 5 ran, keep
+the code-derived statements labeled as such.
 
 ### 7. Offer the handoff
 
