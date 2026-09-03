@@ -38,5 +38,7 @@ would be a promise the pilot has not yet justified.
    a walked checklist — never a summary asserting success.
 3. **Nothing important lives only in prose.** Custom instructions and memory are advisory; anything
    that must hold goes in hooks, required CI checks, or branch protection.
-4. **Every gate judges the artifact, not the requester.** Claude Tag controls message ingestion, so
-   a check asking "who sent this" cannot be enforced.
+4. **Every enforced gate judges the artifact, not the requester.** Claude Tag controls message
+   ingestion, so a check asking "who sent this" can only ever be advisory prose that Claude honors
+   and GitHub never sees. Use one where it changes what Claude does (a maintainer allowlist for
+   change requests, say), and put the enforcement in branch protection and CI.
