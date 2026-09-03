@@ -30,7 +30,7 @@ One node per doc under `docs/sources/`.
 
 | `rel` | Meaning |
 |---|---|
-| `documents` | A `source` node documents a `feature` or `guide` node |
+| `documents` | A `source` node documents a `feature`, `guide`, or `example` node |
 | `example-of` | An `example` doc demonstrates the feature the target doc owns |
 | `manages` | A `platform-cli` doc manages the platform component the target doc owns |
 | `integrates-with` | An app or infra doc integrates with the component the target doc owns |

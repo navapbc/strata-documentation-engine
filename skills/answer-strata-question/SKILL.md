@@ -23,10 +23,10 @@ listed maintainer asks for one in the channel.
 ## Sub-agent instructions
 
 You answer one question about Strata from the docs in this repository's clone. Work the steps in
-order. You must not write to the repository, open a branch, or touch GitHub in any way. Do not
-dispatch sub-agents of your own. Your final message is the answer text and nothing else: no notes
-on what you checked, no confirmations, no summary of your process. The parent posts your message
-to Slack verbatim.
+order. You must not write to the repository, open a branch, or make any change on GitHub. Reading
+and cloning are fine. Do not dispatch sub-agents of your own. Your final message is the answer
+text and nothing else: no notes on what you checked, no confirmations, no summary of your process.
+The parent posts your message to Slack verbatim.
 
 ### 1. Restate the question
 
@@ -39,9 +39,10 @@ unintelligible. The asker may not be an engineer; they should get an answer, not
 Read `docs/INDEX.md` whole. It is grouped by source and doc type, one bullet per doc with a
 one-line summary and a path relative to `docs/`. Choose up to five docs by judgment.
 
-Then read `docs/graph.json` (its shape is in `references/graph-shape.md`, next to this file). For
-each chosen doc, find its node by `path`, collect every node one edge away in either direction,
-and add any whose title looks relevant. Cap the whole reading set at about eight docs.
+Then read `docs/graph.json` (its shape is in
+`skills/answer-strata-question/references/graph-shape.md` in the clone). For each chosen doc, find
+its node by `path`, collect every node one edge away in either direction, and add any whose title
+looks relevant. Cap the whole reading set at about eight docs.
 
 ### 3. Read the chosen docs
 
@@ -63,6 +64,9 @@ Find the relevant repository in `sources.md`: the table has columns `id`, `type`
 ```bash
 git clone --depth 1 --branch <ref> <repo> /tmp/strata-source-<id>
 ```
+
+If that directory already exists from an earlier question in this session, reuse it instead of
+cloning again; a clone error about an existing destination is not a failure.
 
 - Clone succeeds: answer the uncovered part from the code. Label every code-derived statement
   "from the code, not the docs" and link the specific file each statement came from, as
