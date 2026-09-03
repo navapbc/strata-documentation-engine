@@ -472,3 +472,24 @@ If test 2 hit the clone-failure branch, open a `chore.md` issue through the `cre
 - [ ] **Step 5: Close out**
 
 Mark the PR ready only after tests 1, 3, 4, 5, 6, and 7 pass and test 2 is recorded. If issue #42 is still open, comment on it that PR #50's spec supersedes it and close it.
+
+---
+
+## Deviations applied during execution
+
+Recorded so a reader does not re-derive the original wording from the task text above.
+
+- **Task 1, SKILL.md.** After dry-running the sub-agent instructions, four lines were tightened: the
+  final message is the answer text only; a code claim links the specific file, never the repository
+  root; "touch GitHub in any way" became "make any change on GitHub. Reading and cloning are fine";
+  and the graph reference is cited by its repo-relative path, since the pasted prompt has no "this
+  file". Step 5 also reuses an existing clone directory instead of failing on it.
+- **Task 1, graph-shape.md.** The `documents` edge also targets `example` nodes.
+- **Task 2, wording.** "touch the repository for a question" became "change anything in the
+  repository for a question" in both blocks and in the spec, because the skill reads the clone.
+- **Task 2, placement.** Step 1 named the wrong neighbor for the template block. Both paragraphs sit
+  directly after the attach paragraph in the template as well as the pilot, as the spec says.
+- **Task 2, closing note.** One sentence tells an adopting channel to name its own skill or drop
+  both paragraphs.
+- **Branching.** The branch was cut from `main` before PR #50 merged and rebased onto the PR #50
+  branch so spec, plan, and implementation review together.

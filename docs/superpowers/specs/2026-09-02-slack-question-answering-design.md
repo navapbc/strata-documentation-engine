@@ -128,9 +128,9 @@ change request turned away, before that rule fires.
 ```text
 If a message asks how Strata works or how to do something with it, it is a
 question, not a task. Run the answer-strata-question skill and post its answer.
-Do not run the requirements interrogation, write a brief, or touch the
-repository for a question. Only a message that asks to change something in the
-repository is a task; those follow the rest of these instructions.
+Do not run the requirements interrogation, write a brief, or change anything
+in the repository for a question. Only a message that asks to change something
+in the repository is a task; those follow the rest of these instructions.
 ```
 
 **Allowlist paragraph:**
