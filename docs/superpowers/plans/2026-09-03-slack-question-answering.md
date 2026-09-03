@@ -1,0 +1,474 @@
+# Slack Question Answering Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Let anyone in `#strata-claude-tag` ask a question about Strata and get a cited answer from the verified docs, while only listed maintainers can turn the channel toward repository changes.
+
+**Architecture:** One prose skill, `answer-strata-question`, dispatches a single Sonnet sub-agent at medium effort that reads `docs/INDEX.md`, walks `docs/graph.json` one edge out, reads the chosen docs, falls back to a shallow clone of the source repo when the docs are silent, and returns a Slack-length answer with links to `main`. Two channel-instruction paragraphs route questions to the skill before the kit's requirements interrogation fires and gate change requests on a Slack-handle allowlist. Nothing here adds Python; the lint pipeline and tests stay untouched.
+
+**Tech Stack:** Markdown skill files under `skills/` (auto-loaded through the `.claude/skills` and `.agents/skills` symlinks), Claude Tag channel instructions, `gh` for the PR.
+
+**Spec:** `docs/superpowers/specs/2026-09-02-slack-question-answering-design.md`
+
+## Global Constraints
+
+- Zero code. No new Python, no new scripts, no change to `scripts/` or `tests/`.
+- The skill never writes: no edits, commits, branches, issues, or pull requests.
+- No general-knowledge answers about Strata. Order is docs, then code, then "not covered."
+- Exactly one sub-agent, Sonnet at medium effort, running the whole pass. No fan-out inside it and no rewrite of its answer by the parent.
+- Citation links point at `main`: `https://github.com/navapbc/strata-documentation-engine/blob/main/docs/sources/<source>/<doc>.md`.
+- Code-derived statements are labeled "from the code, not the docs" and linked to the file on GitHub.
+- Handoff line, verbatim: "If this should be in the docs, a maintainer can ask for it here and an engineer can pick it up."
+- Reading set: up to five docs by judgment from `docs/INDEX.md`, plus one-edge neighbors from `docs/graph.json`, capped at about eight.
+- The allowlist paragraph carries the bracketed placeholder `[@handle, @handle]` in both the template and the pilot version of `claude-tag-kit/channel-instructions.md`. Handles are never committed.
+- Both new channel paragraphs sit after the "attach, clone, register" paragraph and before the requirements-interrogation paragraph, routing first, then allowlist.
+- House style for prose in this repo: no em-dashes, no hard-wrapped PR or issue bodies, 100-column wrap in markdown files.
+- `docs/INDEX.md` and `docs/graph.json` are generated. Never edit them.
+- Branch: `baonguyenNava/40-answer-strata-question`, cut from `main` after PR #50 merges. Commit template: `git config commit.template .gitmessage`. Every commit body references `Relates to #40`; the final PR body says `Closes #40`.
+
+## Files
+
+| Path | Action | Responsibility |
+|---|---|---|
+| `skills/answer-strata-question/SKILL.md` | Create | Skill frontmatter, dispatch instructions for the parent, and the full sub-agent procedure (steps 1 to 7 plus hard rules) |
+| `skills/answer-strata-question/references/graph-shape.md` | Create | Node and edge fields of `docs/graph.json` and how to walk one edge out, so the sub-agent never needs `build_graph` |
+| `claude-tag-kit/channel-instructions.md` | Modify | Routing and allowlist paragraphs in the template and pilot version, two table rows, one prose note |
+| `claude-tag-kit/README.md` | Modify | Design rule 4 reworded from "cannot be enforced" to "advisory" |
+| `README.md` | Modify | List the new skill under "Running it" |
+
+---
+
+### Task 1: The skill and its graph reference
+
+**Files:**
+- Create: `skills/answer-strata-question/SKILL.md`
+- Create: `skills/answer-strata-question/references/graph-shape.md`
+
+**Interfaces:**
+- Consumes: `docs/INDEX.md` (generated; grouped by source, then `doc_type`, one bullet per doc with a relative path under `docs/`), `docs/graph.json` (generated; `{"nodes": [...], "edges": [...]}`), `sources.md` (markdown table with columns `id`, `type`, `repo`, `ref`, `subpaths`, `notes`).
+- Produces: the skill name `answer-strata-question`, which Task 2's channel paragraphs and Task 4's README line refer to by exactly that name.
+
+- [ ] **Step 1: Confirm the branch and the skill symlinks**
+
+```bash
+git checkout main && git pull -q && git checkout -b baonguyenNava/40-answer-strata-question
+ls -la .claude/skills .agents/skills
+```
+
+Expected: both print `-> ../skills`. If either does not, stop; the spec relies on the whole-directory symlink and this branch must not add a per-skill link.
+
+- [ ] **Step 2: Write the graph reference**
+
+Create `skills/answer-strata-question/references/graph-shape.md`:
+
+````markdown
+# Shape of `docs/graph.json`
+
+`docs/graph.json` is generated by `scripts/build_graph.py` from doc frontmatter. Never edit it. This
+file describes it so you can walk it without reading the builder.
+
+## Top level
+
+```json
+{ "nodes": [ ... ], "edges": [ ... ] }
+```
+
+## Nodes
+
+One node per doc under `docs/sources/`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | Unique. `<source>-<doc-slug>`, for example `app-template-setting-up-a-new-rails-project` |
+| `title` | string | The doc's title, the same text `docs/INDEX.md` shows as the link |
+| `source` | string | The `id` column of the matching row in `sources.md`, for example `strata-sdk` |
+| `doc_type` | string | One of `feature`, `guide`, `example`, `source` |
+| `tags` | string[] | Free-form kebab-case topics from the frontmatter |
+| `path` | string | Relative to `docs/`, for example `sources/app-template/setting-up-a-new-rails-project.md` |
+
+## Edges
+
+```json
+{ "from": "<node id>", "to": "<node id>", "rel": "<relation>" }
+```
+
+| `rel` | Meaning |
+|---|---|
+| `documents` | A `source` node documents a `feature` or `guide` node |
+| `example-of` | An `example` doc demonstrates the feature the target doc owns |
+| `manages` | A `platform-cli` doc manages the platform component the target doc owns |
+| `integrates-with` | An app or infra doc integrates with the component the target doc owns |
+| `related-to` | Frontmatter cross-reference with no more specific relation |
+
+## Walking one edge out
+
+Given a chosen node id `X`, its neighbors are every `to` of an edge whose `from` is `X` and every
+`from` of an edge whose `to` is `X`. Look each neighbor id up in `nodes` to get its `title` and
+`path`. Add a neighbor to your reading set only if its title looks relevant to the question.
+
+## From a node to a citation link
+
+Prepend `https://github.com/navapbc/strata-documentation-engine/blob/main/docs/` to `path`.
+````
+
+- [ ] **Step 3: Write the skill**
+
+Create `skills/answer-strata-question/SKILL.md`:
+
+````markdown
+---
+name: answer-strata-question
+description: Answers a question about how Strata works or how to do something with it, from the verified Strata docs. Use whenever a Slack message asks a question about Strata rather than requesting a change to this repository.
+---
+
+# Answer a Strata question
+
+Answers one question from the verified Strata docs in this repository's clone. This skill never
+writes: no edits, commits, branches, issues, or pull requests. Doc gaps become tasks only when a
+listed maintainer asks for one in the channel.
+
+## How the parent session runs this skill
+
+1. Dispatch exactly one sub-agent. Set its model to Sonnet. Open its prompt with the line
+   `Work at medium effort.` and then paste the whole of "Sub-agent instructions" below, followed
+   by the question verbatim under a heading `## The question`.
+2. Post the text the sub-agent returns without rewriting it. No second pass, no summary, no
+   preamble.
+3. Do not answer the question yourself, and do not dispatch a second sub-agent for any reason.
+4. Each follow-up question in a thread runs this skill again from step 1. Do not carry an earlier
+   answer forward as fact.
+
+## Sub-agent instructions
+
+You answer one question about Strata from the docs in this repository's clone. Work the steps in
+order. You must not write to the repository, open a branch, or touch GitHub in any way. Do not
+dispatch sub-agents of your own.
+
+### 1. Restate the question
+
+Restate it to yourself in one line and note any Strata component it names: SDK, app template,
+infra template, `platform-cli`, OSCER. Ask a clarifying question only if the message is
+unintelligible. The asker may not be an engineer; they should get an answer, not an interview.
+
+### 2. Pick candidate docs
+
+Read `docs/INDEX.md` whole. It is grouped by source and doc type, one bullet per doc with a
+one-line summary and a path relative to `docs/`. Choose up to five docs by judgment.
+
+Then read `docs/graph.json` (its shape is in `references/graph-shape.md`, next to this file). For
+each chosen doc, find its node by `path`, collect every node one edge away in either direction,
+and add any whose title looks relevant. Cap the whole reading set at about eight docs.
+
+### 3. Read the chosen docs
+
+Read each file under `docs/` at the path from the index. Note which doc supports which claim as you
+go; every claim in the answer needs a link.
+
+### 4. Decide coverage
+
+- The docs answer the question: go to step 6.
+- The docs answer part of it: answer the covered part from the docs, name the uncovered part
+  plainly, and take only that part through step 5.
+- The docs do not answer it: take the whole question through step 5.
+
+### 5. Fall back to source
+
+Find the relevant repository in `sources.md`: the table has columns `id`, `type`, `repo`, `ref`,
+`subpaths`, `notes`, and `repo` is a GitHub URL. Shallow-clone it once into a temporary directory:
+
+```bash
+git clone --depth 1 --branch <ref> <repo> /tmp/strata-source-<id>
+```
+
+- Clone succeeds: answer the uncovered part from the code. Label every code-derived statement
+  "from the code, not the docs" and link the file:
+  `<repo>/blob/<ref>/<path-in-repo>`.
+- Clone fails: do not retry. Say which kind of failure it was, access denied or anything else,
+  in one plain sentence. Say the docs do not cover the question and link `<repo>` so the asker can
+  look or ask a maintainer.
+
+### 6. Write the answer
+
+Direct and Slack-length. Follow each factual claim with a link to the doc on `main`:
+
+```text
+https://github.com/navapbc/strata-documentation-engine/blob/main/docs/<path from the index>
+```
+
+No preamble, and do not restate the question in the reply. If step 5 ran, keep the code-derived
+statements labeled as such.
+
+### 7. Offer the handoff
+
+Only if the answer surfaced a gap or a possible doc error, end with exactly this line:
+
+```text
+If this should be in the docs, a maintainer can ask for it here and an engineer can pick it up.
+```
+
+Otherwise end after the last claim.
+
+### Hard rules
+
+- No edits, commits, branches, issues, or pull requests.
+- No general-knowledge answers about Strata. Docs, then code, then "not covered."
+- You are the only sub-agent. Do not fan out.
+- Links point at `main`, never at a pinned commit. A stale link is acceptable; the answer
+  reflects `main` at clone time.
+- Answer only the question in front of you. Earlier answers in the thread are not facts.
+````
+
+- [ ] **Step 4: Verify the skill loads and the pipeline is untouched**
+
+```bash
+python3 - <<'EOF'
+import sys
+sys.path.insert(0, ".")
+from scripts.frontmatter import parse_frontmatter
+text = open("skills/answer-strata-question/SKILL.md").read()
+fm, _ = parse_frontmatter(text)
+assert fm["name"] == "answer-strata-question", fm
+assert "Use whenever a Slack message asks a question" in fm["description"]
+print("SKILL_FRONTMATTER_OK")
+EOF
+ls .claude/skills/answer-strata-question/SKILL.md .agents/skills/answer-strata-question/SKILL.md
+python -m pytest -q && python -m scripts.lint_manifest && python -m scripts.lint_docs && python -m scripts.build_graph && git diff --exit-code docs/INDEX.md docs/graph.json
+```
+
+Expected: `SKILL_FRONTMATTER_OK`, both symlinked paths listed, the test summary with no failures, `MANIFEST_OK`, `DOCS_OK`, `GRAPH_OK`, and no diff on the generated files. If `parse_frontmatter` has a different name or return shape in `scripts/frontmatter.py`, read that file and adjust the check; do not change the parser.
+
+- [ ] **Step 5: Dry-run the sub-agent procedure locally**
+
+In this Claude Code session, dispatch one Agent with `model: "sonnet"`, prompt beginning `Work at medium effort.`, then the "Sub-agent instructions" section pasted verbatim, then `## The question` and `How do I install the Rails application template into a new project?`. Expected: an answer citing at least one `docs/sources/app-template/...` link on `main`, no clarifying question, no handoff line (the docs cover it), no files changed (`git status --short` shows only the two new skill files).
+
+Then repeat with the question `What Slack channel does the Strata SDK post deploy notifications to?` Expected: step 5 runs against `https://github.com/navapbc/strata-sdk-rails`, and the reply is either code-labeled statements with `blob/main/` links into that repo or a one-sentence clone-failure notice plus the "not covered" wording and the handoff line. Fix the skill text if either run deviates; the spec's wording wins over the run.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add skills/answer-strata-question
+git commit -F - <<'EOF'
+Add answer-strata-question skill
+
+Prose skill that dispatches one Sonnet sub-agent at medium effort to
+answer a Strata question from docs/INDEX.md and docs/graph.json, with a
+labeled source-code fallback and links to main. Never writes.
+
+Relates to #40
+EOF
+```
+
+---
+
+### Task 2: Channel instruction paragraphs
+
+**Files:**
+- Modify: `claude-tag-kit/channel-instructions.md` (template block, "Why each paragraph is there" table, pilot block, closing prose)
+
+**Interfaces:**
+- Consumes: the skill name `answer-strata-question` from Task 1.
+- Produces: the two paragraphs a channel Owner pastes in Task 5.
+
+- [ ] **Step 1: Insert the two paragraphs into the template**
+
+In the `## Template` code block, find the paragraph ending `Never read those files by hand instead.` and the paragraph starting `Before doing any substantial work, run a requirements interrogation.` Insert between them, separated by blank lines:
+
+```text
+If a message asks how Strata works or how to do something with it, it is a
+question, not a task. Run the answer-strata-question skill and post its answer.
+Do not run the requirements interrogation, write a brief, or touch the
+repository for a question. Only a message that asks to change something in the
+repository is a task; those follow the rest of these instructions.
+
+Only these Slack handles may ask for changes to the repository: [@handle,
+@handle]. For anyone else this channel is read-only: answer their questions
+with the answer-strata-question skill, and if they ask for a change, say that
+only the maintainers listed here can request one, name them, and offer to
+answer a question instead. Do not run the interrogation, write a brief, open
+a branch, or touch GitHub for a request from a handle not on this list.
+```
+
+The template is generic, so also replace `Strata` in the first line of the routing paragraph with `[the project]`, giving `If a message asks how [the project] works or how to do something with it, it is a`. Keep the skill name literal in the template; the closing prose in Step 4 explains why.
+
+- [ ] **Step 2: Add the two table rows**
+
+In the "Why each paragraph is there" table, insert directly after the `Repository, named in the first message` row:
+
+```markdown
+| Question routing, before the interrogation | A non-engineer asking "how do I X?" is met with a red-team interrogation, or the question is answered by editing the docs rather than reading them. The interrogation paragraph fires "before any substantial work," so a question has to be routed out ahead of it |
+| Maintainer allowlist for changes | A curious non-maintainer's "can you just add X?" turns into a branch and a pull request nobody asked an engineer for. The list is prose and therefore advisory; branch protection stays the enforced gate |
+```
+
+- [ ] **Step 3: Insert the same two paragraphs into the pilot version**
+
+In the `## Pilot version — Strata documentation engine` code block, find the paragraph ending `Never read AGENTS.md or the skill files by hand instead.` and the paragraph starting `This channel builds a live, browsable site`. Insert between them the two paragraphs from Step 1 exactly as written there, with `Strata` (not `[the project]`) in the routing paragraph and the placeholder `[@handle, @handle]` left in place.
+
+- [ ] **Step 4: Add the closing prose note**
+
+After the paragraph beginning `The draft-review paragraph names `review-draft` directly`, add:
+
+```markdown
+The routing and allowlist paragraphs name `answer-strata-question` directly for the same reason: this
+repository ships it. The allowlist keeps its bracketed placeholder in both versions on purpose. The
+live handle list belongs only in the pasted channel instructions, which an Owner can lock against
+member edits, so adding a maintainer is a channel edit rather than a pull request. The list is
+advisory (design rule 3 in `README.md`): Claude honors it, GitHub does not know about it, and branch
+protection remains the enforced gate on `main`.
+```
+
+- [ ] **Step 5: Verify placement and wording**
+
+```bash
+grep -n 'answer-strata-question' claude-tag-kit/channel-instructions.md
+grep -n 'Never read those files by hand instead\|If a message asks how\|Only these Slack handles\|Before doing any substantial work\|Never read AGENTS.md\|This channel builds a live' claude-tag-kit/channel-instructions.md
+grep -c '\[@handle,' claude-tag-kit/channel-instructions.md
+git diff -U0 claude-tag-kit/channel-instructions.md | grep '^+' | grep -c '—'
+```
+
+Expected: the skill name appears in the template block, the pilot block, both table rows' neighborhood, and the closing note. The line numbers from the second grep show, in both blocks, the order: attach paragraph, `If a message asks how`, `Only these Slack handles`, then the next existing paragraph. The placeholder count is 2. The last command prints `0`: none of your added lines contain an em-dash (the file's pre-existing ones stay as they are).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add claude-tag-kit/channel-instructions.md
+git commit -F - <<'EOF'
+Route questions and gate changes in channel instructions
+
+Two paragraphs ahead of the requirements interrogation: questions run
+answer-strata-question, and only listed Slack handles may request
+repository changes. Placeholder handles stay in the repository copy.
+
+Relates to #40
+EOF
+```
+
+---
+
+### Task 3: Reword kit design rule 4
+
+**Files:**
+- Modify: `claude-tag-kit/README.md` (the "Design rules" list, item 4)
+
+**Interfaces:**
+- Consumes: nothing from earlier tasks.
+- Produces: a rule the Task 2 allowlist paragraph no longer contradicts.
+
+- [ ] **Step 1: Replace rule 4**
+
+Replace:
+
+```markdown
+4. **Every gate judges the artifact, not the requester.** Claude Tag controls message ingestion, so
+   a check asking "who sent this" cannot be enforced.
+```
+
+with:
+
+```markdown
+4. **Every enforced gate judges the artifact, not the requester.** Claude Tag controls message
+   ingestion, so a check asking "who sent this" can only ever be advisory prose that Claude honors
+   and GitHub never sees. Use one where it changes what Claude does (a maintainer allowlist for
+   change requests, say), and put the enforcement in branch protection and CI.
+```
+
+- [ ] **Step 2: Verify**
+
+```bash
+grep -n 'cannot be enforced' claude-tag-kit/README.md claude-tag-kit/channel-instructions.md docs/superpowers/specs/2026-09-02-slack-question-answering-design.md
+```
+
+Expected: the only hit is in the spec, which quotes the old wording deliberately. No hit in either kit file.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add claude-tag-kit/README.md
+git commit -F - <<'EOF'
+Make kit design rule 4 allow advisory sender gates
+
+The allowlist paragraph in the channel instructions is a "who sent
+this" check. Rule 4 said such checks cannot be enforced, which is true,
+but read as if they were pointless. Now it says where enforcement goes.
+
+Relates to #40
+EOF
+```
+
+---
+
+### Task 4: List the skill in README
+
+**Files:**
+- Modify: `README.md:24-30` (the "Running it" section)
+
+**Interfaces:**
+- Consumes: the skill name from Task 1.
+
+- [ ] **Step 1: Add the bullet**
+
+After the `**In CI:**` bullet in "Running it", add:
+
+```markdown
+- **From Slack:** in `#strata-claude-tag`, ask a question about Strata. Claude Tag runs the
+  `answer-strata-question` skill, which answers from the verified docs with links to `main` and
+  never edits the repository. Only maintainers listed in the channel instructions can request
+  changes there; see `claude-tag-kit/channel-instructions.md`.
+```
+
+- [ ] **Step 2: Verify the docs-maintenance contract**
+
+```bash
+grep -n 'answer-strata-question' README.md AGENTS.md CONTRIBUTING.md
+```
+
+Expected: one hit in `README.md`, none in the other two. The spec says `AGENTS.md` does not change (no new command, script, or flag), and `CONTRIBUTING.md` documents the contributor workflow, which this skill does not alter.
+
+- [ ] **Step 3: Run the full check and commit**
+
+```bash
+python -m pytest -q && python -m scripts.lint_manifest && python -m scripts.lint_docs && python -m scripts.build_graph && git diff --exit-code docs/INDEX.md docs/graph.json
+git add README.md
+git commit -F - <<'EOF'
+List the Slack question-answering path in README
+
+Relates to #40
+EOF
+```
+
+---
+
+### Task 5: Open the PR, then verify in the channel
+
+**Files:**
+- None in the repository. This task produces a draft PR and a set of channel observations recorded on the PR.
+
+**Interfaces:**
+- Consumes: the two paragraphs from Task 2 and the skill from Task 1.
+
+- [ ] **Step 1: Open a draft PR through the repo skill**
+
+Invoke the `create-pr` skill. It runs `review-draft` over the description and opens the PR as a draft with `.github/PULL_REQUEST_TEMPLATE.md`. The body must say `Closes #40`, link the spec at `docs/superpowers/specs/2026-09-02-slack-question-answering-design.md`, and carry the verification checklist below as unchecked boxes for the reviewer to tick after paste. Do not hard-wrap the body.
+
+- [ ] **Step 2: Paste the channel instructions**
+
+After the PR merges, a channel Owner opens `#strata-claude-tag` channel instructions, pastes the pilot version from `claude-tag-kit/channel-instructions.md`, replaces `[@handle, @handle]` with the real maintainer handles, and locks the instructions against member edits. Record who did this and when as a PR comment.
+
+- [ ] **Step 3: Run the seven behavioral tests**
+
+In `#strata-claude-tag`, in this order, each in a fresh thread unless noted. Record each outcome as a PR comment with a link to the Slack thread.
+
+1. **Docs-covered question.** `How do I install the Rails application template into a new project?` Expect a direct answer whose links resolve under `blob/main/docs/sources/app-template/`, no interrogation, no repository change.
+2. **Uncovered question (the source-access probe).** `What Slack channel does the Strata SDK post deploy notifications to?` Expect either code-labeled statements linking into `navapbc/strata-sdk-rails` or a one-sentence clone-failure notice with the "not covered" wording, plus the handoff line. Record which branch fired; that is the source-access checkpoint's answer.
+3. **Task disguised as a question, from a listed handle.** `Can you update the docs to mention how deploy notifications are configured?` Expect the kit's task flow: the requirements interrogation starts. Stop it there.
+4. **Follow-up in thread.** In test 1's thread, ask `And how do I update the template later?` Expect the skill to run again and cite `docs/sources/app-template/using-the-rails-template.md`.
+5. **Change request from an unlisted handle.** From an account not on the list, `Please add a section on deploy notifications to the SDK docs.` Expect a read-only reply naming the maintainers and offering to answer a question, with no interrogation, branch, or GitHub activity.
+6. **Change request from a listed handle.** The same message from a listed account. Expect the kit's task flow.
+7. **Model pin.** For test 1, open the session's dispatch record and confirm one sub-agent on Sonnet and that the posted text matches its return verbatim.
+
+- [ ] **Step 4: Decide the source-access follow-up**
+
+If test 2 hit the clone-failure branch, open a `chore.md` issue through the `create-issue` skill titled `Decide read access for Claude Tag to Strata source repositories`, body stating the observed error class and the two options from the spec (grant read access, or leave the fallback as a pointer). The skill text does not change either way.
+
+- [ ] **Step 5: Close out**
+
+Mark the PR ready only after tests 1, 3, 4, 5, 6, and 7 pass and test 2 is recorded. If issue #42 is still open, comment on it that PR #50's spec supersedes it and close it.
