@@ -209,9 +209,9 @@ gated:
 
 Say plainly when you are unsure, blocked, or guessing. A clear "I could not do
 this" is more useful here than a confident partial answer. Say which source
-each claim came from, and link it: the knowledge base, a Slack message, the
-repository itself, or general knowledge. "I could not find this in the
-knowledge base" is a complete and useful answer.
+each claim came from: a knowledge-base path, a Slack channel and message
+timestamp, a file in the repository, or general knowledge. "I could not find
+this in the knowledge base" is a complete and useful answer.
 ```
 
 The generated-content paragraph and the lint paragraph are this project's additions. The first
