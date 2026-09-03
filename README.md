@@ -28,6 +28,10 @@ sources, producing a linked, agent-queryable knowledge base.
 - **In CI:** the `Generate Strata Docs` Action (manual)
   runs the skill and opens a PR.
   Requires the `ANTHROPIC_API_KEY` and `SOURCES_READ_TOKEN` secrets.
+- **From Slack:** in `#strata-claude-tag`, ask a question about Strata. Claude Tag runs the
+  `answer-strata-question` skill, which answers from the verified docs with links to `main` and
+  never edits the repository. Only maintainers listed in the channel instructions can request
+  changes there; see `claude-tag-kit/channel-instructions.md`.
 
 ## Developing
 
