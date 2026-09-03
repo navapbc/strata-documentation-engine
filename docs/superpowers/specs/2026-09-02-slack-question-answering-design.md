@@ -7,7 +7,8 @@
 - **Audience:** two groups sharing one channel. Non-maintainers, who ask questions about Strata and
   have no write access to the repository. Engineers, who work on the repository and pick up doc gaps
   the questions expose.
-- **Deliverable:** one repository skill, one channel-instruction paragraph, one verification probe
+- **Deliverable:** one repository skill, two channel-instruction paragraphs (question routing and a
+  maintainer allowlist), one verification probe
 
 ## Why Claude Tag
 
@@ -18,8 +19,12 @@ connection, the clone of this repository, and access control over who may post i
 separate bot, API key, and Lambda duplicate all of that. Nothing from `strata-qa/` is on `main`, and
 this design references none of it.
 
-Access control is out of scope. Claude Tag decides who can post in the channel; the skill treats
-every message that reaches it as authorized.
+Access control is in scope, split along the two audiences. Anyone Claude Tag lets post in the
+channel may ask a question. Only Slack handles on a maintainer list in the channel instructions may
+ask for a change to the repository; for everyone else the channel is read-only and the only thing
+Claude runs is the question-answering skill. The list is prose, so it is an advisory gate (kit design
+rule 3: nothing important lives only in prose). The enforced backstops stay where they are: branch
+protection on `main` and the single GitHub identity Claude Tag writes with.
 
 ## Design rules
 
@@ -32,7 +37,13 @@ every message that reaches it as authorized.
    for build tasks. Routing a question out before that rule fires is the whole job of the channel
    instruction.
 4. **The skill never writes.** No edits, commits, branches, issues, or PRs. Doc gaps become tasks
-   only when a person asks for them to.
+   only when a listed maintainer asks for them to.
+5. **Writes are gated on the sender, questions are not.** A change request from a handle not on
+   the maintainer list gets a plain "this channel is read-only for you" plus an offer to answer
+   questions, never the task flow. A question from anyone gets an answer.
+6. **Sonnet at medium effort answers.** Reading a small doc set and drafting a cited answer is
+   tier 2 work under `rules/subagent-model-tiers.md`. Opus stays reserved for the kit's
+   interrogation and review gates.
 
 ## The skill: `answer-strata-question`
 
@@ -45,6 +56,16 @@ skill does not depend on the reader knowing `build_graph`.
 
 The `skills/` directory is symlinked whole into `.claude/skills` and `.agents/skills`, so adding the
 directory is enough for Claude Tag to load it once the repository is registered.
+
+### Model
+
+A skill cannot change the model of the session it runs in, so the skill dispatches exactly one
+sub-agent on Sonnet at medium effort and that sub-agent runs steps 1 through 7 below. The parent
+session posts the returned answer verbatim: no rewriting, no second pass, no further fan-out. The
+dispatch names the model explicitly and asks for medium effort in its prompt; if the runtime exposes
+no effort control, the model choice is the binding half and the effort request is best-effort.
+
+This is the only sub-agent in the design. It exists to pin the model, not to parallelize.
 
 ### Description
 
@@ -76,30 +97,33 @@ channel instruction:
    `https://github.com/navapbc/strata-documentation-engine/blob/main/docs/sources/<source>/<doc>.md`.
    No preamble and no restating the question in the reply.
 7. **Offer the handoff** only when the answer surfaced a gap or a possible doc error: one closing
-   line, "If this should be in the docs, say so and an engineer can pick it up." This is the cue
-   that flips the thread from question to task.
+   line, "If this should be in the docs, a maintainer can ask for it here and an engineer can pick
+   it up." This is the cue that flips the thread from question to task, and the allowlist paragraph
+   decides whether the follow-up is accepted as one.
 
 ### Hard rules stated in the skill
 
 - No edits, commits, branches, issues, or pull requests.
 - No general-knowledge answers about Strata. Docs, then code, then "not covered."
-- No sub-agents. This is a single-pass read-and-answer task; dispatching adds latency for no gain.
+- Exactly one sub-agent, Sonnet at medium effort, running the whole pass. No fan-out inside it and
+  no rewrite of its answer by the parent.
 - Links point at `main`, not at a pinned commit. The docs regenerate on a schedule and a stale link
   is acceptable; the answer reflects `main` at clone time.
 - Each follow-up question in a thread runs the skill again rather than carrying an earlier answer
   forward as fact.
 
-## The channel instruction
+## The channel instructions
 
-A new paragraph in the template in `claude-tag-kit/channel-instructions.md`, with a matching row in
-the "Why each paragraph is there" table. After merge, a channel Owner pastes the paragraph into
-`#strata-claude-tag`.
+Two new paragraphs in the template in `claude-tag-kit/channel-instructions.md`, each with a row in
+the "Why each paragraph is there" table, and both filled in for the pilot version. After merge, a
+channel Owner pastes them into `#strata-claude-tag` and fills in the handle list.
 
-**Placement:** directly after the "attach, clone, register" paragraph and before the
-requirements-interrogation paragraph. The interrogation paragraph says "before doing any
-substantial work," so a question must be routed out before that rule fires.
+**Placement:** both directly after the "attach, clone, register" paragraph and before the
+requirements-interrogation paragraph, routing first, then the allowlist. The interrogation paragraph
+says "before doing any substantial work," so a question must be routed out, and a non-maintainer's
+change request turned away, before that rule fires.
 
-**Wording:**
+**Routing paragraph:**
 
 ```text
 If a message asks how Strata works or how to do something with it, it is a
@@ -109,16 +133,36 @@ repository for a question. Only a message that asks to change something in the
 repository is a task; those follow the rest of these instructions.
 ```
 
-**Table row.** The failure it targets: a non-engineer asking "how do I X?" met with a red-team
-interrogation, or a question answered by editing the docs rather than reading them.
+**Allowlist paragraph:**
+
+```text
+Only these Slack handles may ask for changes to the repository: [@handle,
+@handle]. For anyone else this channel is read-only: answer their questions
+with the answer-strata-question skill, and if they ask for a change, say that
+only the maintainers listed here can request one, name them, and offer to
+answer a question instead. Do not run the interrogation, write a brief, open
+a branch, or touch GitHub for a request from a handle not on this list.
+```
+
+The repository copy carries the bracketed placeholder in both the template and the pilot version.
+The live list lives only in the pasted channel instructions, which an Owner can lock against member
+edits; keeping handles out of the repository means adding a maintainer is a channel edit, not a PR.
+
+**Table rows.** Routing: a non-engineer asking "how do I X?" met with a red-team interrogation, or a
+question answered by editing the docs rather than reading them. Allowlist: a curious non-maintainer's
+"can you just add X?" turning into a branch and a pull request nobody asked an engineer for.
 
 **Routing edge case.** "Why don't the docs mention X?" is a question first. The skill answers it,
 including "they don't cover it," and its handoff line invites the follow-up that becomes a task. The
 instruction does not need to name this case; the skill's step 7 handles it.
 
-Routing is by message content, not by sender. Claude Tag controls message ingestion, so a check on
-who sent a message cannot be enforced (see design rule 4 in `claude-tag-kit/README.md`). An
-ambiguous message fails soft: an answer plus an offer, never an interrogation.
+**What the sender gate is and is not.** Claude Tag shows the sender of each message, so the
+instruction can read the handle and route on it. It is still prose: Claude honors it, GitHub does
+not know about it. Kit design rule 4 in `claude-tag-kit/README.md` currently says a "who sent this"
+check cannot be enforced, which is true of enforcement and this design does not claim otherwise; the
+rule's wording is amended (see Documentation maintenance) so it stops implying such a check is
+pointless as an advisory gate. An ambiguous message fails soft: an answer plus an offer, never an
+interrogation.
 
 ## Source-access checkpoint
 
@@ -145,6 +189,13 @@ The skill is prose, so its tests are behavioral and run in the channel.
 3. **Task disguised as a question.** "Can you update the docs to mention X?" Expect the kit's task
    flow, not the skill.
 4. **Follow-up in thread.** Ask a second question in the same thread. Expect the skill to run again.
+5. **Change request from an unlisted handle.** From an account not on the list, ask for a doc edit.
+   Expect the read-only reply naming the maintainers, an offer to answer a question, and no
+   interrogation, branch, or GitHub activity.
+6. **Change request from a listed handle.** The same request from a listed account. Expect the
+   kit's task flow.
+7. **Model pin.** For test 1, confirm from the session's dispatch record that the answer came from
+   a single Sonnet sub-agent and that the parent posted it unchanged.
 
 `python -m pytest` and the lint pipeline (`lint_manifest`, `lint_docs`, `build_graph`) stay green;
 the change adds no Python.
@@ -153,7 +204,12 @@ the change adds no Python.
 
 - `README.md`: list the new skill.
 - `AGENTS.md`: no change; the architecture, commands, and workflow it describes are untouched.
-- `claude-tag-kit/channel-instructions.md`: the paragraph and table row above.
+- `claude-tag-kit/channel-instructions.md`: the two paragraphs and table rows above, in the
+  template and the pilot version.
+- `claude-tag-kit/README.md`: design rule 4 reworded from "a check asking 'who sent this' cannot be
+  enforced" to say that such a check is advisory, so the allowlist paragraph and the rule agree.
+- `rules/subagent-model-tiers.md`: no change. Sonnet for a scoped read-and-draft pass is already
+  tier 2; the effort level is set here because that rule deliberately covers model only.
 
 ## Out of scope
 
@@ -161,4 +217,7 @@ the change adds no Python.
   real questions show what the gaps look like.
 - Pinning citation links to a commit SHA.
 - A deterministic retriever in `scripts/`.
-- Any change to who may post in the channel.
+- Any change to who may post in the channel. This design gates what a poster may ask for, not who
+  may post; membership stays with Slack and the channel Owner.
+- Enforcing the maintainer list outside prose (a hook, or a per-sender GitHub identity). Branch
+  protection remains the enforced gate on `main`.
