@@ -1539,7 +1539,7 @@
     },
     {
       "from": "example-oscer-overview",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -1934,7 +1934,7 @@
     },
     {
       "from": "example-strata-paidleave-overview",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -2124,7 +2124,7 @@
     },
     {
       "from": "example-strata-unemployment-overview",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -2194,7 +2194,7 @@
     },
     {
       "from": "infra-azure-making-changes",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -2219,7 +2219,7 @@
     },
     {
       "from": "infra-azure-overview",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -2249,7 +2249,7 @@
     },
     {
       "from": "infra-azure-set-up-account-and-network",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -2279,7 +2279,7 @@
     },
     {
       "from": "infra-azure-set-up-database-and-service",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -2389,7 +2389,7 @@
     },
     {
       "from": "infra-environments-and-workspaces",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -2419,7 +2419,7 @@
     },
     {
       "from": "infra-getting-started",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -2479,7 +2479,7 @@
     },
     {
       "from": "infra-overview",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -2584,7 +2584,7 @@
     },
     {
       "from": "platform-cli-app-commands",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "manages"
     },
     {
@@ -2644,7 +2644,7 @@
     },
     {
       "from": "platform-cli-legacy-migration",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "manages"
     },
     {
@@ -2679,7 +2679,7 @@
     },
     {
       "from": "platform-cli-mechanism",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "manages"
     },
     {
@@ -2734,7 +2734,7 @@
     },
     {
       "from": "platform-cli-updating-projects",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "manages"
     },
     {

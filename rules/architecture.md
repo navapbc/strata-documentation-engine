@@ -55,12 +55,20 @@ Two cross-link axes, both resolved through registries (fenced kebab-case key lis
 
 `lint_docs` hard-fails on any `feature_keys`/`demonstrates`/`component_keys`/`manages`/
 `integrates_with` value not in its registry. Add the key to the registry before writing any doc that
-references it.
+references it. It also hard-fails when two docs claim the same `feature_keys` / `component_keys`
+entry (`COLLISION:` lines; `build_graph` otherwise resolves ownership first-wins over sorted paths and
+would silently drop the second claimant), and on leaked tool-call markup (`</invoke>`, `</content>`,
+`<parameter …>`) in any doc body or `.logs/*.md` distillation log.
+
+Unprefixed feature keys are scoped to the Rails SDK (profile `sdk`); the TypeScript SDK (profile
+`sdk-typescript`) claims none. Both SDKs are platform-component ids.
 
 **"Never silently drop" invariant.** The pipeline surfaces every gap rather than hiding it. When
 editing the graph builder, linter, or delta classifier, emit a visible record rather than discarding:
 
 - Clone failure: source recorded **skipped**, not dropped.
+- Two docs claim one feature key or component id: `lint_docs` fails with a `COLLISION:` line.
+- Tool-call markup leaked into a doc or log: `lint_docs` fails, naming file and line.
 - Registry-valid key with no owning doc: `build_graph` prints a `GAP:` line.
 - Unresolved findings: doc marked `verified: needs-review`.
 - Source removed from `sources.md` with docs still present: `source_delta` reports **orphaned**.

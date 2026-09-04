@@ -1,6 +1,8 @@
 # Profile: sdk
 
-The source is a reusable SDK/engine (the Strata SDK Rails engine). **It already ships
+The source is the **Strata SDK Rails engine** (`strata-sdk-rails`, Ruby). This profile is
+Rails-specific: a TypeScript SDK (e.g. `strata-sdk-case-management`) uses `sdk-typescript.md`
+instead, because the two share no code, API, or feature-key vocabulary. **It already ships
 extensive docs under `docs/`** (getting-started, installation, strata-attributes, generators,
 case-management-business-process, multi-page-form-flows, strata-audit-log, strata-rules-engine,
 authorization, api-authentication, strata-form-builder, strata-sdk-components, …).
@@ -13,7 +15,9 @@ Produce docs under `docs/sources/<source-id>/`:
 
 - One `doc_type: guide` "Getting started with the Strata SDK" — distilled from the SDK's
   `getting-started.md` / `installation.md`: prerequisites, minimal setup to consume the SDK,
-  and a pointer to where its own docs live.
+  and a pointer to where its own docs live. Set **`component_keys: [strata-sdk-rails]`** on this
+  doc (the SDK's id in `references/platform-components.md`) so apps can declare
+  `integrates_with: [strata-sdk-rails]`.
 - One `doc_type: feature` per canonical feature key in `references/feature-keys.md`
   (business-process, task, case, application-form, determination, value-object, attributes,
   each attribute type, audit-log, rules-engine, policies, generators, …). For each: distill the
@@ -25,3 +29,7 @@ Use stable kebab ids like `strata-sdk-<feature>`. Cite exact paths (both the SDK
 verifying code file) in `source_ref.paths`. Do not invent APIs — every claim must trace to a
 file in the checked-out source. Where the SDK doc and the code disagree, document the code's
 actual behavior and note the discrepancy.
+
+**Before finishing a re-document, audit coverage:** list the upstream docs under `docs/` that no
+doc in the set covers, close the material gaps, and record the disposition of each remaining one in
+the distillation log.

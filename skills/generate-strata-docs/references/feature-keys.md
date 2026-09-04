@@ -6,6 +6,13 @@ SHOW with `demonstrates: [..]`. `lint_docs.py` hard-fails on any value not liste
 `build_graph.py` resolves each `demonstrates` key to the owning `sdk` doc as an `example-of`
 edge. Each key traces to a real file in `strata-sdk-rails`.
 
+**Every unprefixed key below is scoped to the Rails SDK.** Only `strata-sdk-rails` docs (profile
+`sdk`) may claim them via `feature_keys`; a doc for any other SDK (e.g. the TypeScript
+`strata-sdk-case-management`, profile `sdk-typescript`) sets `feature_keys: []` even where the
+domain vocabulary overlaps (`case`, `task`). `lint_docs` hard-fails when two docs claim the same key,
+so a second SDK that needs its own feature vocabulary gets a namespaced key set added here first
+(e.g. `cm-ts/case-type-config`), never a share of the Rails keys.
+
 ```
 business-process            # app/models/strata/business_process.rb
 task                        # app/models/strata/task.rb
@@ -41,6 +48,15 @@ policies                    # app/policies/strata/application_form_policy.rb
 auth                        # lib/strata/auth.rb, docs/api-authentication.md
 generators                  # lib/generators/strata/* (11 generators)
 ```
+
+## Thresholds for judgment-prone keys
+
+- **`components`**: tag it when the app renders an SDK ViewComponent or shared template as a
+  load-bearing part of its UI (`Strata::Flows::TaskListComponent`, `Strata::Cases::IndexComponent`,
+  the shared `strata/application_forms` index/show templates, `Strata::US::AccordionComponent`).
+  Incidental row/cell sub-components rendered inside another SDK component
+  (`CaseRowComponent`/`TaskRowComponent` on their own) are **not** a `components` demonstration.
+  When tagged, put it on a standalone `components` example doc so the key has one owner.
 
 ## Deliberately excluded
 
