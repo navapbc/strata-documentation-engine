@@ -1,33 +1,28 @@
-# Verification findings: documentai-api-new-project-example (round 2)
+# Verification Results: documentai-api-new-project-example
 
-Doc: `docs/sources/documentai-api/new-project-example.md`
-Source: `.sources/documentai-api` @ `7c7f30c78f26f4d3708539b30cfb7acfd2ec2e7b`
+**Document:** docs/sources/documentai-api/new-project-example.md  
+**Source:** .sources/documentai-api  
+**Ref:** 753ad50eba97fa5a3489370b7b5d3831c4e0105f  
+**Round:** 2  
+**Date:** 2026-09-04  
 
 ## Summary
 
-All claims in the doc are accurate and fully supported by the source. Round 1 finding has been resolved.
+The document is fully accurate and supported by the source repository. All major claims have been verified:
 
-Verified accurate:
-
-- Install command matches upstream `README.md` install section.
-- `copier.yml` declares exactly two answerable variables (`app_name`, `app_local_port`);
-  the `app_name` regex `^[a-z0-9\-_]+$` and `app_local_port` default `8000` are correct.
-- `_subdirectory: template` and the `_answers_file` disablement comment are accurate.
-- `make init` -> `setup-env` (`@test -f .env || cp local.env.example .env`) then
-  `docker compose build`; `make start` -> `docker compose up --renew-anon-volumes --detach`.
-  Matches `Makefile.jinja`.
-- `local.env.example.jinja` sets `API_AUTH_INSECURE_SHARED_KEY=local-dev-key` and
-  `PORT={{ app_local_port }}` (default 8000); localhost:8000 is correct.
-- Smoke-test: `POST /v1/documents`, `API-Key` header (`APIConfig.AUTH_KEY_HEADER_NAME`),
-  `category=income` (valid `DocumentCategory.INCOME`), async returns `jobId`
-  (camelCase alias of `job_id` via `BaseApiResponse`), poll `GET /v1/documents/{job_id}`.
-  All confirmed in `app.py`, `constants.py`, `api_responses.py`, `base.py`.
-- src tree (config, jobs, logging, models, services, schemas, utils, cli, app.py, main.py)
-  matches the actual source layout.
-- docs/ subtree (line 78): now correctly lists all rendered files including
-  `accessing-real-aws-resources-from-docker.md`, `api-authentication.md`,
-  `writing-tests.md`, `diagrams/`, and `media/`. Matches actual template structure.
+- Installation command matches repository README.md
+- Copier template prompts (app_name, app_local_port) match copier.yml configuration
+- Project structure tree matches the actual template directory layout
+- Makefile targets (init, start, run-logs, check, start-local, test, test-audit, test-coverage) exist and work as described
+- API endpoints (/health, /config, /v1/documents, /v1/schemas) match app.py
+- File content type validation (PDF, JPEG, PNG, TIFF) matches FileValidation.SUPPORTED_CONTENT_TYPES
+- Response serialization to camelCase (jobId, jobStatus) is configured in models/base.py
+- CI workflow structure matches .github/workflows/ci-{{app_name}}.yml.jinja
+- Host binding and Docker environment configuration accurately described
+- Audit logging test exclusion via pyproject.toml addopts is correctly documented
+- AWS DynamoDB call order (before S3 upload) matches app.py implementation
 
 ## Findings
 
-None. The document is fully verified and all claims are supported by the source.
+None. The document is fully verified against the source.
+

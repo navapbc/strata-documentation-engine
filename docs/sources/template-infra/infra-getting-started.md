@@ -2,15 +2,14 @@
 id: infra-getting-started
 title: Getting Started — Standing Up Infrastructure
 source: template-infra
-verified: ok
 doc_type: guide
 tags: [infra, setup, terraform, aws, getting-started, deployment]
-related: [infra-overview, infra-module-architecture, infra-configuration, infra-database, infra-capabilities]
+related: [infra-overview, infra-module-architecture, infra-configuration, infra-database, infra-capabilities, infra-security-monitoring]
 integrates_with: [template-application-rails]
 summary: The end-to-end setup sequence for a project — install the template, set up developer tools, then deploy the account, network, build repository, database, and service layers in order.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: 80a7cc8ec802c442098933f65280175b8453c659
+  ref: 8b7bc3899c3a9ab1b3441330d72993cd34d21f70
   paths:
     - README.md
     - infra/README.md
@@ -22,7 +21,11 @@ source_ref:
     - docs/infra/set-up-app-env.md
     - docs/infra/add-application.md
     - docs/infra/staging-and-production-environments.md
-last_documented: 2026-07-21
+    - infra/accounts/main.tf
+    - infra/project-config/threat_detection.tf
+    - infra/project-config/main.tf.jinja
+last_documented: 2026-09-04
+verified: ok
 ---
 
 # Getting Started — Standing Up Infrastructure
@@ -31,7 +34,8 @@ This guide walks the full first-time setup sequence, distilled from `README.md`,
 and the `docs/infra/set-up-*` guides. The layers must be deployed in dependency order; see
 [infra-module-architecture](infra-module-architecture.md) for why.
 
-`{{app_name}}` below is a placeholder for your application's folder name under `infra/`.
+`<APP_NAME>` below is a placeholder for your application's name, which is also its directory
+name under `infra/`.
 
 ## Prerequisites
 
@@ -56,7 +60,9 @@ updating, since breaking changes can affect deployed infrastructure.
 
 Review `infra/project-config/main.tf` before deploying — its values have broad, hard-to-change-later
 impact (`infra/README.md`). Optionally adjust the networks in `infra/project-config/networks.tf`
-(three are defined by default, one per environment).
+(three are defined by default, one per environment). In the template repo this file is
+`main.tf.jinja`; copier renders it to `main.tf` with your answers (project name, owner, code
+repository URL, default region) already filled in.
 
 ## 3. Set up developer tools and AWS auth
 
@@ -79,7 +85,9 @@ make infra-set-up-account ACCOUNT_NAME=<ACCOUNT_NAME>
 ```
 
 This creates the S3 Terraform state bucket, the GitHub OIDC provider, and the IAM role and policy
-for GitHub Actions, and writes `<account name>.<account id>.s3.tfbackend` into `infra/accounts/`. Then verify GitHub Actions can
+for GitHub Actions, and writes `<account name>.<account id>.s3.tfbackend` into `infra/accounts/`. The
+account layer also enables an **AWS GuardDuty detector** by default in the project's default region
+(see [infra-security-monitoring](infra-security-monitoring.md)). Then verify GitHub Actions can
 authenticate:
 
 ```bash
@@ -89,7 +97,7 @@ make infra-check-github-actions-auth ACCOUNT_NAME=<ACCOUNT_NAME>
 ## 5. Set up the network (VPC)
 
 Per `docs/infra/set-up-network.md`, first set `has_database` and `has_external_non_aws_service` in
-`infra/{{app_name}}/app-config/main.tf` (these determine which VPC endpoints and NAT gateways the
+`infra/<APP_NAME>/app-config/main.tf` (these determine which VPC endpoints and NAT gateways the
 network creates), then:
 
 ```bash
@@ -150,4 +158,17 @@ or repeat the account and network setup; see `docs/infra/staging-and-production-
 
 The infrastructure supports a monorepo with multiple applications. To add one
 (`docs/infra/add-application.md`): create the application directory, use the Platform CLI to add its
-infrastructure code, then repeat the build-repository / database / service setup for the new app.
+infrastructure code (the guide links to
+<https://navapbc.github.io/platform-cli/guides/adding-an-app/>), then repeat the build-repository /
+database / service setup for the new app.
+
+## Wiring up CI/CD and the team workflow
+
+The steps above stand up AWS resources. `README.md` then points at four further setup guides that
+live under `template-only-docs/` — set up CI, set up continuous deployment, set up pull request
+environments (optional), and set up the team workflow. Those paths are **template-author docs**: the
+Nava Platform CLI strips `template-only-*` from generated projects, so in your own repo follow them
+from the template's GitHub page rather than expecting the files locally. See
+[infra-environments-and-workspaces](infra-environments-and-workspaces.md) for what PR environments
+do once enabled, and [infra-security-monitoring](infra-security-monitoring.md) for the CI
+vulnerability and compliance scans.

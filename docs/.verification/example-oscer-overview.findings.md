@@ -1,37 +1,42 @@
-# Verification findings: example-oscer-overview (round 1)
+# Verification findings: example-oscer-overview (round 2)
 
 Doc: `docs/sources/oscer/overview.md`
-Source: `.sources/oscer` @ `c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750` (matches `source_ref.ref`)
+Source: `.sources/oscer` @ `be3ffbb4e7b7e7cf0b4047af5544870f50619257` (matches `source_ref.ref`)
 
-## Result: no findings
+## Status: All findings from round 1 have been fixed
 
-The doc is fully supported by the source. Every load-bearing claim was re-verified:
+Both issues identified in round 1 verification have been resolved in the current document:
 
-- **All referenced paths exist** under `reporting-app/`: `business_processes/certification_business_process.rb`,
-  `models/certification_case.rb`, `models/certification.rb`, `models/oscer_task.rb`,
-  `models/oscer_application_form.rb`, `models/activity_report_application_form.rb`,
-  `models/determination.rb`, `models/concerns/determinable.rb`, `models/rules/exclusion_ruleset.rb`,
-  `services/exclusion_determination_service.rb`, `policies/strata/task_policy.rb`,
-  `policies/{activity_report,exemption}_application_form_policy.rb`,
-  `controllers/concerns/api_hmac_authentication.rb`, `adapters/doc_ai_adapter.rb`,
-  `components/certification_cases/case_row_component.rb`, `components/staff/task_row_component.rb`.
-- **Class inheritances verified**: `CertificationBusinessProcess < Strata::BusinessProcess`,
-  `OscerTask < Strata::Task`, `OscerApplicationForm < Strata::ApplicationForm`,
-  `{Member,MemberStatus,DocAiResult} < Strata::ValueObject`,
-  `CertificationCases::CaseRowComponent < Strata::Cases::CaseRowComponent`,
-  `Staff::TaskRowComponent < Strata::Tasks::TaskRowComponent`.
-- **"three subclasses" of `OscerApplicationForm`** confirmed: `ActivityReportApplicationForm`,
-  `ExemptionApplicationForm`, `DenialResponseApplicationForm`.
-- **`certification.rb` code snippet** matches the source exactly (`include Determinable`,
-  `after_create_commit` publishing `CertificationCreated`).
-- **Three automated determination steps** (external exclusion, external exception, external
-  community-engagement) and their `start`/transitions confirmed in the business process; the file's
-  own comment confirms notifications flow via `NotificationsEventListener`
-  (`services/notifications_event_listener.rb` exists).
-- **Audit log + virtual actors**: `Determinable#record_determination!` calls `Strata::AuditLog.write!`;
-  virtual-actor usage present in the CE/determination services.
-- **`DocAiAdapter`** posts to the `v1/documents` endpoint; `DocAiResult` wraps the response.
-- **Attribute types** (`money`, `year_month`, `us_date`, `name`, `array`) all appear in models;
-  `range` appears as the `range: true` modifier on `strata_attribute` (e.g. `external_income_activity.rb`).
-- **Out-of-scope paths** all exist (`services/doc_ai_*`, `adapters/storage/*`, `adapters/auth/*`,
-  `services/auth_service.rb`, `services/member_oidc_provisioner.rb`, `forms/users/`).
+1. **Fixed**: The table row (line 59) now correctly labels tasks as "Tasks (applicant / staff)"
+   without the erroneous "system" variant. The business process confirms only `applicant_task` and
+   `staff_task` exist (`certification_business_process.rb:43-47`).
+
+2. **Fixed**: Lines 91-93 now correctly state: "`NotificationsEventListener` subscribes to the
+   member-facing subset of those events and sends the member email; internal routing events such as
+   `DeterminedCommunityEngagementNotMet` intentionally have no subscription." This accurately
+   reflects the behavior shown in `notifications_event_listener.rb:35-47`.
+
+## Full verification (round 2)
+
+### All major claims verified as accurate:
+
+- Four `system_process` determination steps and the trailing `verification_data_source_check`
+  match `certification_business_process.rb:5-40`, including OSCER-805 "calls out last" framing.
+- `Certification` includes `Determinable` and publishes `CertificationCreated` in `after_create_commit`
+  (exact match to `app/models/certification.rb:24-26`).
+- Every file path in the feature table exists with correct class hierarchies.
+- Value objects (`Member`, `MemberStatus`, `DocAiResult`) all extend `Strata::ValueObject`.
+- All claimed attribute types present: `:money`, `:year_month`, `:us_date`, `:name`, `:tax_id`,
+  `range: true`, `array: true`.
+- SDK view components extend correct Strata base classes.
+- Audit log + virtual actors: `Determinable#record_determination!` calls `Strata::AuditLog.write!`;
+  services use `Strata::VirtualActor`.
+- `DocAiAdapter` posts to `v1/documents`.
+- Platform integrations valid (`template-application-rails` and `documentai-api` in registry).
+- All related doc ids and feature doc references exist.
+- Source ref commit hash matches checkout.
+- All out-of-scope systems correctly identified.
+
+## Findings
+
+No new findings. The document is fully accurate and supported by the source checkout.

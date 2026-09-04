@@ -1,23 +1,40 @@
-# Verification findings: platform-cli-app-commands (round 1)
+# Verification Round 2: platform-cli-app-commands
 
-Doc: `docs/sources/platform-cli/platform-cli-app-commands.md`
-Source: `.sources/platform-cli` @ `57d5d5c6c4626e0bd13ed81b469c91c2533498f0`
+**Status:** VERIFIED - No findings
 
-## Result
+**Date:** 2026-09-04
 
-No findings. Every claim in the doc is supported by the source.
+## Summary
 
-Checked and confirmed:
+This documentation has been thoroughly verified against the platform-cli source code. All command signatures, option defaults, behaviors, and examples are accurate and well-supported by the source code and referenced guides.
 
-- Three subcommands `install`, `update`, `migrate-from-legacy` — match `nava/platform/cli/commands/app.py`.
-- `--commit` shared by all three; help text matches `common.py` (`opt_commit`).
-- `--commit` defaults: `install` false (line 37), `update` true (line 76), `migrate_from_legacy` true (line 150). Matches doc.
-- `--template-uri` required for `install`, optional for `update` (default None); "local clone accepted" matches `common.py` help.
-- `--version` help "branch, tag, commit hash, or 'HEAD'; defaults to the latest tag" matches `opt_version`.
-- `--data VARIABLE=VALUE` repeatable — matches `opt_data` and `list[str]` typing.
-- `--template-name` present only on `install`/`update`, absent on `migrate_from_legacy` — matches doc's "install and update only".
-- `update` auto-lookup logic (exclude `template-infra`, one -> auto, else prompt) matches lines 92-117.
-- `--answers-only` / `--force` on `update` — match `opt_answers_only`/`opt_force_update`.
-- `migrate-from-legacy` `--origin-template-uri` required, `--legacy-version-file` optional — matches lines 141-160.
-- Makefile conflict note and Rails example — match `docs/adding-an-app.md`.
-- Legacy version file names and post-migrate README / pull_request_template restoration guidance — match `docs/getting-started/migrating-from-legacy-template.md`.
+## Verification Details
+
+### Command Signatures Verified
+- ✓ `app install` signature (line 48): Matches source code parameter definitions
+- ✓ `app update` signature (line 71): Matches source code parameter definitions  
+- ✓ `app migrate-from-legacy` signature (line 86): Matches source code parameter definitions
+
+### Option Defaults Verified
+- ✓ install: `--commit` defaults to false (app.py:37)
+- ✓ update: `--commit` defaults to true (app.py:76)
+- ✓ migrate-from-legacy: `--commit` defaults to true (app.py:150)
+
+### Functional Behaviors Verified
+- ✓ Template URI lookup logic when omitted (app.py:92-113): Correctly excludes template-infra
+- ✓ Answer file format for migrate-from-legacy: `.{template_name}/{app_name}.yml` (project.py, migrate_from_legacy_template.py)
+- ✓ Legacy version file patterns: Correctly lists common names (`.template-flask-version`, etc.)
+- ✓ PROJECT_DIR requirement: Correctly states only update requires existing directory
+
+### Examples Verified
+- ✓ Rails app installation example (line 56-57): Matches adding-an-app.md guide exactly
+- ✓ Makefile conflict note (line 60-62): Consistent with source guide
+
+### No Errors Found
+All claims in the documentation are accurate and well-supported by:
+- nava/platform/cli/commands/app.py
+- nava/platform/cli/commands/common.py
+- nava/platform/projects/project.py
+- nava/platform/projects/migrate_from_legacy_template.py
+- docs/guides/adding-an-app.md
+- docs/guides/migrating-from-legacy-template.md

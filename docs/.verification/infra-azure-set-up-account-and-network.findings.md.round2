@@ -1,0 +1,48 @@
+# Verification findings: infra-azure-set-up-account-and-network (round 2)
+
+- Doc: `docs/sources/template-infra-azure/infra-set-up-account-and-network.md`
+- Source: `.sources/template-infra-azure` @ `474f45e99076d3b72af4ea9d63dd5d6c0aab850f`
+- Verdict: **FULLY VERIFIED** — all round 1 findings have been addressed; no new issues found.
+
+## Round 1 findings — status
+
+### Finding 1 (medium) — outdated Terraform version example
+**Status:** FIXED ✓
+
+The doc now correctly cites 1.11.4 and explains the requirement:
+> "then install the version the template pins in `.terraform-version` (`1.11.4` at this ref: `tfenv install 1.11.4`). The `infra/accounts` and `infra/networks` root modules declare `required_version = "~> 1.11.0"`, so an older release such as the `1.4.6` in the shipped doc will not run."
+
+**Verified against:**
+- `.terraform-version` contains `1.11.4`
+- `infra/accounts/main.tf:36` and `infra/networks/providers.tf:8` both declare `required_version = "~>1.11.0"`
+
+### Finding 2 (low) — `make infra-lint` scope overstated
+**Status:** FIXED ✓
+
+The doc now correctly describes the full scope:
+> "`make infra-lint` runs the whole infra lint suite (markdown, shell scripts, Terraform, workflows), which expects these tools to be installed."
+
+**Verified against:**
+- `Makefile:146-147` confirms infra-lint is an aggregate target that runs markdown, shell scripts, terraform, and workflow checks
+- Lines 64-66 of the doc now accurately reflect this aggregate nature
+
+## Round 2 verification — all claims re-checked
+
+All major claims have been re-verified against source:
+
+✓ Terraform version, tools, and Azure authentication guidance
+✓ Account layer resources (resource group, Log Analytics, backend module, auth module, certificate store)
+✓ Make targets and their behavior
+✓ GitHub OIDC configuration and federated credentials
+✓ Network setup and layering
+✓ Container App Environment attributes (naming, zone redundancy, logging, workload profile, load balancer behavior)
+✓ NAT gateway creation logic
+✓ Private DNS zone configuration
+✓ Gateway subnet NSG rules restricting to outbound_peer_cidrs
+✓ Alternative network setup with apps-public
+✓ Customer-managed encryption key configuration
+✓ All referenced source files exist and contain cited content
+
+## Conclusion
+
+The document is substantively accurate and complete. All previously identified issues have been properly addressed, and no new issues were discovered during this verification round.

@@ -1,43 +1,37 @@
-# Verification findings: infra-azure-domains-and-https (Round 2)
+# Verification findings: infra-azure-domains-and-https (round 2)
 
-**Status:** Verified - no findings
-
-**Verification date:** 2026-07-21
+Doc: `docs/sources/template-infra-azure/infra-domains-and-https.md`
+Source: `.sources/template-infra-azure` @ `474f45e99076d3b72af4ea9d63dd5d6c0aab850f`
 
 ## Summary
 
-The document "Custom domains and HTTPS for the Azure infra template" was verified against the following source files:
-- docs/infra/set-up-custom-domains.md
-- docs/infra/https-support.md
-- docs/system-architecture.md
-- infra/project-config/networks.tf
-- infra/networks/providers.tf
+All findings from round 1 have been resolved. The doc now correctly states:
 
-All claims in the document are accurate and well-supported by the source material.
+1. **Automatic wildcard certificates** (line 125-134): Now accurately describes that automatic certificate behavior defaults to on only for Application Gateway networks, with explicit `manage_certs` override capability.
 
-## Verification details
+2. **Hosted zone derivation** (line 51-55): Now correctly specifies that only lower-environment networks (`dev`, `staging`) derive their zone from `shared_hosted_zone`, while `prod` sets its zone literally.
 
-### Custom domains section
-- Hosted zone configuration and purpose: verified
-- Shared hosted zone option: verified
-- DNS delegation steps (NS records): verified
-- Domain name configuration rules: verified
-- A record creation: verified
-- Externally managed DNS option: verified
+3. **A-record creation condition** (line 189-193): Now accurately states that A records are created only when `manage_dns` is true AND a custom domain is configured, with the full count condition included.
 
-### HTTPS/TLS section
-- HTTPS requirement: verified
-- Prerequisite (custom domains): verified
-- Three certificate acquisition methods (ACME, Azure Key Vault, Imported): verified
-- ACME defaults to Let's Encrypt staging: verified (confirmed in `infra/networks/providers.tf`)
-- Wildcard certificate default behavior: verified
-- `manage_certs = false` opt-out mechanism: verified
-- Certificate configuration steps: verified
+### Verified as fully accurate
 
-### Architecture section
-- Application Gateway as per-service load balancer: verified
-- Certificate Key Vault as per-subscription storage: verified
-- ACME provider certificate acquisition and refresh: verified
-- Private DNS zones for name resolution: verified
+The document's claims have been verified against source code and documentation:
 
-All source references (related documents, source_ref paths) are valid and correspond to existing documents with correct IDs.
+- Custom domain setup sequence and `make` commands
+- NS delegation with `terraform -chdir=infra/networks output -json hosted_zone_name_servers`
+- Per-application domain configuration logic in `infra/{{app_name}}/app-config/env-config/domain.tf`
+- ACME certificate issuance via `azuredns` DNS-01 challenge
+- Certificate Key Vault naming: `substr("certs-${var.account_name}-${var.project_unique_id}", 0, 24)`
+- Name transformations: `.` → `-`, `*` → `wildcard`
+- `certificate_configs` assembly logic in `infra/networks/main.tf.jinja:79`
+- Terraform state warning about ACME credentials
+- `bin/renew-tls-certificates` targets and flags
+- Application Gateway: static Standard public IP, user-assigned identity with `Key Vault Secrets User`, SKU values, DNS A record with `@` apex notation
+- Container App path without gateway: `asuid.<subdomain>` TXT, CNAME to ingress FQDN, `azurerm_container_app_custom_domain`, `az containerapp hostname bind --validation-method CNAME`, skipped for temporary environments
+- `use_application_gateway` as env-config output
+- Shared hosted zone `DNS Zone Contributor` grant in `infra/accounts/shared_hosted_zone.tf`
+- Per-subscription Certificate Key Vault architecture
+
+## Findings
+
+No new inaccuracies found. Document is fully supported by source code and documentation.

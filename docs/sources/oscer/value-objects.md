@@ -2,7 +2,6 @@
 id: example-oscer-value-objects
 title: OSCER — value objects
 source: oscer
-verified: ok
 doc_type: example
 tags: [example-app, oscer, value-object, immutable, equality]
 related:
@@ -14,13 +13,15 @@ integrates_with: [documentai-api]
 summary: How OSCER subclasses Strata::ValueObject for Member, MemberStatus, and DocAiResult, including the attribute-based equality/blank/serialization contract.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
+  ref: "be3ffbb4e7b7e7cf0b4047af5544870f50619257"
   paths:
     - reporting-app/app/models/member.rb
     - reporting-app/app/models/member_status.rb
     - reporting-app/app/models/doc_ai_result.rb
+    - reporting-app/app/models/doc_ai_result/payslip.rb
     - reporting-app/app/adapters/doc_ai_adapter.rb
-last_documented: 2026-07-21
+last_documented: 2026-09-04
+verified: ok
 ---
 
 # OSCER — value objects
@@ -28,6 +29,17 @@ last_documented: 2026-07-21
 OSCER uses `Strata::ValueObject` for read-only domain values that are derived from aggregates (or
 from an external response) rather than persisted on their own. Three examples are `Member`,
 `MemberStatus`, and `DocAiResult`.
+
+**Read the base class before assuming.** Only these three classes extend `Strata::ValueObject`
+directly (plus `DocAiResult`'s own subclasses, such as
+`DocAiResult::Payslip` in `reporting-app/app/models/doc_ai_result/payslip.rb`). The
+app has its own, separate `ValueObject` base (`reporting-app/lib/value_object.rb`, an
+`ActiveModel::Model` + `Attributes` + JSON-serializer bundle whose `==` compares `as_json`), and
+that is what the many other value objects in the app extend — the `Determinations::*` determination
+payloads, `Verification::DataSourceResult` / `OrchestrationResult`, the `Api::*` request/response
+models, and the `Certifications::*` certification-data objects. Its class comment says it is "very
+similar to `Strata::ValueObject`, possibly can be replaced by it" but is kept as a place to iterate.
+So a bare `< ValueObject` in this app is **not** an SDK value object.
 
 ## Member
 

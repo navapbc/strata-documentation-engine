@@ -1,37 +1,39 @@
-# Verification findings: infra-azure-set-up-database-and-service (round 1)
+# Verification findings for infra-azure-set-up-database-and-service
 
-Source: `.sources/template-infra-azure` @ `e10a383c4871d6eab3999baf63a01e5bd5a81f4c` (matches `source_ref.ref`).
+Round 3 adversarial verification against `.sources/template-infra-azure` (ref 474f45e99076d3b72af4ea9d63dd5d6c0aab850f).
 
-## Result: no findings
+## Summary
 
-Every substantive claim in the doc is supported by the cited source files.
+One minor inaccuracy found in line-range citations. The document correctly identifies issues in the shipped source docs and accurately describes the infrastructure resources, make targets, and Terraform configurations.
 
-Checks performed:
+## Findings
 
-- Database setup 5-step summary — matches `docs/infra/set-up-database.md` steps 1-5 (PostgreSQL
-  flexible server, `app` schema, Entra ID group, role-manager Container App Job, create `app`/`migrator` users).
-- `has_database = false` skip guidance and `infra/<APP_NAME>/app-config/main.tf` location — confirmed
-  (`main.tf` line 16 `has_database = true`).
-- All Makefile targets exist: `infra-configure-app-database`, `db-role-manager-release-build`,
-  `db-role-manager-release-publish`, `infra-update-app-database`, `infra-update-app-database-roles`,
-  `infra-check-app-database-roles`, `infra-configure-app-service`, `infra-update-app-service`,
-  `release-build`, `release-publish`, `release-run-database-migrations`, `release-deploy`.
-- The "Lambda function" / `<ENVIRONMENT>.s3.tfbackend` AWS-carryover note is accurate — source
-  `set-up-database.md` line 59 says "Lambda function" and line 36 names `<ENVIRONMENT>.s3.tfbackend`.
-- `ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO app` and the migrator/app permissions rationale —
-  matches `set-up-database.md` and `database-access-control.md`.
-- Three Entra groups ("DB Admin", "Migrator", "App"), username=group name, token as password,
-  `az account get-access-token --resource-type oss-rdbms` — matches `database-access-control.md`.
-- Service-layer requirements (compatible app, `has_database`, per-env sizing in `<ENVIRONMENT>.tf`
-  with `service_cpu`/`service_memory`/`service_desired_instance_count`, load test, non-default
-  network, database layer) — matches `set-up-app-env.md`; `prod.tf` confirms those three vars.
-- Env vars/secrets: `default_extra_environment_variables`, `service_override_extra_environment_variables`,
-  `secrets` map with `manage_method` generated/manual and `secret_name`, manual-secret-before-deploy
-  warning — matches `environment-variables-and-secrets.md`. The doc's filename
-  `env-config/environment-variables.tf` (hyphen) matches the actual file on disk (the source prose
-  uses an underscore; the doc's hyphenated form is correct).
-- Background jobs: scheduled + event-triggered, worker-queue "not yet implemented", single
-  manually-triggered migration job, add `azurerm_container_app_job` in the service module — matches
-  `background-jobs.md`.
-- Release chain `release-build → release-publish → release-run-database-migrations → release-deploy`
-  — matches `releases.md` and Makefile.
+### Finding 1: Inaccurate line range for role_manager SQL statements
+
+**Claim (line 154-156):**
+> Setup step 4 (`bin/create-or-update-database-roles`, which runs the role manager with the `manage` command) calls `configure_default_privileges()` (`infra/modules/database/resources/role_manager/src/role_manager/manage.py:45`), which reconnects as the **migrator** — default privileges can only be altered for the current role — and issues (`manage.py:250-272`):
+
+**Issue:**
+The line range `250-272` does not include all three SQL statements being referenced. The SQL statements are on lines 266 (TABLES), 270 (SEQUENCES), and 274 (ROUTINES), so the range should be `250-275` to include the complete function.
+
+**Severity:** Low
+
+**Evidence:**
+`infra/modules/database/resources/role_manager/src/role_manager/manage.py` lines 250-275 contain the function definition and all three `ALTER DEFAULT PRIVILEGES` statements.
+
+**Suggested fix:**
+Change the citation from `manage.py:250-272` to `manage.py:250-275` to accurately reflect the range of the complete function including all SQL statements.
+
+## Verification notes
+
+✓ All make targets (`infra-configure-app-database`, `db-role-manager-release-build`, `db-role-manager-release-publish`, etc.) confirmed present in Makefile
+✓ PostgreSQL version 16 confirmed in `infra/modules/database/resources/main.tf` line 47
+✓ Database SKU `B_Standard_B1ms` confirmed in `infra/{{app_name}}/database/main.tf` line 110
+✓ Role manager specs (0.5 CPU, 1Gi memory, manual trigger, 3600s timeout) confirmed in `infra/modules/database/resources/role_manager.tf`
+✓ Production sizing (1 CPU, 2Gi, 3 instances, Standard_v2 gateway) confirmed in `infra/{{app_name}}/app-config/prod.tf`
+✓ Environment variable defaults (0.25 CPU, 0.5Gi, 0 instances, Basic gateway) confirmed in `infra/{{app_name}}/app-config/env-config/variables.tf`
+✓ Service environment variables structure confirmed in `infra/modules/service/main.tf`
+✓ Document accurately identifies AWS leftovers in shipped source docs (`docs/infra/set-up-database.md`, `docs/infra/environment-variables-and-secrets.md`)
+✓ Migration script override of `AZURE_CLIENT_ID` and `DB_USER` confirmed in `bin/run-database-migrations` lines 65-66
+✓ Role manager invocation with `["manage"]` command confirmed in `bin/create-or-update-database-roles` line 34
+✓ All three Entra security groups (DB Admin, Migrator, App) confirmed created in `infra/modules/database/resources/main.tf`

@@ -2,7 +2,6 @@
 id: example-oscer-attributes
 title: OSCER — typed attributes and attribute types
 source: oscer
-verified: ok
 doc_type: example
 tags: [example-app, oscer, attributes, strata-attribute, types, money, dates]
 related:
@@ -15,21 +14,30 @@ demonstrates:
   - attribute-types/year-month
   - attribute-types/us-date
   - attribute-types/name
+  - attribute-types/tax-id
   - attribute-types/range
   - attribute-types/array
-summary: How OSCER uses the strata_attribute DSL and the SDK's money, year-month, us-date, name, range, and array attribute types across forms, activities, and value objects.
+summary: How OSCER uses the strata_attribute DSL and the SDK's money, year-month, us-date, name, tax-id, range, and array attribute types across forms, activities, and value objects.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
+  ref: "be3ffbb4e7b7e7cf0b4047af5544870f50619257"
   paths:
     - reporting-app/app/models/income_activity.rb
     - reporting-app/app/models/activity_report_application_form.rb
     - reporting-app/app/models/external_income_activity.rb
     - reporting-app/app/models/external_hourly_activity.rb
     - reporting-app/app/models/member.rb
-    - reporting-app/app/forms/demo/certifications/base_create_form.rb
+    - reporting-app/app/models/member_status.rb
+    - reporting-app/app/models/information_request.rb
     - reporting-app/app/models/activity.rb
-last_documented: 2026-07-21
+    - reporting-app/app/models/certifications/member_data.rb
+    - reporting-app/app/models/certifications/household_data.rb
+    - reporting-app/app/models/certifications/requirements.rb
+    - reporting-app/app/forms/demo/certifications/base_create_form.rb
+    - reporting-app/app/helpers/activity_report_application_form_helper.rb
+    - reporting-app/app/services/batch_upload_record_validator.rb
+last_documented: 2026-09-04
+verified: ok
 ---
 
 # OSCER — typed attributes and attribute types
@@ -108,13 +116,19 @@ Reporting periods are months, modeled with the `:year_month` type (as arrays). T
 ```
 
 `reporting_period_dates` sorts and maps the `year_month` values (`.year`, `.month`) into `Date`s.
+`ActivityReportApplicationFormHelper` shows a rough edge in the same area: it round-trips reporting
+periods as `{ year:, month: }` JSON because array attributes can't yet be set from a `"2024-01"`
+date string, and the helper carries the SDK ticket reference (TSS-375) for that gap.
 
 ## US date and range
 
-External activity records store a reporting period as a **range of US dates**:
+External activity records store a reporting period as a **range of US dates**. In
+`external_hourly_activity.rb` an inline comment notes the range gives it start/end validation for
+free; `external_income_activity.rb` declares the identical attribute without that comment:
 
 ```ruby
-# app/models/external_income_activity.rb (and external_hourly_activity.rb)
+# app/models/external_hourly_activity.rb
+# DateRange provides built-in validation (start <= end)
 strata_attribute :period, :us_date, range: true
 ```
 
@@ -128,7 +142,7 @@ strata_attribute :certification_date, :us_date
 
 `Strata::USDate.cast(value)` is also used directly to parse incoming date strings in
 `app/services/batch_upload_record_validator.rb`, and `Strata::DateRange` is constructed in
-`app/models/certifications/requirements.rb`.
+`app/models/certifications/requirements.rb` to express a certification's continuous lookback period.
 
 ## Name
 
@@ -145,7 +159,26 @@ strata_attribute :member_name, :name
 
 The demo form validates the decomposed sub-fields directly (`member_name_first`, `member_name_last`,
 `member_name_middle`, `member_name_suffix`), showing how the `:name` type exposes its parts.
-`Strata::Name` is also used as a JSON attribute type in `Certifications::MemberData`
-(`attribute :name, ActiveModel::Type::Json.new(Strata::Name)`).
+
+## Tax ID
+
+A member's SSN is declared with the `:tax_id` type, in both the certification's member data and the
+nested `Certifications::HouseholdData::Member` value object:
+
+```ruby
+# app/models/certifications/member_data.rb
+# and Certifications::HouseholdData::Member in app/models/certifications/household_data.rb
+strata_attribute :ssn, :tax_id
+```
+
+`HouseholdData::Member#same_person_as?` then treats that tax ID as authoritative when deduplicating
+a household member against the applicant.
+
+The same value objects also use SDK types **outside** the `strata_attribute` DSL, as Active Model
+JSON types. Both declare `attribute :name, ActiveModel::Type::Json.new(Strata::Name)`, and
+`member_data.rb` adds `attribute :address, ActiveModel::Type::Json.new(Strata::Address)`;
+`household_data.rb`'s `Member` uses only the `Strata::Name` JSON type. That is a different mechanism
+from the typed-attribute declarations above — the SDK's value class is reused as a serialization
+type on a plain `attribute`.
 
 For the value-object types these attributes resolve into, see [value objects](./value-objects.md).

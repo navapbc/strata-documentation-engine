@@ -2,14 +2,13 @@
 id: infra-module-architecture
 title: Terraform Module Architecture and Layers
 source: template-infra
-verified: ok
 doc_type: guide
 tags: [infra, terraform, modules, layers, architecture, adr]
-related: [infra-overview, infra-getting-started, infra-configuration, infra-environments-and-workspaces]
+related: [infra-overview, infra-getting-started, infra-configuration, infra-environments-and-workspaces, infra-security-monitoring]
 summary: How the Terraform code is split into independently-deployed root-module layers and reusable child modules, the dependency order, and the guidelines for choosing a resource's layer.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: 80a7cc8ec802c442098933f65280175b8453c659
+  ref: 8b7bc3899c3a9ab1b3441330d72993cd34d21f70
   paths:
     - docs/infra/module-architecture.md
     - docs/infra/making-infra-changes.md
@@ -17,12 +16,26 @@ source_ref:
     - infra/accounts/main.tf
     - infra/networks/main.tf.jinja
     - infra/modules/network/resources/waf.tf
+    - infra/modules/network/interface/outputs.tf
+    - infra/modules/database/interface/outputs.tf
     - infra/modules/service/waf.tf
+    - infra/{{app_name}}/build-repository/main.tf
+    - infra/{{app_name}}/database/main.tf
+    - infra/{{app_name}}/database/network.tf
+    - infra/{{app_name}}/service/main.tf
+    - infra/{{app_name}}/service/database.tf
+    - infra/{{app_name}}/service/domain.tf
+    - infra/{{app_name}}/service/notifications.tf
+    - infra/{{app_name}}/service/identity_provider.tf
+    - infra/{{app_name}}/service/document_data_extraction.tf
+    - infra/{{app_name}}/service/feature_flags.tf
+    - infra/{{app_name}}/service/storage.tf
     - docs/decisions/infra/2023-09-11-separate-app-infrastructure-into-layers.md
     - docs/decisions/infra/2023-05-09-separate-terraform-backend-configs-into-separate-config-files.md
     - docs/decisions/infra/2023-05-25-separate-database-infrastructure-into-separate-layer.md
     - docs/decisions/infra/2023-12-01-network-layer-design.md
-last_documented: 2026-07-21
+last_documented: 2026-09-04
+verified: ok
 ---
 
 # Terraform Module Architecture and Layers
@@ -37,21 +50,53 @@ The Terraform code (`docs/infra/module-architecture.md`) is split into:
 
 - **Root modules** — deployed independently of one another. Each maps to a layer. To stand up an
   environment, every root module is applied separately, in the correct order.
-- **Child modules** — reusable modules under `infra/modules/` that root modules call. The repo
-  ships child modules including `terraform-backend-s3`, `auth-github-actions`,
-  `container-image-repository`, `network`, `database`, `service`, `monitoring`, `domain`,
-  `identity-provider`, `notifications`, `feature_flags`, `secrets`, `storage`, and
-  `document-data-extraction` (see `infra/modules/`).
+- **Child modules** — reusable modules under `infra/modules/` that root modules call. The repo ships
+  `auth-github-actions`, `container-image-repository`, `database`, `document-data-extraction`,
+  `domain`, `feature_flags`, `identity-provider`, `identity-provider-client`, `monitoring`,
+  `network`, `notifications`, `notifications-email-domain`, `notifications-phone-pool`,
+  `notifications-sms`, `secrets`, `service`, `storage`, `terraform-backend-s3`, and
+  `threat_detection` (see `infra/modules/`).
 
-The calling structure: `accounts` → `terraform-backend-s3` + `auth-github-actions`; `networks` →
-`network`; `{{app_name}}/build-repository` → `container-image-repository`;
-`{{app_name}}/database` → `database`; `{{app_name}}/service` → `service`.
+Several child modules are split into a `data/` and a `resources/` submodule — `network`, `domain`,
+`database`, `identity-provider`, `notifications-email-domain`, and `notifications-phone-pool`. The
+`resources/` half creates the infrastructure in its owning layer; the `data/` half is called by a
+downstream layer to *read* what the upstream layer created — the database layer calls
+`modules/network/data`, and the service layer calls `modules/database/data`,
+`modules/domain/data`, `modules/identity-provider/data`,
+`modules/notifications-email-domain/data`, and `modules/notifications-phone-pool/data` (see the
+table below). `network` and `database` add a third `interface/` submodule holding shared
+naming/derived values (subnet group names, subnet tags) used by both `data/` and `resources/`.
+
+Four modules ship a `resources/` submodule only, with no `data/` half: `document-data-extraction`,
+`identity-provider-client`, `notifications`, and `notifications-sms`. The remaining modules have no
+submodules at all and are called directly (`service`, `storage`, `secrets`, `feature_flags`,
+`monitoring`, `container-image-repository`, `auth-github-actions`, `terraform-backend-s3`,
+`threat_detection`).
+
+The calling structure:
+
+| Root module | Child modules it calls |
+| --- | --- |
+| `accounts` | `terraform-backend-s3`, `auth-github-actions`, `threat_detection` |
+| `networks` | `network/resources`, `domain/resources` |
+| `{{app_name}}/build-repository` | `container-image-repository` |
+| `{{app_name}}/database` | `database/resources`, `network/data` |
+| `{{app_name}}/service` | `service`, `storage`, `secrets`, `feature_flags`, `monitoring`, `identity-provider/resources`, `identity-provider-client/resources`, `notifications/resources`, `notifications-email-domain/resources`, `notifications-sms/resources`, `notifications-phone-pool/resources`, `document-data-extraction/resources`, plus the `data` modules for domain, database, identity provider, notifications email domain, and the notifications phone pool |
+
+Every root module also calls the static `project-config` and (except `accounts`) `app-config`
+modules; `infra/networks/main.tf.jinja` loops over every application
+(`{% for app_name in app_names %}`) and calls each one's `app-config`, so the network knows the
+union of VPC endpoints and NAT gateways the applications on it need.
+
+The diagram in `docs/infra/module-architecture.md` is a simplified view and is slightly out of date:
+it labels the service layer's child module `web-app`, but the module in the tree is
+`infra/modules/service`.
 
 ## Layers
 
 | Layer (root module) | Scope | Notes |
 | --- | --- | --- |
-| `infra/accounts/` | Per AWS account | Terraform backend (S3 state bucket) + GitHub Actions OIDC provider and IAM role/policy |
+| `infra/accounts/` | Per AWS account | Terraform backend (S3 state bucket), GitHub Actions OIDC provider and IAM role/policy, and the account's GuardDuty detector (one per account per region — see [infra-security-monitoring](infra-security-monitoring.md)) |
 | `infra/networks/` | Per network (shared across apps/envs/workspaces) | VPC, subnets, VPC endpoints, a WAF web ACL (always created here; its association with the service load balancer is optional via `enable_waf` in the service layer), and optional Route 53 hosted zones (`manage_dns`) |
 | `infra/{{app_name}}/build-repository/` | Per app (shared across envs) | ECR registry for the app's images |
 | `infra/{{app_name}}/database/` | Per app, per env (optional) | Aurora cluster + role manager |

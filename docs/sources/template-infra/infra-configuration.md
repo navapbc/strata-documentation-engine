@@ -2,14 +2,13 @@
 id: infra-configuration
 title: Configuration — Project Config, App Config, Env Vars, and Secrets
 source: template-infra
-verified: ok
 doc_type: guide
 tags: [infra, configuration, terraform, environment-variables, secrets]
-related: [infra-overview, infra-module-architecture, infra-getting-started, infra-database]
+related: [infra-overview, infra-module-architecture, infra-getting-started, infra-database, infra-security-monitoring]
 summary: How the template configures itself from static project-config and app-config modules, and how to add application environment variables and secrets.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: 80a7cc8ec802c442098933f65280175b8453c659
+  ref: 8b7bc3899c3a9ab1b3441330d72993cd34d21f70
   paths:
     - docs/infra/infrastructure-configuration.md
     - docs/infra/environment-variables-and-secrets.md
@@ -17,8 +16,18 @@ source_ref:
     - infra/project-config/aws_services.tf
     - infra/project-config/networks.tf
     - infra/project-config/system_notifications.tf
+    - infra/project-config/threat_detection.tf
+    - infra/project-config/outputs.tf
+    - infra/project-config/main.tf.jinja
+    - infra/{{app_name}}/app-config/main.tf
+    - infra/{{app_name}}/app-config/dev.tf
+    - infra/{{app_name}}/app-config/outputs.tf
+    - infra/{{app_name}}/app-config/env-config/variables.tf
+    - infra/{{app_name}}/app-config/env-config/feature_flags.tf
+    - docs/infra/system-notifications.md
     - docs/decisions/infra/2023-09-07-consolidate-infra-config-from-tfvars-files-into-config-module.md
-last_documented: 2026-07-21
+last_documented: 2026-09-04
+verified: ok
 ---
 
 # Configuration — Project Config, App Config, Env Vars, and Secrets
@@ -32,11 +41,31 @@ placeholder for your application's folder.
 
 The configuration sources are:
 
-- **Project config** — `infra/project-config/` — project-wide values: account/region defaults,
-  resource tags, the network definitions (`networks.tf`), the AWS services GitHub Actions may manage
-  (`aws_services.tf`), and CI/CD system notification settings (`system_notifications.tf`).
+- **Project config** — `infra/project-config/` — project-wide values: project name, owner, code
+  repository URL, default region and the GitHub Actions role name (`main.tf`, shipped in the template
+  as `main.tf.jinja` and rendered from your copier answers), the network definitions (`networks.tf`),
+  the AWS services GitHub Actions may manage (`aws_services.tf`), CI/CD system notification settings
+  (`system_notifications.tf`), and the account's GuardDuty defaults (`threat_detection.tf`). Each of
+  those is a `locals` block re-exported from `outputs.tf`. `outputs.tf` also derives values of its
+  own rather than only re-exporting: the `default_tags` map is built there from the `main.tf` locals
+  plus `terraform.workspace`, and `code_repository` is regexed out of the repository URL.
 - **App config** — `infra/{{app_name}}/app-config/`, with a nested `env-config/` module for
   per-environment values — per-application settings and per-environment overrides.
+
+`app-config/main.tf` is where the application's coarse-grained toggles live as locals. They split
+into two groups by how they reach the rest of the infra:
+
+- **Passed into `env-config`** — `has_database`, `has_incident_management_service`,
+  `enable_identity_provider`, `enable_storage_malware_scanning`, `enable_notifications`,
+  `enable_sms_notifications`, and `enable_document_data_extraction`. Each of `dev.tf`, `staging.tf`,
+  and `prod.tf` instantiates the `env-config` module and passes these through as `local.*` alongside
+  genuinely per-environment values (`network_name`, `domain_name`, `enable_https`, and any
+  overrides). So by default a toggle in `main.tf` applies to every environment; to vary one by
+  environment, pass a literal value in that environment's file instead of the `local.*` reference.
+- **Application-wide, not per environment** — `has_external_non_aws_service`, `enable_waf`, and
+  `shared_network_name`. `env-config/variables.tf` declares no variables for these and no
+  environment file passes them; they are surfaced only through `app-config/outputs.tf`, so they
+  cannot be overridden per environment this way.
 
 Both are used two ways (`docs/infra/infrastructure-configuration.md`):
 
@@ -144,6 +173,15 @@ Other settings live in the app-config modules and are covered in their own guide
 - `has_external_non_aws_service`, network/WAF/HTTPS toggles, custom domains →
   [infra-security-and-access](infra-security-and-access.md).
 - `enable_notifications`, `enable_identity_provider`, monitoring, background jobs, service command
-  execution → [infra-capabilities](infra-capabilities.md).
+  execution, feature flags (`env-config/feature_flags.tf`) →
+  [infra-capabilities](infra-capabilities.md).
 - GitHub Actions permissions are controlled by `project-config/aws_services.tf` →
   [infra-security-and-access](infra-security-and-access.md).
+- `enable_threat_detection` / `threat_detection_finding_publishing_frequency`
+  (`project-config/threat_detection.tf`) and `enable_storage_malware_scanning` →
+  [infra-security-monitoring](infra-security-monitoring.md).
+- CI/CD system notifications (`project-config/system_notifications.tf`) define named channels that
+  the CI/CD workflows post to; each channel sets a `type` (only `slack` is supported today) plus the
+  GitHub secret names holding the Slack channel id and bot token. A channel whose `type` is unset is
+  a no-op, which is how the shipped `workflow-failures` channel starts out
+  (`docs/infra/system-notifications.md`).

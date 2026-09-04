@@ -2,7 +2,6 @@
 id: example-oscer-application-forms
 title: OSCER — application forms
 source: oscer
-verified: ok
 doc_type: example
 tags: [example-app, oscer, application-form, forms, validation]
 related:
@@ -14,14 +13,16 @@ demonstrates: [application-form]
 summary: How OSCER subclasses Strata::ApplicationForm through an abstract OscerApplicationForm base for its three member-submitted forms, each tied to a staff review task.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
+  ref: "be3ffbb4e7b7e7cf0b4047af5544870f50619257"
   paths:
     - reporting-app/app/models/oscer_application_form.rb
     - reporting-app/app/models/activity_report_application_form.rb
     - reporting-app/app/models/exemption_application_form.rb
     - reporting-app/app/models/denial_response_application_form.rb
     - reporting-app/app/models/concerns/form_approval_status.rb
-last_documented: 2026-07-21
+    - reporting-app/app/models/information_request.rb
+last_documented: 2026-09-04
+verified: ok
 ---
 
 # OSCER — application forms
@@ -36,17 +37,25 @@ task.
 
 `OscerApplicationForm < Strata::ApplicationForm` (`app/models/oscer_application_form.rb`) is
 `abstract_class = true` (not STI): `Strata::ApplicationForm` is itself abstract and each concrete
-form has its own table (no `type` column). The base holds the case-bound lifecycle the three forms
-share — creation guards, pending-form detection, flow status, and event routing:
+form has its own table (no `type` column), so table names resolve from the concrete subclass while
+the status enum, attributes, and determinations inherit normally. The base holds the case-bound
+lifecycle the three forms share — creation guards, pending-form detection, flow status, and event
+routing:
 
 ```ruby
 class OscerApplicationForm < Strata::ApplicationForm
   self.abstract_class = true
   include FormApprovalStatus
 
-  # Declares which CertificationCase approval-status accessor flow_status reads once review completes
-  def self.case_approval_status(accessor)
-    self.case_approval_status_accessor_name = accessor
+  # Stored as a symbol and read lazily
+  class_attribute :case_approval_status_accessor_name, instance_accessor: false
+
+  class << self
+    # Declares which CertificationCase approval-status accessor flow_status reads once review completes
+    def case_approval_status(accessor)
+      self.case_approval_status_accessor_name = accessor
+    end
+    # ... case_approval_status_accessor, has_pending_form
   end
 
   validates :certification_case_id, presence: true
@@ -93,6 +102,11 @@ Things the SDK base class provides that the app relies on:
 - **Immutability after submission** — forms expose their outcome through the review task rather than
   mutating themselves (see the `FormApprovalStatus` concern below).
 
+`ActivityReportApplicationForm` also validates its reporting periods on a named
+`:reporting_period_selection` context — an exact-count `length` check against
+`number_of_months_to_certify`, plus `validate_reporting_periods_in_range`, which rejects any month
+outside `months_that_can_be_certified` and formats the offenders with `Strata::YearMonth#strftime`.
+
 ## Submission gating
 
 The base adds create-time guards so a member can't submit against a closed case or stack
@@ -118,17 +132,25 @@ undecided review task (`on_hold`/`pending`) exists for the case.
 
 ## The three forms
 
-- `ActivityReportApplicationForm` (above) — the richest form: reporting-period attributes and a
-  `has_many :activities`.
+- `ActivityReportApplicationForm` (above) — the richest form: reporting-period attributes, a
+  `has_many :activities`, and the `MINIMUM_MONTHLY_HOURS` / `MINIMUM_MONTHLY_INCOME` constants the
+  member-facing copy reads.
 - `ExemptionApplicationForm` — an `exemption_type` enum attribute (`enum :exemption_type,
   Exemption.enum_hash`), validated for inclusion in `Exemption.types + LEGACY_EXEMPTION_TYPES`
   with `allow_nil: true`, `has_many_attached :supporting_documents`,
   `has_review_task "ReviewExemptionClaimTask"`, and `case_approval_status
-  :exemption_request_approval_status`.
+  :exemption_request_approval_status`. It also exposes `staff_exemption_review_complete?`, a public
+  delegator over the base's private review-task check, for callers such as the member dashboard.
 - `DenialResponseApplicationForm` — a free-text `strata_attribute :comment, :text`, attached
   supporting documents, `has_review_task "ReviewDenialResponseTask"`, and `case_approval_status
   :denial_response_approval_status`. It lets a member contest a denied case while the verification
   window is still open.
+
+The activity-report and exemption forms additionally declare `self.information_request_class`
+(`ActivityReportInformationRequest` / `ExemptionInformationRequest`), which the SDK-derived
+`TasksController` uses when a caseworker requests more information; the underlying
+`InformationRequest` model is a plain `ApplicationRecord` that mixes in `Strata::Attributes` rather
+than an application form.
 
 ## Form approval status concern
 
@@ -141,6 +163,11 @@ form class), and delegates the form's outcome to that task without mutating the 
 ```ruby
 module FormApprovalStatus
   extend ActiveSupport::Concern
+
+  included do
+    # Recorded as a String and resolved lazily, to avoid a Zeitwerk load cycle.
+    class_attribute :review_task_class_name, instance_accessor: false
+  end
 
   class_methods do
     def has_review_task(class_name)
@@ -169,4 +196,6 @@ Separately, the base's `flow_status` decides between the form's own status and t
 approval status by checking whether the review task's `status` is `:completed` (a `.exists?` query)
 — not by inspecting the `nil`/`approved`/`denied` value above. When the task is complete it returns
 the case's approval status (via the accessor named by `case_approval_status`); otherwise it returns
-the form's own `status`.
+the form's own `status`. Its memoization deliberately re-computes while the resolved value is blank
+(task complete but the case accessor not yet written), which the source warns not to simplify to
+`||=`.

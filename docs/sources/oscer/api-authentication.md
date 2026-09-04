@@ -2,7 +2,6 @@
 id: example-oscer-api-authentication
 title: OSCER — HMAC API authentication
 source: oscer
-verified: ok
 doc_type: example
 tags: [example-app, oscer, auth, hmac, api]
 related:
@@ -12,13 +11,15 @@ demonstrates: [auth]
 summary: How OSCER authenticates inbound API requests with the SDK's HMAC strategy via Strata::ApiAuthenticator and Strata::Auth::Strategies::Hmac.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
+  ref: "be3ffbb4e7b7e7cf0b4047af5544870f50619257"
   paths:
     - reporting-app/app/controllers/concerns/api_hmac_authentication.rb
     - reporting-app/app/controllers/api_controller.rb
     - reporting-app/app/controllers/api/direct_uploads_controller.rb
+    - reporting-app/app/controllers/api/certifications_controller.rb
     - reporting-app/app/models/api/client.rb
-last_documented: 2026-07-21
+last_documented: 2026-09-04
+verified: ok
 ---
 
 # OSCER — HMAC API authentication
@@ -82,5 +83,17 @@ inheritance chain:
   parent doesn't pre-empt HMAC) and runs the same HMAC `before_action` instead.
 
 This keeps a single HMAC entry point across both controller families while reusing the SDK's auth
-strategy and error types. (The member/staff Cognito/OIDC and Devise authentication under
-`app/adapters/auth/` and `app/forms/users/` is app-specific and not part of the SDK auth surface.)
+strategy and error types.
+
+## What sits behind it
+
+The authenticated principal is then authorized like any other Pundit subject.
+`Api::CertificationsController` (which inherits the HMAC `before_action` from `ApiController`)
+`authorize`s the certification it is about to create, deduplicates the request through
+`Certification.find_duplicate(member_id:, case_number:, application_date:)` so a state-system retry
+is idempotent, and returns the existing record instead of creating a second one. A caller may pass
+`prefer: respond-async` to get a `202` with a `location` pointing at the outcome endpoint rather than
+waiting for the determination.
+
+(The member/staff Cognito/OIDC and Devise authentication under `app/adapters/auth/` and
+`app/forms/users/` is app-specific and not part of the SDK auth surface.)

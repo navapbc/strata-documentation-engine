@@ -2,23 +2,28 @@
 id: example-oscer-business-process
 title: OSCER — certification business process and case
 source: oscer
-verified: ok
 doc_type: example
 tags: [example-app, oscer, business-process, case, state-machine, events]
 related:
   - example-oscer-overview
   - example-oscer-tasks
   - example-oscer-determinations
+  - example-oscer-verification-data-sources
 demonstrates: [business-process, case]
 summary: How OSCER models the Medicaid certification lifecycle as a Strata::BusinessProcess state machine driving a Strata::Case aggregate.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
+  ref: "be3ffbb4e7b7e7cf0b4047af5544870f50619257"
   paths:
     - reporting-app/app/business_processes/certification_business_process.rb
     - reporting-app/app/models/certification_case.rb
     - reporting-app/app/models/certification.rb
-last_documented: 2026-07-21
+    - reporting-app/app/models/oscer_application_form.rb
+    - reporting-app/app/services/community_engagement_check_service.rb
+    - reporting-app/app/services/exclusion_determination_service.rb
+    - reporting-app/app/services/notifications_event_listener.rb
+last_documented: 2026-09-04
+verified: ok
 ---
 
 # OSCER — certification business process and case
@@ -46,6 +51,10 @@ class CertificationBusinessProcess < Strata::BusinessProcess
   system_process(EXTERNAL_COMMUNITY_ENGAGEMENT_CHECK_STEP, ->(kase) {
     CommunityEngagementCheckService.determine(kase)
   })
+  # Trailing step: where OSCER calls OUT, after the preceding steps assess data in hand.
+  system_process(VERIFICATION_DATA_SOURCE_CHECK_STEP, ->(kase) {
+    DataSourceCheckService.determine(kase)
+  })
 
   # Human task steps
   applicant_task(REPORT_ACTIVITIES_STEP)
@@ -71,28 +80,47 @@ The flow as declared:
    process at the external exclusion check and constructs a `CertificationCase` bound to the
    certification id.
 2. **External exclusion check** (`system_process`) — runs `ExclusionDeterminationService.determine`.
-   `DeterminedExcluded` ends the case; `DeterminedNotExcluded` advances to the exception check.
+   `DeterminedExcluded` and `DeterminedExcepted` end the case; `DeterminedNotExcluded` advances to
+   the exception check. (The step can emit an exception outcome because it lets the verification data
+   sources improve on the rules engine's verdict — see [rules engine](./rules-engine.md).)
 3. **External exception check** (`system_process`) — runs `ExceptionDeterminationService.determine`.
    `DeterminedExcepted` ends the case (the member need not report); `DeterminedNotExcepted` advances
    to the CE check.
 4. **External community-engagement check** (`system_process`) — runs
-   `CommunityEngagementCheckService.determine`, which assesses aggregate hours and income from both
-   member-reported and externally-sourced data.
-   `DeterminedCommunityEngagementMet` ends; `DeterminedCommunityEngagementInsufficient` and
-   `DeterminedCommunityEngagementActionRequired` route to the member's report-activities step.
-5. **Report activities** (`applicant_task`) — the member submits one of three application forms.
+   `CommunityEngagementCheckService.determine`, which aggregates the hours and income already in
+   hand (inbound-pushed plus member-reported). `DeterminedCommunityEngagementMet` ends the case;
+   `DeterminedCommunityEngagementNotMet` advances to the verification-data-source check.
+5. **Verification data source check** (`system_process`) — runs `DataSourceCheckService.determine`,
+   the trailing step where OSCER calls out to external sources. `DeterminedExcepted` and
+   `DeterminedCommunityEngagementMet` end the case;
+   `DeterminedCommunityEngagementInsufficient` and `DeterminedCommunityEngagementActionRequired`
+   route to the member's report-activities step. See
+   [verification data sources](./verification-data-sources.md).
+6. **Report activities** (`applicant_task`) — the member submits one of three application forms.
    Each form's submission event (`ActivityReportApplicationFormSubmitted`,
    `ExemptionApplicationFormSubmitted`, `DenialResponseApplicationFormSubmitted`) transitions to the
    matching staff review step.
-6. **Staff review** (`staff_task` × 3) — a caseworker approves/denies. Approval events end the case;
-   denial events route back to report-activities (or end the case on a `…Final` event when the
-   verification window has closed).
+7. **Staff review** (`staff_task` × 3) — a caseworker approves/denies. Every approval event
+   (`ActivityReportApproved`, `DeterminedExempt`, `DenialResponseApproved`) ends the case. Denials
+   differ by review: for the activity-report and denial-response reviews, a denial while the
+   verification window is open returns the member to report-activities (`ActivityReportDenied`,
+   `DenialResponseDenied`) and a `…Final` denial ends the case
+   (`ActivityReportDeniedFinal`, `DenialResponseDeniedFinal`). The exemption-claim review has no
+   `…Final` variant — `deny_exemption_request` always `save!`s and publishes `DeterminedNotExempt`
+   with no `verification_window_ended?` check, so an exemption denial always routes back to
+   report-activities.
 
-Note the transitions are written so that a **denial while the verification window is open** returns
-the member to `report_activities` (e.g. `ActivityReportDenied`), whereas a **final denial**
-(`ActivityReportDeniedFinal`) ends the case — the two event names are emitted by the case model
-depending on window state (see below). "Excluded", "excepted", and "exempt" are three distinct
-outcomes in this flow and are not interchangeable.
+Two things worth reading off the transition table:
+
+- A **denial while the verification window is open** returns the member to `report_activities` (e.g.
+  `ActivityReportDenied`), whereas a **final denial** (`ActivityReportDeniedFinal`) ends the case.
+  The two event names are emitted by the case model depending on window state (see below).
+- `DeterminedCommunityEngagementNotMet` is an **internal routing event only**: the source comments
+  that it has no `NotificationsEventListener` subscription, so a member is not told they fell short
+  before the outbound data sources have been consulted.
+
+"Excluded", "excepted", and "exempt" are three distinct outcomes in this flow and are not
+interchangeable.
 
 ## The case aggregate
 
@@ -113,12 +141,12 @@ The case exposes two families of state-mutating methods. The caseworker-facing t
 `accept_denial_response`, etc.) each run inside a `transaction`, flip the relevant approval-status
 accessor, call the SDK's `close!`/`save!`, and then publish the next workflow event directly. The
 automated `record_*` methods (`record_exclusion_determination`, `record_exception_determination`,
-`record_external_ce_combined_assessment`, etc.), invoked by the determination services, only mutate
-case state inside the `transaction` — the calling service publishes the event and sends
-notifications; some of these do not flip an accessor at all (e.g.
-`record_exception_determination` only `close!`s). Most methods in both families also record a
-`Determination` on the `Certification` (the exemption-denial path instead writes a
-`Strata::AuditLog` entry):
+`record_hours_compliance`, `record_income_compliance`, `record_data_source_ce_determination`,
+`record_external_ce_combined_assessment`), invoked by the determination services, only mutate case
+state inside the `transaction` — the calling service publishes the event and sends notifications.
+Some of these do not flip an accessor at all (e.g. `record_exception_determination` only `close!`s).
+Most methods in both families also record a `Determination` on the `Certification` (the
+exemption-denial path instead writes a `Strata::AuditLog` entry):
 
 ```ruby
 def deny_activity_report(user, application_form)
@@ -127,6 +155,7 @@ def deny_activity_report(user, application_form)
 
   transaction do
     self.activity_report_approval_status = "denied"
+    self.activity_report_approval_status_updated_at = Time.current
     verification_window_ended? ? close! : save!
     certification.record_determination!(decision_method: :manual, outcome: :not_compliant, # ...
   end
@@ -136,6 +165,12 @@ def deny_activity_report(user, application_form)
   Strata::EventManager.publish(event_name, { case_id: id, certification_id:, application_form_id: application_form.id })
 end
 ```
+
+The automated CE recorders share one private helper, `record_automated_ce_compliance`, whose
+`close_on_compliant:` keyword (default `true`) decides whether a `:compliant` outcome `close!`s the
+case in the same transaction as the determination — so a compliant member drops out of the open-case
+queues however the compliance was established (in-hand hours, in-hand income, or a data source's
+attestation).
 
 ### Verification window
 

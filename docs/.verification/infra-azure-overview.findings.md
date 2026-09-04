@@ -1,15 +1,22 @@
-# Verification findings: infra-azure-overview (round 2)
+# Verification findings: infra-azure-overview.md (Round 2)
 
-Doc: `docs/sources/template-infra-azure/infra-overview.md`
-Source: `.sources/template-infra-azure` @ `e10a383c4871d6eab3999baf63a01e5bd5a81f4c`
+## Findings
 
-## Status
+### 1. Networks root module missing Terraform version constraints
+**Severity**: Medium
 
-**All findings from round 1 have been addressed.** The doc now correctly states:
+**Claim**: "Root modules pin `required_version = "~>1.11.0"` and the `hashicorp/azurerm` provider at `~> 5.0.0`."
 
-1. **Subnet names**: Line 84 correctly lists "apps-private" (not "apps")
-2. **Log Analytics Workspace**: Line 78-81 correctly describes it as "subscription-level 
-   (account-level)" 
+**Issue**: The networks root module (`infra/networks/main.tf.jinja`) does not declare `required_version` or `required_providers`, unlike the account, database, and service root modules which all have these constraints.
 
-Round 2 verification confirmed these fixes and found no new inaccuracies. The document is 
-fully accurate and consistent with the source repository at the referenced commit.
+**Evidence**: 
+- `infra/accounts/main.tf` contains: `required_version = "~>1.11.0"` and azurerm provider `version = "~> 5.0.0"`
+- `infra/{{app_name}}/database/main.tf` contains: `required_version = "~>1.11.0"` and azurerm provider `version = "~> 5.0.0"`
+- `infra/{{app_name}}/service/main.tf` contains: `required_version = "~>1.11.0"` and azurerm provider `version = "~> 5.0.0"`
+- `infra/networks/main.tf.jinja` contains no `terraform` block or version constraints
+
+**Suggested fix**: Clarify that only the account, database, and service root modules pin Terraform and provider versions, or add the missing constraints to the networks root module to match the pattern used in other root modules.
+
+## Summary
+
+One finding identified. The document makes an overgeneralized claim about all root modules pinning Terraform versions, but the networks root module omits these constraints.
