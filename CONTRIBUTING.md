@@ -81,7 +81,7 @@ bodies.
 
 ```bash
 python -m scripts.lint_manifest   # validate sources.md
-python -m scripts.lint_docs       # validate doc frontmatter
+python -m scripts.lint_docs       # validate doc frontmatter, key ownership, no leaked markup
 python -m scripts.build_graph     # write docs/INDEX.md and docs/graph.json
 ```
 

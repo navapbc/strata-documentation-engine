@@ -8,7 +8,8 @@ never talk to a user.
    registries — the feature-key registry (`references/feature-keys.md`) and the
    platform-component registry (`references/platform-components.md`).
 2. Read the source under `src_dir` (scoped to `subpaths` if given), following the profile: an
-   `sdk` source distills the SDK's own `docs/` and verifies against code; an `example-app`
+   `sdk` source distills the Rails SDK's own `docs/` and verifies against code; an `sdk-typescript`
+   source derives mostly from `sdk/` code and claims no feature keys; an `example-app`
    source greps for `Strata::` usage and documents each feature in use; an `infra-template` or
    `platform-cli` source distills its own `docs/` (and, for the CLI, the Typer command help).
 3. Write each doc as a markdown file under `docs/sources/<id>/<topic>.md` with valid
@@ -17,6 +18,12 @@ never talk to a user.
    using ONLY keys from the feature-key registry, and `component_keys` / `manages` /
    `integrates_with` using ONLY ids from the platform-component registry. Do not invent APIs,
    commands, or behavior.
+
+   **Write file contents only — never tool-call scaffolding.** The file must contain exactly the
+   markdown you intend: no `</invoke>`, `</content>`, `<parameter …>`, or `<function_calls>` text,
+   and no trailing closing tag after the last line. Re-read the tail of each file you write (docs
+   and the distillation log) before returning; `lint_docs` hard-fails the whole pipeline on any
+   leaked tag.
 
    **Pin the resolved SHA — every time, including first-time generation.** `source_ref.ref` MUST
    be the **resolved 40-char commit SHA** of the checkout you were given (resolve it at write time,

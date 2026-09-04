@@ -5,7 +5,7 @@
 | Column | Required | Meaning |
 |--------|----------|---------|
 | `id` | yes | Unique kebab-case identifier for the source |
-| `type` | yes | Must have a matching `references/profiles/<type>.md` (e.g. `sdk`, `rails-template`, `example-app`, `infra-template`, `platform-cli`) |
+| `type` | yes | Must have a matching `references/profiles/<type>.md` (e.g. `sdk`, `sdk-typescript`, `rails-template`, `example-app`, `infra-template`, `platform-cli`) |
 | `repo` | yes | Git URL (`https://` or `git@`) |
 | `ref` | yes | Branch, tag, or SHA — pin a tag/SHA for reproducible runs |
 | `subpaths` | no | Space-separated globs scoping what gets documented; empty = whole repo |

@@ -39,7 +39,7 @@ python -m pytest -k frontmatter -v                # by pattern
 
 # Lint / build pipeline (run in order; each prints a *_OK sentinel)
 python -m scripts.lint_manifest       # validate sources.md -> MANIFEST_OK
-python -m scripts.lint_docs           # validate doc frontmatter + registry use -> DOCS_OK
+python -m scripts.lint_docs           # frontmatter, registry use, key collisions, leaked markup -> DOCS_OK
 python -m scripts.build_graph         # write docs/INDEX.md + docs/graph.json -> GRAPH_OK
 ```
 

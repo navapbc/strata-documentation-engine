@@ -6,7 +6,7 @@ verified: ok
 doc_type: example
 tags: [rails, walkthrough, bootstrap, local-development, getting-started]
 related: [app-template-using-the-rails-template]
-component_keys: [template-application-rails]
+component_keys: []
 integrates_with: [template-infra]
 summary: End-to-end walkthrough of installing the Rails application template and running the generated app locally.
 source_ref:

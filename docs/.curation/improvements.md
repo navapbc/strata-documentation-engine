@@ -9,6 +9,294 @@ ones under a dated section. The most recent pass is at the top.
 
 ---
 
+# Update-mode pass — 2026-09-04 (7 sources)
+
+An **update-mode** run over 5 re-documented sources plus 2 NEW ones. The curator was handed the
+explicit source list (the P3 mitigation below still holds):
+
+- **`oscer`** (example-app) — re-documented at `be3ffbb…`; 13 docs (12 refreshed, 1 new).
+- **`template-infra`** (infra-template) — re-documented at `8b7bc38…`; 9 docs (1 new).
+- **`platform-cli`** (platform-cli) — re-documented at `5ed1286…`; 6 docs (2 new).
+- **`template-infra-azure`** (infra-template) — re-documented at `474f45e…`; 6 docs (1 new).
+- **`documentai-api`** (application-template) — re-grounded at `753ad50…`; 3 docs.
+- **`strata-paidleave`** (example-app) — **NEW**; `954a71f…`; 10 docs.
+- **`strata-sdk-case-management`** (`sdk` profile, TypeScript) — **NEW**; `579d276…`; 10 docs.
+
+All 7 produced a distillation log; **none missing**. `.logs/` still holds 6 logs from prior runs
+(`app-template`, `strata-sdk`, `strata-template-rules-engine-catala`, `strata-unemployment`,
+`template-application-flask`, `template-application-nextjs`) — correctly excluded from this pass. The
+last two are for sources **no longer in `sources.md`** and are obsolete; see the P3 pruning item.
+
+## Registry health this run: NOT clean
+
+For the first time in three runs, two documenters hit registry surfaces that do not exist and had to
+work around them (see P0 and P1 below). Every key that *was* used resolved, so no lint hard-fail, and
+`feature_key_gaps` stayed 0 — but only because `strata-sdk-case-management` deliberately claimed
+nothing.
+
+---
+
+## P0 — The `sdk` profile was applied to a TypeScript SDK it does not describe; the whole feature axis had to be abandoned
+
+`strata-sdk-case-management` is a TypeScript/pnpm monorepo publishing `@nava-strata/*` packages. It
+shares the name "Strata SDK" and the case-management *domain* with `strata-sdk-rails` but shares no
+code, API, or vocabulary (`CaseTypeConfig`, `CriterionDefinition`, `Evidence`, `Signal`, `CaseStore`
+vs `Strata::BusinessProcess`, `strata_attribute`, …). Consequences the documenter had to reason out
+unaided (case-management log, "headline finding" + judgment calls 1–3):
+
+1. **`feature_keys: []` on all 10 docs.** `references/feature-keys.md`'s own preamble says every key
+   traces to a real file in `strata-sdk-rails`, so no key is claimable. The profile's core
+   instruction — "one `doc_type: feature` doc per canonical key" — is inapplicable.
+2. **A near-miss graph regression.** `build_graph.py` resolves ownership with
+   `owners.setdefault(k, d["id"])` over `sorted(rglob)`, and
+   `docs/sources/strata-sdk-case-management/…` sorts **before** `docs/sources/strata-sdk/…`
+   (`-` < `/`). Had this documenter claimed `case`, `task`, or `business-process`, it would have
+   **silently stolen ownership** from the Rails SDK docs and re-pointed every example app's
+   `demonstrates` `example-of` edge at a TypeScript doc describing a different API. Only a judgment
+   call prevented it.
+3. **The profile's docs assumption inverted.** `sdk.md` assumes a source that "already ships
+   extensive docs under `docs/`" to distill; this repo's `docs/` holds exactly two files, so nearly
+   everything was derived from `sdk/` source. These docs are now the most complete API description of
+   this SDK that exists.
+
+**Action (three parts, in order):**
+1. **Split the profile.** Add `profiles/sdk-typescript.md` (or rename the existing one
+   `sdk-rails.md`) and repoint the `strata-sdk-case-management` row in `sources.md`. One profile
+   cannot serve a Rails engine and an npm monorepo; `lint_manifest` will accept a new profile file
+   with no other change.
+2. **Namespace the feature registry before any doc claims a key.** If this SDK is to join the
+   feature axis, `feature-keys.md` needs a distinct key set — e.g. `cm-ts/case-type-config`,
+   `cm-ts/criteria`, `cm-ts/tasks`, `cm-ts/events`, `cm-ts/stores`, `cm-ts/blueprints` — plus a
+   preamble sentence saying unprefixed keys are Rails-SDK-scoped. Until then `feature_keys: []` here
+   is correct and should be stated as expected in the profile, not left to judgment.
+3. **Make ownership collisions loud, not lexicographic.** `build_graph`'s `setdefault`-over-sorted
+   ordering means a second claimant of an owned key is silently ignored. Per the "never silently
+   drop" invariant, `lint_docs` should hard-fail (or `build_graph` should print a `COLLISION:` line)
+   when two docs claim the same `feature_keys`/`component_keys` entry. This is the single highest-
+   value engine change from this run: it converts a silent graph regression into a pipeline stop.
+
+## P1 — `platform-components.md` has no id for either SDK, so the component axis has a hole
+
+`strata-sdk-case-management` set `component_keys`, `manages`, and `integrates_with` all to `[]`
+because the registry has **no id for it, nor for the Rails SDK** (case-management log, judgment call
+2). Both SDKs are therefore unreachable on the platform axis; only the `related` axis and inbound
+`demonstrates` edges connect them.
+
+**Action:** decide explicitly and record the decision in `platform-components.md` itself — either add
+`strata-sdk-rails` and `strata-sdk-case-management` as canonical ids (letting apps declare
+`integrates_with: [strata-sdk-case-management]`, which `strata-paidleave`'s casemgmt composition
+would immediately use), or add a one-line note that SDKs are deliberately feature-axis-only. Silence
+makes every documenter re-derive it.
+
+## P1 — `sources.md` subpaths for `strata-sdk-case-management` exclude its intended entry points
+
+The declared `docs sdk` scope omits `skills/` (eight agent skills that `AGENTS.md` calls
+authoritative for their tasks) and `tools/workflow-viewer/` (whose `/learn` pages the SDK's own
+maturity doc points users at). The documenter flagged both as clearly significant and out of scope
+(case-management log, judgment call 3).
+
+**Action:** widen that row's `subpaths` to `docs sdk skills tools` so a future run can document the
+program-workflow generator skill and the viewer — for a consuming team those are the front door, and
+today the docs describe the library without them.
+
+## P1 — Prior P0 (leaked tool-call XML) is UNFIXED and still visible in the tree
+
+The 2026-07-21 report's P0 asked for (a) a `lint_docs` hard-fail on stray tool-call markup and (b) a
+hardened write step. Neither landed: `grep -n 'invoke\|antml\|parameter' scripts/lint_docs.py` returns
+nothing, and `.logs/strata-unemployment.distillation.md` still ends with a bare `</content>` tag.
+
+No new corruption appeared in this run's 7 logs or docs, so the write path may have self-corrected —
+but nothing enforces it, and the detection gap that let the prior corruption survive lint + verify→fix
++ graph is unchanged. **Re-raising unchanged:** add the body/log scan to `lint_docs`. It is a dozen
+lines and closes a whole class of silent corruption.
+
+## P1 — Prior P1s on judgment-churn keys are ALSO unfixed; three run-over-run reversals are now on record
+
+Verified this run: `feature-keys.md` still carries no threshold note for `components`,
+`profiles/example-app.md` still has no "leave a key off rather than force a near-match" rule and no
+flow-`task`-DSL caution, `profiles/infra-template.md` still has no AWS-terminology caution and no
+"ADRs if present" softening, and `profiles/rails-template.md` still says nothing about Azure. The
+cost is now measurable:
+
+- **`components`** was declined by oscer (2026-06-29), claimed by oscer (2026-07-21), and this run
+  both `oscer` and `strata-paidleave` wrote standalone `components.md` docs — converging, but by
+  coincidence, not by rule.
+- **`app-template`'s Azure `integrates_with`** flipped on and stayed on.
+- **`strata-paidleave` re-derived the entire "what NOT to tag" analysis from scratch** (judgment
+  calls 3–6: declining `task/system-process`, `task/third-party-task`, `rules-engine`, `auth`,
+  `policies`, `audit-log`, `virtual-actor`, `generators`), reaching correct answers by careful
+  grepping — exactly the work the 2026-06-29 profile note was meant to save. Its `rules-engine`
+  reasoning ("the app's rules engine is an external HTTP service reached through
+  `RulesEngine::Adapter`; no code references `Strata::RulesEngine`") is a better example than the one
+  previously proposed and should be quoted verbatim in the profile.
+
+**Action:** apply the four one-line profile/registry edits already specified in the 2026-06-29 and
+2026-07-21 sections. They have now been recommended three runs running and remain the cheapest
+outstanding work in this report.
+
+## P2 — `needs-review` is being spent on cosmetic residuals; the loop needs a severity floor
+
+Both docs that ended `verified: needs-review` did so on findings a reader would not notice:
+
+- **`infra-database`** (round 3): the maintenance-window upgrade path says "apply" rather than naming
+  the explicit make command. Rounds 1 and 2 findings were otherwise all addressed.
+- **`infra-azure-set-up-database-and-service`** (round 3): a citation reads `manage.py:250-272` where
+  the complete function runs to line 275. The record's own verification notes then confirm ~12
+  substantive claims correct.
+
+`needs-review` is the engine's signal that a doc may mislead. Spending it on a three-line citation
+range devalues it, and a reader triaging INDEX cannot tell these two apart from a doc with a wrong
+command.
+
+**Action:** give the adjudicator an explicit floor in `agents/adjudicator.md` — only **medium or
+higher** unresolved findings set `needs-review`; residual `low` findings are recorded in
+`docs/.verification/` and the doc stays `ok`. Optionally have `build_graph` surface the highest
+residual severity alongside the status so the distinction is visible in `INDEX.md`.
+
+## P2 — Known graph gaps: `template-application-nextjs` and `template-application-flask` are referenced but unowned
+
+Both ids are referenced this run — `platform-cli`'s `legacy-migration` and `app-commands` docs
+`manages` them (grounded in the `.template-flask-version` / `.template-nextjs-version` files those
+guides name), and `strata-paidleave` declares `integrates_with: [template-application-nextjs]`
+grounded in a real `.template-application-nextjs/casemgmt.yml` answers file plus six
+`CaseManagementService` job callers. Neither has a documented source, so `build_graph` prints `GAP:`
+lines, as designed.
+
+The 2026-06-29 report called this soft-deprecation "the intended state, revisit only if those
+templates are re-added or fully retired." **That condition has now been met from the other side:** a
+live example app composes with the Next.js template, and both `.logs/` still hold full, high-quality
+distillation logs from when they *were* documented sources.
+
+**Action:** re-add `template-application-nextjs` to `sources.md` (`application-template`, subpaths
+`template template-only-docs`). Its prior log shows the source supports a clean three-doc set, so the
+cost is one update-mode run and the gap closes into a real `integrates-with` edge. For
+`template-application-flask`, either re-add it the same way or drop the id from
+`platform-components.md` and let `platform-cli`'s `manages` list shrink — the current state (a
+canonical id kept alive solely to keep a `manages` value lint-valid) is the worst of both.
+
+## P2 — Shallow clones: the prior-SHA diff problem is half-solved, and the fix is a one-line profile note
+
+The 2026-07-21 P1 asked that the clone step make the prior `source_ref.ref` diffable. Something
+improved — `oscer`, `platform-cli`, `documentai-api`, and `template-infra` all successfully ran
+`git diff <prior>..<new>` and scoped their work from it, which is exactly the intended update-mode
+behavior. But `template-infra`'s documenter found the sharp edge:
+
+> The checkout is a **grafted shallow clone**, so `git log 80a7cc8..8b7bc38` reports a single commit
+> and is useless for change detection — both SHAs are grafted roots. `git diff 80a7cc8..8b7bc38`
+> gives the true tree delta.
+
+`documentai-api` hit the same thing ("the checkout is shallow (depth 1), but a `git diff` between the
+two SHAs resolved"). So `git diff` works on a grafted clone and `git log` silently lies.
+
+**Action:** state in `agents/source-doc.md` that update-mode drift scoping must use
+`git diff <prior-sha>..<new-sha> -- <subpaths>`, never `git log`, because clones are shallow/grafted
+and `git log` returns a plausible-but-wrong single-commit answer. One sentence prevents a documenter
+from concluding "nothing changed."
+
+## P2 — `example-app` profile needs a doc-count/grouping rule; `strata-paidleave` had to invent one
+
+`strata-paidleave` wrote **10 docs** where the profile implies a smaller set, reasoning: "This app is
+much larger than a single-form reference app (5 application forms, 5 flows, a full business process, a
+staff dashboard, an M2M API). Splitting by SDK feature keeps each doc's `demonstrates` clean and gives
+the graph one owner per key." `oscer` independently reached 13 on the same principle. That principle —
+**one doc per feature key, so the graph has exactly one owner per key** — is the right rule and it is
+nowhere written down.
+
+**Action:** codify it in `profiles/example-app.md`: doc count follows the app's SDK surface, one doc
+per feature key (or coherent key cluster), with no target number. This also subsumes the older
+"profiles don't state a doc count" P1 for the example-app case.
+
+## P2 — Two documenters independently split `attributes` from `value-objects` the same way; make it a rule
+
+`strata-paidleave` tagged `attribute-types/money` and `attribute-types/year-quarter` on its
+value-objects doc and the other five type keys on its attributes doc, "so no key is claimed twice",
+reasoning that money and year-quarter are the two whose *value class* surface the app exercises
+directly. `oscer` drew a closely related line, warning that `Strata::Address` used as
+`ActiveModel::Type::Json.new(Strata::Address)` is **not** an `attribute-types/address` demonstration.
+
+Both calls are sound and mutually consistent. **Action:** add to `feature-keys.md` next to the
+`attribute-types/*` block: tag the key on the doc that exercises the type's *declaration*
+(`strata_attribute`), and only move it to a value-objects doc when the app exercises the value
+class's own API; an SDK value class used merely as a serialization type is not a demonstration of its
+attribute-type key.
+
+## P2 — New docs↔code mismatches for the `upstream-issues.md` ledger
+
+Recommending, not editing. This run's documenters grounded around a large crop of source defects;
+the highest-value ones to file upstream:
+
+- **`strata-sdk-case-management`** — `humanId` is silently dropped by event serialization
+  (`SerializedCaseRecord` has no such field, yet both SQL stores persist it), so webhook payloads and
+  `SqliteEventStore` round-trips lose it; `settleAutoTransitions` exists as two near-identical ~90-line
+  private copies; `CaseSdkOptions.humanIdGenerator?: any` is untyped though `HumanIdGenerator` is a
+  real exported interface; `onTaskCreated`/`onTaskCompleted` are the only hooks not error-isolated;
+  the `'event'` transition trigger is accepted by type and Zod schema but filtered nowhere;
+  `income-eligibility` sits in a "jurisdiction- and program-agnostic" catalog carrying
+  `ruleEvaluatorId: 'snap-income-eligibility-check'`.
+- **`strata-sdk-rails`** (found via `strata-paidleave`) — `Strata::Attributes::MoneyAttribute::MoneyType#cast`
+  returns `nil` for Strings, silently dropping `money_field` input (the app ships a `MoneyInput`
+  workaround "remove once the SDK's MoneyType casts strings", and `BenefitPayment` works around it a
+  second, different way); no repeater view component exists (a 50-row wage repeater is hand-built);
+  no `:year_quarter` form helper; `Strata::Determinable`'s `has_many` hardcodes
+  `class_name: "Strata::Determination"`, forcing every app with a `Determination` subclass to
+  re-declare the association; `Strata::ApplicationForm`'s submitted-freeze guard recognizes only the
+  literal `submitted` status.
+- **`template-infra`** — threat-detection override precedence is asymmetric (`coalesce` for the
+  enable flag, a `== true` ternary for the frequency, so setting only the frequency has no effect);
+  `enable_storage_malware_scanning` is documented as per-environment but all three shipped env files
+  pass one shared local; the 2023-11-28 feature-flags ADR describes CloudWatch Evidently while the
+  shipped module writes plain SSM parameters; `docs/feature-flags.md` names the wrong path for the
+  defaults map; neither new security doc mentions cost, though malware scanning ships with
+  `object_prefixes = []`.
+- **`template-infra-azure`** — `make infra-configure-monitoring-secrets` calls a
+  `./bin/configure-monitoring-secret` that does not exist, and its `has_incident_management_service`
+  flag is referenced nowhere (dead config); blob storage is on by default and entirely undocumented;
+  `environment-variables-and-secrets.md` is still substantially AWS text and names
+  `environment_variables.tf` where the file is `environment-variables.tf`.
+- **`documentai-api`** — `ProcessStatus.is_completed` omits `blurry_document_detected` and
+  `password_protected`, while `insert_initial_ddb_record` writes a final response for them, so a
+  `wait=true` upload polls for the full timeout and is then rewritten as `failed` while
+  `GET /v1/documents/{job_id}` returns the real answer immediately; the two jobs take positional
+  arguments in **opposite orders**; README's OpenAPI link points at a path `make openapi-spec` does
+  not write.
+- **`platform-cli`** — `docs/getting-started/help.md`'s `-v`-count description does not match
+  `main.py`/`logging/__init__.py`; `docs/guides/new-project.md` and the tail of
+  `migrating-from-legacy-template.md` show invocations the current Typer signatures reject.
+
+## P3 — Empty template-author README is now confirmed across five sources (prior P2, unapplied)
+
+`documentai-api` (`template-only-docs/README.md`, 0 bytes) and `template-infra-azure`
+(`docs/README.md`, 0 bytes) both re-flagged it this run, joining `app-template` and the prior run's
+finds. The one-liner recommended in 2026-07-21 — that an empty `template-only-docs/README.md` /
+`docs/README.md` is expected copier-family boilerplate, skip without flagging — is still unapplied and
+still worth a minute.
+
+## P3 — Curator scoping mitigation held again; `.logs/` pruning is the remaining half
+
+The explicit re-documented-source list was passed again and worked. The unaddressed half is pruning:
+`.logs/` holds logs for `template-application-flask` and `template-application-nextjs`, which are not
+in `sources.md`. If those sources are re-added (P2 above) the logs become useful again; if not, prune
+them and record in `SKILL.md` that `.logs/` is not run-scoped.
+
+## P3 — What worked, worth keeping (informational)
+
+- **SHA-pinning held on all 7 sources**, including both NEW ones, and `strata-sdk`'s prior-run fix
+  (branch name → resolved SHA in all 14 docs) removed the standing cause of conservative full
+  re-documents.
+- **Doc-id stability was preserved deliberately everywhere it mattered.** `documentai-api` kept its
+  three ids specifically because "`oscer`'s docs already point at `documentai-api` via
+  `integrates_with`, so the component id must not move"; `platform-cli` kept four ids while adding
+  two; `template-infra` kept all eight; `template-infra-azure` kept five and added one. No churn.
+- **`verified: ok` was correctly dropped on every rewritten doc** across five sources, each citing the
+  frontmatter contract. That convention is now self-sustaining and needs no further reinforcement.
+- **Coverage auditing emerged unprompted.** `template-infra`'s documenter listed which upstream docs
+  had *no* coverage in the existing doc set, closed the material gaps, and recorded which four it left
+  uncovered and why. Worth promoting from good instinct to a profile instruction for `infra-template`
+  and `sdk`: before finishing a re-document, list upstream docs with no doc covering them and record
+  the disposition of each.
+
+---
+
 # Update-mode pass — 2026-07-21 (6 sources)
 
 This was an **update-mode** run. The engine re-documented exactly these 6 sources, and ONLY their

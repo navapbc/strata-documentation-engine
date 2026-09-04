@@ -1,58 +1,38 @@
-# Verification findings: infra-azure-access-control-and-operations (round 1)
+# Verification Report: infra-azure-access-control-and-operations
 
-Doc: docs/sources/template-infra-azure/infra-access-control-and-operations.md
-Source: .sources/template-infra-azure
+**Document**: docs/sources/template-infra-azure/infra-access-control-and-operations.md
+**Source ref**: 474f45e99076d3b72af4ea9d63dd5d6c0aab850f
+**Verification round**: 2
+**Date**: 2026-09-04
 
-## Result
+## Summary
 
-One low-severity staleness finding (inherited from the source doc). The doc is
-otherwise fully supported by its eight cited source files.
+No inaccuracies found. The document is fully supported by the source repository.
 
-### Finding 1 — Workflow name `ci-vulnerability-scans` does not match repo files (low)
+## Verification Details
 
-- **Claim:** "a `ci-vulnerability-scans` GitHub workflow scans Docker images before
-  they are pushed."
-- **Issue:** Faithful to the source doc (vulnerability-management.md says
-  "named `ci-vulnerability-scans`"), but the checkout has no such file. The
-  reusable workflow is `.github/workflows/vulnerability-scans.yml` (display name
-  "Vulnerability Scans"), invoked per app by the templated
-  `ci-{{app_name}}-vulnerability-scans.yml.jinja` caller.
-- **Evidence:** `.github/workflows/vulnerability-scans.yml:6`;
-  `.github/workflows/ci-{{app_name}}-vulnerability-scans.yml.jinja`.
-- **Suggested fix:** Describe the scans as running via the reusable
-  `vulnerability-scans.yml` workflow, invoked per app by a
-  `ci-<app_name>-vulnerability-scans` caller.
+All major claims have been verified against source files:
 
-Spot-checks performed:
+✓ Cloud access control roles (Contributor, Key Vault Secrets Officer, Key Vault Certificates Officer, Role Based Access Control Administrator)
+✓ GitHub Actions authentication via federated identity credential scoped to `repo:<org>/<repo>`
+✓ Microsoft Graph Group.Read.All application permission requiring tenant admin consent
+✓ Database access control via Entra ID with three groups (DB Admin, Migrator, App)
+✓ Database password_auth_enabled = false configuration with comment explaining rationale
+✓ Terraform workspace mechanism using local.is_temporary = terraform.workspace != "default"
+✓ Workspace behavior: resource name prefixing, deletion protection disabled, DNS records skipped
+✓ Workspace persistence: resource group and Key Vault lookup vs creation, secret name suffixing
+✓ Workspace cleanup: private endpoints disabled, blob versioning disabled, soft-delete retention shortened to 1 day
+✓ Infrastructure destroy sequence in reverse order
+✓ Terraform backend storage account soft-delete retention: 30 days
+✓ Terraform backend Key Vault purge_protection_enabled = true
+✓ Compliance checks: Checkov and tfsec
+✓ Vulnerability scanners: Hadolint, Trivy, Anchore/grype, Dockle
+✓ Terraform style guide conventions (module naming, variable naming, .terraform.lock.hcl exclusion, etc.)
+✓ Code review guidelines (response time, approval criteria, PR size, etc.)
+✓ Linting tools: markdown link check, shellcheck, terraform fmt, actionlint
 
-- **Cloud access control** — `subscription_roles` in
-  `infra/modules/auth-github-actions/main.tf`: matches cloud-access-control.md.
-- **Database access control** — three Entra groups (DB Admin / Migrator / App),
-  group-name-as-username + token-as-password, `az account get-access-token
-  --resource-type oss-rdbms`, migrator/app Postgres roles: all match
-  database-access-control.md.
-- **Infra admin permissions** — Owner, Key Vault Administrator, RBAC
-  Administrator, Storage Blob Data Contributor scoped to subscription; Cloud
-  Application Administrator scoped to tenant: matches infra-admin-permissions.md.
-- **Workspaces** — default vs non-default behavior (name prefixing, deletion
-  protection disabled, DNS not created), init/new/show/apply/destroy/select
-  command flow, short-name guidance: matches the workspaces doc. (Doc's
-  `terraform ... delete <WORKSPACE_NAME>` reproduces the source's own wording on
-  line 94 — not a doc-introduced error.)
-- **Destroy** — reverse order, accounts module last, comment out `backend
-  "azurerm"`, `terraform init -force-copy`, final `terraform destroy` in
-  `infra/accounts`: matches destroy-infrastructure.md. Doc generalizes the
-  source's `/infra/app/service` to `infra/<APP_NAME>/service`, a faithful
-  templating generalization.
-- **Compliance** — Checkov + tfsec, Homebrew install, `make
-  infra-check-compliance`, optional pre-commit: matches compliance.md.
-- **Vulnerability scanning** — `ci-vulnerability-scans` workflow, runs on PR push
-  and merge to main when `app` changes, Hadolint/Trivy/Anchore(grype)/Dockle,
-  ignore files `.hadolint.yaml`/`.trivyignore`/`.grype.yml`/`.dockleconfig` via
-  `DOCKLE_ACCEPT_FILES`, multi-stage `FROM scratch AS release`: matches
-  vulnerability-management.md.
-- **Style** — HashiCorp guide + exceptions (logical module names, shared config
-  vs tfe_outputs, underscores, type/unit-suffixed variables, plural lists,
-  `values_by_key`, `enable_` prefix, no committed `.terraform.lock.hcl`,
-  Terratest, tfsec for policy), GitHub Actions conventions, Google Shell Style
-  Guide, `make infra-lint`: matches style-guide.md.
+Note: The document correctly identifies a source documentation error (missing `workspace` subcommand in `terraform delete` command) and provides the corrected command.
+
+## Findings
+
+None.

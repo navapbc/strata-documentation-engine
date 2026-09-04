@@ -2,14 +2,13 @@
 id: infra-database
 title: Database — Aurora, the Role Manager, and Access Control
 source: template-infra
-verified: ok
 doc_type: guide
 tags: [infra, database, postgres, aurora, rds, lambda, iam, terraform]
 related: [infra-overview, infra-module-architecture, infra-getting-started, infra-configuration, infra-environments-and-workspaces]
 summary: How the database layer provisions Aurora Serverless v2 PostgreSQL, uses a role-manager Lambda to create the app and migrator users, secures access with IAM authentication, and how to upgrade the engine.
 source_ref:
   repo: https://github.com/navapbc/template-infra
-  ref: 80a7cc8ec802c442098933f65280175b8453c659
+  ref: 8b7bc3899c3a9ab1b3441330d72993cd34d21f70
   paths:
     - docs/infra/set-up-database.md
     - docs/infra/database-access-control.md
@@ -17,7 +16,10 @@ source_ref:
     - docs/decisions/infra/2023-05-25-separate-database-infrastructure-into-separate-layer.md
     - docs/decisions/infra/2023-05-25-provision-database-users-with-serverless-function.md
     - docs/decisions/infra/2023-06-05-database-migration-architecture.md
-last_documented: 2026-07-21
+    - docs/infra/pull-request-environments.md
+    - docs/infra/temporary-environments-and-out-of-band-resources.md
+last_documented: 2026-09-04
+verified: needs-review
 ---
 
 # Database — Aurora, the Role Manager, and Access Control
@@ -37,11 +39,15 @@ Per `docs/infra/set-up-database.md`, the setup process:
 5. Invokes the role manager to create the **`app`** and **`migrator`** users.
 
 The layer is skipped entirely for applications without a database (`has_database = false` in
-app-config). It is a separate layer (ADR `2023-05-25`, separate database layer) so the database can be
-fully provisioned and its roles/schemas configured — an out-of-band step — before the service layer
-runs.
+app-config). It is a separate layer (ADR `2023-05-25`, separate database layer) so infrequent, complex database
+changes stay out of the application deploy path and each layer is created once, in order — the
+database (including its users and schema) before the application service.
 
 ## Setting it up
+
+`docs/infra/set-up-database.md` lists two prerequisites: [set up the AWS
+account](https://github.com/navapbc/template-infra/blob/main/docs/infra/set-up-aws-account.md) first,
+and have `pip` installed (it downloads the role-manager Lambda's dependencies).
 
 ```bash
 make infra-configure-app-database APP_NAME=<APP_NAME> ENVIRONMENT=<ENVIRONMENT>
@@ -119,12 +125,15 @@ Per `docs/infra/database-access-control.md`:
   then set `allow_major_version_upgrade = true` (on the `aws_rds_cluster` resource) and
   `apply_immediately = true` on both the `aws_rds_cluster` and `aws_rds_cluster_instance` resources, bump
   `serverlessv2_scaling_configuration` `min_capacity` to at least 4.0 (lower minimums fail with
-  `FATAL: shared memory segment sizes are configured too large`), set the new `engine_version`, run
-  `infra-update-app-database` between each change, then revert the temporary settings.
+  `FATAL: shared memory segment sizes are configured too large`), run `infra-update-app-database`,
+  set the new `engine_version`, run `infra-update-app-database` again, revert the temporary
+  settings, then run `infra-update-app-database` a final time.
 - **During the maintenance window** — set `allow_major_version_upgrade = true` in the
-  `aws_rds_cluster` resource, then create a new `aws_rds_cluster_parameter_group` for the new
-  engine family, point the cluster at it, set the new `engine_version`, and apply (queued for the
-  next maintenance window). After the upgrade completes, remove the old parameter group, drop
+  `aws_rds_cluster` resource, bump `serverlessv2_scaling_configuration` `min_capacity` to 4.0 if
+  needed (a lower minimum fails with `FATAL: shared memory segment sizes are configured too large`),
+  then create a new `aws_rds_cluster_parameter_group` for the new engine family, point the cluster at
+  it, set the new `engine_version`, and apply (queued for the next maintenance window; to apply it
+  right away, change the engine version to match manually in the AWS Console). After the upgrade completes, remove the old parameter group, drop
   `allow_major_version_upgrade`, and optionally use a Terraform `moved` block to rename the new
   parameter-group resource back to the original name without recreating it.
 

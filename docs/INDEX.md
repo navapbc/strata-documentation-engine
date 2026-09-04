@@ -13,26 +13,27 @@
 ## documentai-api
 
 ### example
-- [Example: scaffolding a new DocumentAI API project](sources/documentai-api/new-project-example.md) — A concrete walk-through of installing the DocumentAI template into a project, the prompts answered, and the resulting project tree.
+- [Example: scaffolding a new DocumentAI API project](sources/documentai-api/new-project-example.md) — A concrete walk-through of installing the DocumentAI template into a project, the answers given to each prompt, the resulting tree, and a first local smoke test.
 
 ### guide
-- [DocumentAI API capability overview](sources/documentai-api/overview.md) — A deployable Strata capability — a separately deployable, independently scalable document-processing service that classifies and extracts data from uploaded documents using AWS Bedrock Data Automation.
-- [Using and deploying the DocumentAI template](sources/documentai-api/using-the-template.md) — How to install the DocumentAI template with the nava-platform CLI, run it locally, and deploy it as a sidecar using the Strata AWS infrastructure template.
+- [DocumentAI API capability overview](sources/documentai-api/overview.md) — A deployable Strata capability — a separately deployable, independently scalable document-processing service that classifies uploaded documents and extracts their data using AWS Bedrock Data Automation.
+- [Using and deploying the DocumentAI template](sources/documentai-api/using-the-template.md) — How to install the DocumentAI template with the nava-platform CLI, what it scaffolds, how to run it locally, and how to deploy it beside a host app with the Strata AWS infrastructure template.
 
 ## oscer
 
 ### example
 - [OSCER — HMAC API authentication](sources/oscer/api-authentication.md) — How OSCER authenticates inbound API requests with the SDK's HMAC strategy via Strata::ApiAuthenticator and Strata::Auth::Strategies::Hmac.
 - [OSCER — application forms](sources/oscer/application-forms.md) — How OSCER subclasses Strata::ApplicationForm through an abstract OscerApplicationForm base for its three member-submitted forms, each tied to a staff review task.
-- [OSCER — typed attributes and attribute types](sources/oscer/attributes.md) — How OSCER uses the strata_attribute DSL and the SDK's money, year-month, us-date, name, range, and array attribute types across forms, activities, and value objects.
+- [OSCER — typed attributes and attribute types](sources/oscer/attributes.md) — How OSCER uses the strata_attribute DSL and the SDK's money, year-month, us-date, name, tax-id, range, and array attribute types across forms, activities, and value objects.
 - [OSCER — audit log and virtual actors](sources/oscer/audit-log-and-actors.md) — How OSCER writes Strata::AuditLog entries (write!, record block, add_line) and attributes system-initiated actions to Strata::VirtualActor services.
-- [OSCER — authorization policies](sources/oscer/authorization.md) — How OSCER builds on Strata::TaskPolicy and Strata::ApplicationFormPolicy for task and application-form authorization, including region-based query scoping.
+- [OSCER — authorization policies](sources/oscer/authorization.md) — How OSCER defines Strata::TaskPolicy in the SDK namespace and mixes in the SDK's Strata::ApplicationFormPolicy for task and application-form authorization, including region-based query scoping.
 - [OSCER — certification business process and case](sources/oscer/business-process.md) — How OSCER models the Medicaid certification lifecycle as a Strata::BusinessProcess state machine driving a Strata::Case aggregate.
 - [OSCER — SDK view components](sources/oscer/components.md) — How OSCER extends the SDK's ViewComponents (case-row, task-row, index, accordion) and its DateHelper to render caseworker case and task views.
 - [OSCER — determinations and the Determinable concern](sources/oscer/determinations.md) — How OSCER extends Strata::Determination and includes Strata::Determinable to record automated and manual compliance/exclusion/exception/exemption decisions on the Certification aggregate.
 - [OSCER — rules engine (exclusion eligibility)](sources/oscer/rules-engine.md) — How OSCER defines a Strata::Rules::MedicaidRuleset subclass and runs it through Strata::RulesEngine to compute community-engagement exclusion eligibility.
 - [OSCER — tasks (applicant, staff, system)](sources/oscer/tasks.md) — How OSCER subclasses Strata::Task and declares applicant, staff, and system steps that the certification business process drives.
 - [OSCER — value objects](sources/oscer/value-objects.md) — How OSCER subclasses Strata::ValueObject for Member, MemberStatus, and DocAiResult, including the attribute-based equality/blank/serialization contract.
+- [OSCER — verification data sources in a system_process](sources/oscer/verification-data-sources.md) — How OSCER's trailing verification-data-source step calls external sources behind a uniform adapter contract and records the winning outcome as a Strata::Determination via a virtual actor.
 
 ### guide
 - [OSCER — overview](sources/oscer/overview.md) — A Rails application that implements a Medicaid community-engagement certification workflow on top of the Strata SDK, exercising business processes, cases, tasks, application forms, determinations, the rules engine, audit logging, HMAC API auth, and SDK view components.
@@ -42,8 +43,26 @@
 ### guide
 - [nava-platform app command reference](sources/platform-cli/platform-cli-app-commands.md) — Reference for the nava-platform app command group (install, update, migrate-from-legacy) that installs and updates application templates such as template-application-rails, template-application-nextjs, and template-application-flask.
 - [nava-platform infra command reference](sources/platform-cli/platform-cli-infra-commands.md) — Reference for the nava-platform infra command group (install, add-app, update, update-base, update-app, migrate-from-legacy, info) that installs and updates template-infra.
-- [How install and update work (Copier wrapper)](sources/platform-cli/platform-cli-mechanism.md) — The CLI wraps Copier to install templates at their latest git tag, records answers in .template-<name>/<app>.yml files, and performs a 3-way diff on update; the target project repo must be clean.
-- [nava-platform CLI overview](sources/platform-cli/platform-cli-overview.md) — What the nava-platform CLI is, how to install it (uv, pipx, Nix, Docker), and the two command groups (infra and app) it exposes.
+- [Migrating a legacy-template project to the CLI](sources/platform-cli/platform-cli-legacy-migration.md) — How to convert a project that tracked template versions in legacy .<TEMPLATE_NAME>-version files into the CLI's answers-file format, and then bring it up to a current template version.
+- [How install and update work (Copier wrapper)](sources/platform-cli/platform-cli-mechanism.md) — The CLI wraps Copier to install templates at their latest git tag, records answers in .template-<name>/<app>.yml files, and performs a 3-way update; the target project repo must be clean.
+- [nava-platform CLI overview](sources/platform-cli/platform-cli-overview.md) — What the nava-platform CLI is, how to install it (uv, Nix, pipx, container), how to get help and read its logs, and the two command groups (infra and app) it exposes.
+- [Updating a project and avoiding conflicts](sources/platform-cli/platform-cli-updating-projects.md) — How to keep a project current with its upstream Strata templates using the infra and app update commands, and how to reduce merge conflicts when you do.
+
+## strata-paidleave
+
+### example
+- [Five Strata::ApplicationForm subclasses](sources/strata-paidleave/application-forms.md) — How the paid leave app models five different intakes as Strata::ApplicationForm subclasses, using page-scoped validation contexts, before_submit hooks, and — in one case — an extended status enum with its own review transitions.
+- [Typed attributes (strata_attribute)](sources/strata-paidleave/attributes.md) — Every strata_attribute declaration in the paid leave app, how each type maps to columns and to permitted flow fields, and why the app reaches for :us_date instead of Rails' default date cast.
+- [Leave application business process (Strata::BusinessProcess)](sources/strata-paidleave/business-process.md) — How the paid leave app declares a four-step Strata::BusinessProcess over a leave application case, mixing applicant tasks, a system step, and a staff task, and drives transitions with published events.
+- [Leave application cases and tasks (Strata::Case, Strata::Task)](sources/strata-paidleave/cases-and-tasks.md) — How the paid leave app subclasses Strata::Case and Strata::Task, links the case to its application form, and builds a staff dashboard on Strata::StaffController and Strata::TasksController.
+- [SDK ViewComponents in the paid leave UI](sources/strata-paidleave/components.md) — Which Strata ViewComponents the paid leave app renders — USWDS primitives, the flow task list, the case index — and how it subclasses the case-row and task-row components to define its own staff table columns.
+- [Determinations (Strata::Determination, Strata::Determinable)](sources/strata-paidleave/determinations.md) — How the paid leave app subclasses Strata::Determination to attach a PDF decision letter and funnels every recording of a determination — staff UI and machine-to-machine API — through one service that calls record_determination! and publishes the case-closing event.
+- [Multi-page flows (Strata::Flows::ApplicationFormFlow)](sources/strata-paidleave/flows.md) — How the paid leave app defines five flows with tasks, question pages, info pages, conditional pages and a repeating loop, mounts their routes, and drives them from Strata::Flows::ApplicationFormController.
+- [strata_form_with and the SDK field helpers](sources/strata-paidleave/form-builder.md) — Every SDK form-builder helper the paid leave app uses, how error anchors are built by instantiating Strata::FormBuilder directly, and how the SDK builder coexists with the app's own us_form_with on the auth pages.
+- [Money and YearQuarter value objects](sources/strata-paidleave/value-objects.md) — How the paid leave app constructs, compares and formats Strata::Money and Strata::YearQuarter, plus the MoneyInput concern that works around Strata::FormBuilder posting money as a String the SDK's own type casts to nil.
+
+### guide
+- [Strata Paid Leave — overview](sources/strata-paidleave/overview.md) — A multi-portal Rails application — applicant, employer, and staff — built on the Strata SDK for Rails, exercising business processes, cases, tasks, five application-form flows, determinations, and the SDK's UI components.
 
 ## strata-sdk
 
@@ -64,6 +83,22 @@
 
 ### guide
 - [Getting started with the Strata SDK](sources/strata-sdk/strata-sdk-getting-started.md) — How to install the Strata SDK Rails engine into a host app and where to go next.
+
+## strata-sdk-case-management
+
+### feature
+- [Case management blueprints (decision criteria and program types)](sources/strata-sdk-case-management/strata-sdk-cm-blueprints.md) — The off-the-shelf, jurisdiction-agnostic blueprint package — a shared decision-criteria catalog plus standalone PFML and SNAP program-type configs you copy or extend.
+- [The case record and case lifecycle operations](sources/strata-sdk-case-management/strata-sdk-cm-case-lifecycle.md) — The CaseRecord aggregate, sdk.cases create/get/list/updateMetadata, human-readable ids, and the per-case mutex plus optimistic-concurrency model.
+- [Case type configuration and validation](sources/strata-sdk-case-management/strata-sdk-cm-case-type-config.md) — The CaseTypeConfig shape, the immutable versioned configuration registry, and the two validation paths (runtime register versus standalone validateConfig).
+- [Domain events, message buses, and lifecycle hooks](sources/strata-sdk-case-management/strata-sdk-cm-events-and-hooks.md) — The thirteen domain events, when each is published relative to persistence, the MessageBus/EventStore ports and their in-process, webhook, and composite adapters, event serialization, and the eight CaseSdkHooks.
+- [Evidence, signals, and decision criteria](sources/strata-sdk-case-management/strata-sdk-cm-evidence-signals-criteria.md) — The evidence/signal/criterion data model, the rule-evaluator contract, forward-only status progression, and the dependency-DAG evaluation cascade.
+- [Persistence ports and store adapters](sources/strata-sdk-case-management/strata-sdk-cm-stores.md) — The CaseStore and EventStore ports, the in-memory, SQLite, and Postgres adapters, their optional native drivers, and the optimistic-concurrency contract every adapter must honor.
+- [Tasks and structured task outcomes](sources/strata-sdk-case-management/strata-sdk-cm-tasks.md) — Task definitions and triggers, the TaskOperations lifecycle, and the minimal JSON-Schema subset the SDK enforces on task outcome payloads.
+- [Workflow, transitions, and guards](sources/strata-sdk-case-management/strata-sdk-cm-workflow.md) — The workflow state machine — transition triggers, the three guard types, manual transitions, auto-transition settling, and the transition error hierarchy.
+
+### guide
+- [Getting started with the Strata Case Management SDK](sources/strata-sdk-case-management/strata-sdk-cm-getting-started.md) — What the TypeScript Strata Case Management SDK packages are, how to build them, and the minimal wiring needed to stand up a CaseSdk instance.
+- [SDK maturity, gaps, and host-app workarounds](sources/strata-sdk-case-management/strata-sdk-cm-maturity.md) — What alpha means for this SDK, which surfaces are still moving, and the expected process for unblocking yourself and tracking a workaround until the upstream fix lands.
 
 ## strata-template-rules-engine-catala
 
@@ -89,20 +124,22 @@
 ## template-infra
 
 ### guide
-- [Application Capabilities — Notifications, Identity, Jobs, Monitoring, Service Exec](sources/template-infra/infra-capabilities.md) — Optional application capabilities the template can enable — SES email and AWS End User Messaging SMS notifications, Cognito identity provider, EventBridge background jobs, CloudWatch monitoring alerts, ECS Exec service command execution, and Bedrock document data extraction.
+- [Application Capabilities — Notifications, Identity, Jobs, Monitoring, Service Exec](sources/template-infra/infra-capabilities.md) — Optional application capabilities the template can enable — SES email and AWS End User Messaging SMS notifications, Cognito identity provider, EventBridge background jobs, CloudWatch monitoring alerts, ECS Exec service command execution, Bedrock document data extraction, and Parameter Store feature flags.
 - [Configuration — Project Config, App Config, Env Vars, and Secrets](sources/template-infra/infra-configuration.md) — How the template configures itself from static project-config and app-config modules, and how to add application environment variables and secrets.
 - [Database — Aurora, the Role Manager, and Access Control](sources/template-infra/infra-database.md) — How the database layer provisions Aurora Serverless v2 PostgreSQL, uses a role-manager Lambda to create the app and migrator users, secures access with IAM authentication, and how to upgrade the engine.
 - [Environments, Workspaces, and Temporary Environments](sources/template-infra/infra-environments-and-workspaces.md) — The standing dev/staging/prod environments plus the temporary environments — Terraform workspaces, per-pull-request environments, and how out-of-band resources are shared or excluded.
 - [Getting Started — Standing Up Infrastructure](sources/template-infra/infra-getting-started.md) — The end-to-end setup sequence for a project — install the template, set up developer tools, then deploy the account, network, build repository, database, and service layers in order.
 - [Terraform Module Architecture and Layers](sources/template-infra/infra-module-architecture.md) — How the Terraform code is split into independently-deployed root-module layers and reusable child modules, the dependency order, and the guidelines for choosing a resource's layer.
 - [template-infra Overview](sources/template-infra/infra-overview.md) — The Nava Platform Terraform/AWS infrastructure template — its layer model, environment model, configuration model, and bin/ operator scripts.
-- [Security and Access — IAM/OIDC, WAF, HTTPS, and Custom Domains](sources/template-infra/infra-security-and-access.md) — How GitHub Actions authenticates to AWS via OIDC and gets scoped permissions, plus the production-launch protections — web application firewall, HTTPS certificates, and custom domains.
+- [Security and Access — IAM/OIDC, WAF, HTTPS, and Custom Domains](sources/template-infra/infra-security-and-access.md) — How GitHub Actions authenticates to AWS via OIDC and gets scoped permissions, plus the production-launch protections — web application firewall, HTTPS certificates, custom domains — and how to grant the service outbound internet access.
+- [Security Monitoring — GuardDuty Threat Detection, S3 Malware Scanning, and Image Vulnerability Scans](sources/template-infra/infra-security-monitoring.md) — The template's detective security controls — account-wide AWS GuardDuty threat detection, GuardDuty malware scanning of the application's S3 storage bucket, and the CI image-vulnerability and Terraform-compliance scanners.
 
 ## template-infra-azure
 
 ### guide
-- [Access control, workspaces, and operations](sources/template-infra-azure/infra-access-control-and-operations.md) — Cloud and database access control, infra-admin Entra permissions, isolated development with Terraform workspaces, tearing down infrastructure, and the compliance/vulnerability/style checks for the Azure infra template.
-- [Custom domains and HTTPS for the Azure infra template](sources/template-infra-azure/infra-domains-and-https.md) — How to configure custom domains (Azure DNS hosted zones and A records) and HTTPS/TLS certificates (ACME, Key Vault, or imported) for application services in the Azure infra template.
-- [Azure infra template overview](sources/template-infra-azure/infra-overview.md) — The layer, environment, and configuration model of the Nava Platform Azure infrastructure template, plus the Makefile operator interface and how it is installed into an application.
-- [Set up the Azure account and network](sources/template-infra-azure/infra-set-up-account-and-network.md) — How to install developer tools and stand up the account layer (Terraform backend, GitHub OIDC, container registry) and network layer (VNet, subnets, private DNS, Container App Environment) for the Azure infra template.
-- [Set up the application database and service](sources/template-infra-azure/infra-set-up-database-and-service.md) — How to provision an application's per-environment database layer (PostgreSQL flexible server, role manager, Postgres roles) and service layer (Container App, migrations, environment variables, secrets, background jobs) with the Azure infra template.
+- [Access control, workspaces, and operations](sources/template-infra-azure/infra-access-control-and-operations.md) — Cloud and database access control, the infra-admin Entra permissions needed to run Terraform, isolated development with Terraform workspaces, tearing infrastructure down, and the compliance, vulnerability, and style checks the Azure infra template ships with.
+- [Custom domains and HTTPS for the Azure infra template](sources/template-infra-azure/infra-domains-and-https.md) — How to configure custom domains (Azure DNS hosted zones, shared zones, and records) and HTTPS/TLS certificates (ACME, Key Vault, or imported) for application services in the Azure infra template, and how they are renewed.
+- [Making infra changes and shipping releases](sources/template-infra-azure/infra-making-changes.md) — The three ways to apply Terraform changes in the Azure infra template (Make targets, the bin wrapper scripts, raw terraform), the bin script layer, the build-publish-migrate-deploy release pipeline, and the validation and Terratest tooling.
+- [Azure infra template overview](sources/template-infra-azure/infra-overview.md) — The layer, environment, and configuration model of the Nava Platform Azure infrastructure template, plus the resources each layer creates, the Makefile/bin operator interface, and how the template is installed and updated.
+- [Set up the Azure account and network](sources/template-infra-azure/infra-set-up-account-and-network.md) — How to install the developer tools and stand up the account layer (Terraform backend, GitHub OIDC, container registry) and network layer (VNet, subnets, NAT gateway, private DNS, Container App Environment) of the Azure infra template.
+- [Set up the application database and service](sources/template-infra-azure/infra-set-up-database-and-service.md) — How to provision an application's per-environment database layer (PostgreSQL flexible server, role manager, Entra-authenticated Postgres roles) and service layer (Container App, migrations job, environment variables, secrets, blob storage, background jobs) with the Azure infra template.

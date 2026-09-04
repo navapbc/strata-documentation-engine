@@ -1,27 +1,39 @@
 # Verification findings: documentai-api-using-the-template (round 2)
 
-Source: `.sources/documentai-api` @ `7c7f30c78f26f4d3708539b30cfb7acfd2ec2e7b` (matches `source_ref.ref`).
+Doc: `docs/sources/documentai-api/using-the-template.md`
+Source: `.sources/documentai-api` @ `753ad50eba97fa5a3489370b7b5d3831c4e0105f` (matches `source_ref.ref`)
 
 ## Summary
 
-**Status**: FULLY VERIFIED. No inaccuracies found.
+All round 1 findings have been addressed in this revision:
 
-All claims have been re-verified against the source code and are accurate:
+1. **Issue #1 (Local port story)** — FIXED. Lines 149-153 now explain that `local.env.example` seeds `HOST=localhost` and `PORT={{app_local_port}}`, and explicitly state that for Docker paths to set `HOST=0.0.0.0` and `PORT=8000` in `.env`, with seeded values for native development.
 
-- Install/update commands match `README.md` "Installation"/"Updates".
-- `copier.yml`: exactly two answerable vars (`app_name` regex `^[a-z0-9\-_]+$`, `app_local_port` int default 8000), `_subdirectory: template`.
-- `pyproject.toml`: Python >=3.12, FastAPI + uvicorn + boto3 + pypdf + pdf2image + opencv-python-headless + python-magic + typer; four `[project.scripts]` entry points and descriptions.
-- `Makefile.jinja` targets (`init`, `start`, `run-logs`, `init-local`, `start-local`, `check`, `test`, `lint`, `format`, `openapi-spec`) and `RUN_CMD_APPROACH=local` native-vs-Docker switch; `setup-env` copies `local.env.example.jinja` -> `.env`.
-- `local.env.example.jinja` seeded values incl. `API_AUTH_INSECURE_SHARED_KEY=local-dev-key`, BDA ARNs/region, table name, input/output S3 locations.
-- Auth: `API-Key` header in `APIConfig.AUTH_KEY_HEADER_NAME` (constants.py), shared-key check in `app.py` (`verify_api_key`); `api-authentication.md` correctly marks scheme as not suitable for production multi-user systems.
-- API endpoints: `POST /v1/documents` (async default, `wait=true` for sync, `timeout=180`), `GET /v1/documents/{job_id}` with `include_extracted_data`, `GET /v1/schemas`, `GET /v1/schemas/{document_type}`; `/health` and `/config` public. curl examples accurate.
-- Docker-based development: `make init` + `docker compose build`, `make start` with `--renew-anon-volumes --detach`, `make run-logs`.
-- Native development: `make init-local` + `uv sync --all-extras --frozen`, `RUN_CMD_APPROACH=local`, `make start-local` (runs `uv run --frozen documentai_api`).
-- Sidecar deployment steps 1-7 all match `template-only-docs/deployment.md`: has_database/enable_document_data_extraction flags, file_upload_jobs wiring to DDE input/output buckets, DynamoDB+GSI+KMS+IAM in documentai_api.tf, aws_services, DDE_* env aliasing, generated secret, custom domains/HTTPS.
-- `AWSEnvConfig` env-var names in `config/env.py` match all seven listed: `BDA_PROJECT_ARN`, `BDA_PROFILE_ARN`, `BDA_REGION`, `DOCUMENTAI_DOCUMENT_METADATA_TABLE_NAME`, `DOCUMENTAI_DOCUMENT_METADATA_JOB_ID_INDEX_NAME`, `DOCUMENTAI_INPUT_LOCATION`, `DOCUMENTAI_OUTPUT_LOCATION`.
-- CI workflow path correctly stated as `template/.github/workflows/ci-{{app_name}}.yml.jinja` (Round 1 issue resolved).
-- Template docs exist: `api-authentication.md`, `writing-tests.md.jinja`, `accessing-real-aws-resources-from-docker.md`, architecture diagram.
+2. **Issue #2 (make start-local --frozen)** — FIXED. Line 146 now correctly shows `make start-local # uv run --frozen documentai_api` with the `--frozen` flag.
 
-## Findings
+3. **Issue #3 (make help statement)** — FIXED. Lines 158-159 now properly state "`make help` lists the documented targets; `architecture-diagram` carries no `##` comment, so it never shows up there."
 
-None. Document is fully supported by source code.
+## Verification against source
+
+Comprehensive re-verification confirms the doc remains accurate across all major sections:
+
+- **Installation/update commands** (lines 54, 63): Match README.md templates exactly
+- **copier.yml variables** (lines 68-74): Two variables, correct types, defaults, constraints
+- **Template scaffold structure** (lines 91-102): Accurate tree with correct paths
+- **CI workflow** (lines 97-100): Correct job names and targets
+- **Application stack** (lines 106-114): Correct Python version (3.12), base image (python3.14), dependencies, and mypy strict mode
+- **Entry points table** (lines 116-125): All four scripts with correct targets verified
+- **Makefile targets** (lines 154-159): All referenced targets exist; architecture-diagram undocumented status confirmed
+- **Environment variables** (lines 167-180): AWSEnvConfig and AppEnvConfig requirements/defaults all correct
+- **Authentication** (lines 187-198): API-Key header, 401/500 responses, public routes, SSM path all verified
+- **API endpoints** (lines 269-286): POST /v1/documents, GET /v1/documents/{job_id}, GET /v1/schemas, GET /v1/schemas/{document_type}, plus public endpoints all correct
+- **Polling behavior** (lines 273-280): `timeout=180` default vs. "120" docstring discrepancy correctly documented; `is_completed` gap for `blurry_document_detected` and `password_protected` confirmed
+- **Response serialization** (line 288): `to_camel` alias generator confirmed in models/base.py
+- **File size limits** (lines 293-301): TIFF handling correctly described as 500 MiB, not 5 MiB
+- **5-page truncation** (line 298): Confirmed in invoke_bedrock_data_automation
+- **Deployment steps** (lines 206-225): All steps and gotchas verified against deployment.md
+- **Issue references** (lines 231-232): #52 and #53 correctly linked to TODOs in deployment.md Terraform
+
+## Conclusion
+
+No new issues detected. Doc is well-grounded and suitable for publication.

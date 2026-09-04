@@ -1,43 +1,16 @@
-# Verification findings: platform-cli-infra-commands.md
+# Verification findings: platform-cli-infra-commands (round 2)
 
-## Summary
-Verified round 2 (adversarial pass) of the documentation for `nava-platform infra` command reference against source code in platform-cli at commit `57d5d5c6c4626e0bd13ed81b469c91c2533498f0`.
+Source: `.sources/platform-cli` @ 5ed1286af74c16bd0be9132655dbe3b31b4b001b
 
-## Verification scope
-- Command synopses and argument order
-- Option availability and defaults for each command
-- Descriptions of command behavior
-- Default flag values
-- Auto-commit behavior
-- Error handling for merge conflicts and validation
-- Template URI derivation logic
+Overall: All findings from round 1 have been properly addressed in the doc. The document is now fully accurate and well-supported by the source code. Verified:
 
-## Results
-✓ All commands present and correctly documented: install, add-app, update, update-base, update-app, migrate-from-legacy, info
+- Command synopses and their parameter lists are correct for all eight commands
+- All `--commit` defaults match the source: install (false), add-app (true), update (none/auto), update-base (true), update-app (true), migrate-from-legacy (false)
+- The `--all` constraint for `update-app` is correctly described: cannot be combined with `--no-commit`
+- The `info` command's version list correctly includes the current version when it is a tagged release
+- The legacy project output description for `info` is accurate
+- Template URI derivation logic is correctly documented
+- App name derivation (excluding accounts, modules, networks, project-config, test) is accurate
+- All option descriptions match the help text in the source code
 
-✓ All command synopses accurately reflect the CLI signatures
-
-✓ Shared options (--template-uri, --version, --data, --commit, --answers-only, --force) are correctly listed with accurate availability across commands
-
-✓ Default values match source code:
-  - install: --commit defaults to false
-  - add-app: --commit defaults to true  
-  - update: auto-commits (no --commit flag)
-  - update-base: --commit defaults to true
-  - update-app: --commit defaults to true
-  - migrate-from-legacy: --commit defaults to false
-  - info: no --commit flag
-
-✓ Template URI derivation logic accurately described for each command
-
-✓ Auto-commit behavior in `update` command correctly documented (InfraTemplate.update calls update_base and update_app with commit=True)
-
-✓ Error handling and guidance for merge conflicts in `update` command matches code behavior
-
-✓ --all flag behavior for update-app correctly documented with all constraints (requires --commit, disallows app-name args)
-
-✓ Interactive prompts for single vs. multiple apps in update-app correctly described
-
-✓ Legacy template migration command behavior matches source implementation
-
-No issues found. Documentation is fully accurate and well-supported by source code.
+No new findings.

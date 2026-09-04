@@ -1,39 +1,70 @@
-# Verification findings: platform-cli-overview
+# Verification Findings: platform-cli-overview (Round 2)
 
-- **Doc:** `docs/sources/platform-cli/platform-cli-overview.md`
-- **Source checkout:** `.sources/platform-cli` @ `57d5d5c6c4626e0bd13ed81b469c91c2533498f0`
-- **Round:** 1
-- **Verdict:** No findings. All claims are fully supported by the source.
+**Document ID:** platform-cli-overview  
+**Verification Date:** 2026-09-04  
+**Status:** VERIFIED - No findings
 
-## Claims checked and supported
+## Summary
 
-- CLI purpose "simplifies installing, upgrading, and managing Nava Strata", Python/Typer program
-  wrapping Copier — `README.md` line 25; `nava/platform/cli/main.py` (`typer.Typer()`). Supported.
-- uv install / uvx one-off / `uv tool upgrade` / `uv tool uninstall` — `README.md` lines 63-90.
-  Supported.
-- uv prerequisites "git 2.27+" and "uv 0.6.15+" — `README.md` lines 60-70. Supported.
-- pipx install + `--fetch-missing-python --python 3.12` — `README.md` lines 92-108. Supported.
-- pipx prerequisite "Python 3.11+ per `requires-python = \">=3.11\"`; pipx itself requires Python
-  3.10+" — `pyproject.toml` (`requires-python = ">=3.11"`); `README.md` note "pipx requires
-  Python 3.10+ to run itself". Supported.
-- Nix install / one-off run — `README.md` lines 128-146. Supported.
-- Docker: `make build`, `./bin/docker-wrapper infra install ./my_project_directory`, and
-  `docker run --rm -it -v "$(pwd):/project-dir" nava-platform-cli infra install /project-dir`,
-  plus the docker-wrapper "makes assumptions about your environment" caveat — `README.md`
-  lines 148-192. Supported.
-- Quick start `nava-platform infra install ./just-a-test` — `README.md` lines 42-46. Supported.
-- Global options `-v/--verbose` (repeatable; enough -v's prints logs to screen), `-q/--quiet`
-  (disable all console output) — `nava/platform/cli/main.py` callback. Supported.
-- `--install-completion` / `--show-completion` — Typer default options, not disabled via
-  `add_completion=False` in `main.py`. Supported.
-- Two command groups `infra` and `app` registered as Typer sub-apps —
-  `nava/platform/cli/main.py` (`app.add_typer(infra.app, name="infra")`,
-  `app.add_typer(app_command.app, name="app")`). Supported.
-- infra group description (manage template-infra usage; base + reusable app part) — Typer help
-  string in `nava/platform/cli/commands/infra/__init__.py`. Supported.
-- app group "manage application templates (e.g. template-application-rails)" — help string
-  "Manage application templates" in `nava/platform/cli/commands/app.py`. Supported.
+The doc has been thoroughly verified against the platform-cli source code and documentation. All major claims have been validated:
 
-## Findings
+### Verified Claims
 
-None.
+1. **Technology Stack**
+   - ✓ CLI is Python/Typer based (main.py)
+   - ✓ Wraps Copier for template operations (copier_worker.py, templates/template.py)
+
+2. **Help Text**
+   - ✓ Top-level help matches exactly: "Tool to help manage using Nava PBC's platform work" (main.py:32)
+
+3. **Installation Methods**
+   - ✓ uv (0.6.15+, git 2.27+ prerequisite)
+   - ✓ Nix (no prerequisites)
+   - ✓ pipx (git 2.27+, Python 3.11+ required)
+   - ✓ Container (Docker prerequisite, images not published)
+   - All match source documentation and commands
+
+4. **Global Options**
+   - ✓ `-v` / `--verbose` (repeatable count parameter)
+   - ✓ `-q` / `--quiet` (boolean)
+   - ✓ `--install-completion` / `--show-completion` (Typer-provided, not declared in callback)
+
+5. **Verbosity Levels**
+   - ✓ 1st `-v` (VERBOSE): adds extra inline detail, no console logging
+   - ✓ 2nd `-v` (DEBUG): enables console logging
+   - ✓ 3rd `-v` (TRACE): enables audit logging
+   - Verified in main.py resolve_verbosity() and logging/__init__.py
+
+6. **Logging**
+   - ✓ Structured JSON format (config.py uses structlog.processors.JSONRenderer)
+   - ✓ File logging via LOG_TO_FILE environment variable (default: true)
+   - ✓ Platform-specific locations match platformdirs behavior:
+     - Linux: ~/.local/share/state/nava-platform-cli/log/log.json
+     - macOS: ~/Library/Logs/nava-platform-cli/log.json
+
+7. **Command Structure**
+   - ✓ Two Typer sub-apps: infra (manages template-infra) and app (manages application templates)
+   - ✓ Infra template provides base + reusable app parts (infra/__init__.py:26-31)
+
+8. **Command Syntax Examples**
+   - ✓ `nava-platform infra install --commit --data app_name=<APP_NAME> .` 
+     - Note: doc correctly notes that upstream guide shows outdated syntax with trailing <APP_NAME> positional
+     - Modern syntax requires --data for app_name per current function signature (infra/__init__.py:47)
+   - ✓ `nava-platform app install --commit --template-uri <TEMPLATE_URI> . <APP_NAME>`
+     - Correct: app_name and project_dir are positional arguments (app.py:install signature)
+   - ✓ `nava-platform infra update-app --answers-only --data app_has_dev_env_setup=true . <APP_NAME>`
+     - Correct: command name converted from update_app to update-app by Typer
+
+9. **Related Documentation**
+   - ✓ All referenced related docs exist with correct IDs:
+     - platform-cli-mechanism
+     - platform-cli-infra-commands
+     - platform-cli-app-commands
+     - platform-cli-updating-projects
+     - platform-cli-legacy-migration
+
+## Conclusion
+
+The document is accurate and well-supported by the source code and documentation. The doc provides helpful clarification about outdated syntax in upstream guides (infra install with trailing app_name positional), which is correct—the current API only accepts project_dir as positional and requires app_name to be passed via --data.
+
+No corrections needed.

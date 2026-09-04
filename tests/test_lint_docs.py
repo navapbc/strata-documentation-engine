@@ -118,3 +118,71 @@ def test_load_docs_injects_relative_path(tmp_path):
     (d / "a.md").write_text(fm)
     docs = load_docs(tmp_path)
     assert docs[0]["path"] == "sources/strata-sdk/a.md"
+
+
+# --- ownership collisions -------------------------------------------------------------------
+
+def test_validate_docs_flags_feature_key_claimed_twice():
+    a = dict(VALID, id="rails-case", feature_keys=["application-form"])
+    b = dict(VALID, id="ts-case", source="strata-sdk-case-management",
+             feature_keys=["application-form"])
+    errors = validate_docs([a, b], KEYS, COMPONENTS)
+    assert any("application-form" in e and "rails-case" in e and "ts-case" in e
+               for e in errors), errors
+
+
+def test_validate_docs_flags_component_key_claimed_twice():
+    a = dict(VALID, id="infra-a", feature_keys=[], component_keys=["template-infra"])
+    b = dict(VALID, id="infra-b", feature_keys=[], component_keys=["template-infra"])
+    errors = validate_docs([a, b], KEYS, COMPONENTS)
+    assert any("template-infra" in e and "infra-a" in e and "infra-b" in e
+               for e in errors), errors
+
+
+def test_validate_docs_allows_distinct_owners():
+    a = dict(VALID, id="a", feature_keys=["application-form"])
+    b = dict(VALID, id="b", feature_keys=["business-process"])
+    assert validate_docs([a, b], KEYS, COMPONENTS) == []
+
+
+# --- leaked tool-call markup ----------------------------------------------------------------
+
+from scripts.lint_docs import find_leaked_markup, scan_for_leaked_markup  # noqa: E402
+
+
+def test_find_leaked_markup_flags_tool_call_tags():
+    text = "# Doc\n\nreal prose\n</content></invoke>\n"
+    hits = find_leaked_markup(text)
+    assert hits and hits[0][0] == 4  # (line_no, offending token)
+
+
+def test_find_leaked_markup_flags_parameter_and_invoke_open_tags():
+    assert find_leaked_markup('<parameter name="x">') 
+    assert find_leaked_markup('<invoke name="Write">')
+    assert find_leaked_markup("<function_calls>")
+
+
+def test_find_leaked_markup_ignores_legit_markdown_and_html():
+    text = ("Use `<details>` and </details> for folding.\n"
+            "A generic `Array<Content>` type and `Map<String, Invoke>`.\n"
+            "<br>\n")
+    assert find_leaked_markup(text) == []
+
+
+def test_scan_for_leaked_markup_covers_doc_bodies_and_logs(tmp_path):
+    docs = tmp_path / "docs" / "sources" / "s"
+    docs.mkdir(parents=True)
+    (docs / "clean.md").write_text("---\nid: c\n---\nfine\n")
+    (docs / "bad.md").write_text("---\nid: b\n---\nprose\n</invoke>\n")
+    logs = tmp_path / ".logs"
+    logs.mkdir()
+    (logs / "s.distillation.md").write_text("notes\n</content>\n")
+    errors = scan_for_leaked_markup(tmp_path / "docs", logs)
+    assert len(errors) == 2
+    assert any("bad.md" in e and "</invoke>" in e for e in errors)
+    assert any("s.distillation.md" in e and "</content>" in e for e in errors)
+
+
+def test_scan_for_leaked_markup_tolerates_missing_logs_dir(tmp_path):
+    (tmp_path / "docs" / "sources").mkdir(parents=True)
+    assert scan_for_leaked_markup(tmp_path / "docs", tmp_path / "nope") == []

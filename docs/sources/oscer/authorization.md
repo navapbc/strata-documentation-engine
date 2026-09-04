@@ -2,58 +2,84 @@
 id: example-oscer-authorization
 title: OSCER — authorization policies
 source: oscer
-verified: ok
 doc_type: example
 tags: [example-app, oscer, policies, authorization, pundit, region-scoping]
 related:
   - example-oscer-overview
   - example-oscer-tasks
   - example-oscer-application-forms
+  - example-oscer-api-authentication
 demonstrates: [policies]
-summary: How OSCER builds on Strata::TaskPolicy and Strata::ApplicationFormPolicy for task and application-form authorization, including region-based query scoping.
+summary: How OSCER defines Strata::TaskPolicy in the SDK namespace and mixes in the SDK's Strata::ApplicationFormPolicy for task and application-form authorization, including region-based query scoping.
 source_ref:
   repo: https://github.com/navapbc/oscer
-  ref: "c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750"
+  ref: "be3ffbb4e7b7e7cf0b4047af5544870f50619257"
   paths:
     - reporting-app/app/policies/strata/task_policy.rb
     - reporting-app/app/policies/activity_report_application_form_policy.rb
     - reporting-app/app/policies/exemption_application_form_policy.rb
     - reporting-app/app/policies/activity_report_information_request_policy.rb
     - reporting-app/app/policies/staff_policy.rb
+    - reporting-app/app/policies/application_policy.rb
     - reporting-app/app/controllers/tasks_controller.rb
-last_documented: 2026-07-21
+last_documented: 2026-09-04
+verified: ok
 ---
 
 # OSCER — authorization policies
 
-OSCER authorizes access with Pundit-style policies and uses the SDK's policy surface
-(`Strata::TaskPolicy`, `Strata::ApplicationFormPolicy`) for the SDK-provided task and
-application-form resources.
+OSCER authorizes access with Pundit-style policies covering the SDK-provided task and
+application-form resources. Application-form policies mix in the SDK-provided
+`Strata::ApplicationFormPolicy`; for tasks, the app itself defines a `Strata::TaskPolicy` inside the
+SDK's namespace to authorize the SDK's `Strata::Task` model (the SDK ships no `TaskPolicy` of its
+own).
 
 ## Task policy with region scoping
 
-`Strata::TaskPolicy` is reopened by the app under `app/policies/strata/task_policy.rb`. It subclasses
-the app's `StaffPolicy` and defines the action predicates the SDK task controller checks, splitting
+The app defines `Strata::TaskPolicy` under `app/policies/strata/task_policy.rb` — placed in the SDK's
+`Strata` namespace so it pairs with the SDK's `Strata::Task` model, but app-owned code, not reopened
+SDK code. It subclasses the app's `StaffPolicy` and defines the action predicates the SDK task
+controller checks, splitting
 collection-level actions (any staff) from record-level actions (staff in the same region):
 
 ```ruby
 module Strata
   class TaskPolicy < ::StaffPolicy
-    # Collection/page-level — any staff
-    def index? = staff?
-    def pick_up_next_task? = staff?
+    # Collection/page-level actions - any staff can access
+    def index?
+      staff?
+    end
 
-    # Individual task actions — must be in the same region
-    def show? = staff_in_region?
-    def update? = staff_in_region?
-    def assign? = staff_in_region?
-    def request_information? = staff_in_region?
-    def create_information_request? = staff_in_region?
+    def pick_up_next_task?
+      staff?
+    end
 
-    # Scopes the SDK's Strata::Task query to the caseworker's region
+    # Individual task actions - must be in same region
+    def show?
+      staff_in_region?
+    end
+
+    def update?
+      staff_in_region?
+    end
+
+    def assign?
+      staff_in_region?
+    end
+
+    def request_information?
+      staff_in_region?
+    end
+
+    def create_information_request?
+      staff_in_region?
+    end
+
+    # Scopes tasks to only show records from the user's region
     class Scope < ::StaffPolicy::Scope
       def resolve
         return scope.none unless user&.staff?
+
         scope.by_region(user.region)
       end
     end
@@ -70,7 +96,9 @@ end
 `OscerTask.policy_class` returns `Strata::TaskPolicy`, wiring the SDK's task model to this policy
 (see [tasks](./tasks.md)). The `TasksController` calls `policy_scope(Strata::Task)` (and explicitly
 `Strata::TaskPolicy::Scope` in `filter_tasks`) so caseworkers only see and pick up tasks in their
-region, and calls `authorize @task` / `authorize Strata::Task` per action.
+region. Authorization is split by action shape: `authorize_staff_access` returns early unless the
+action is `index` or `pick_up_next_task`, in which case it authorizes the `Strata::Task` class; every
+record-level action instead authorizes the loaded record via `authorize @task` in `set_task`.
 
 ## Application-form policies
 
@@ -113,7 +141,18 @@ end
 ## Base policies (app-side)
 
 `Strata::ApplicationFormPolicy` is mixed into policies that inherit from the app's `ApplicationPolicy`
-(a default-deny base — every predicate returns `false` until overridden) and, for tasks, `StaffPolicy`
-(which gates on `staff?`/`admin?` roles delegated to the user, and adds `staff_in_region?`). The SDK
-policy concern supplies the per-action defaults the application-form and task controllers authorize
-against; the app extends them with role checks, region scoping, and ownership rules.
+(a default-deny base — every predicate returns `false` until overridden, and the constructor raises
+`Pundit::NotAuthorizedError` when there is no user at all). Tasks go through `StaffPolicy`, which
+delegates both `staff?` and `admin?` to the user but gates every one of its own predicates
+(`index?`, `closed?`, `show?`, `create?`, `update?`, `search?`) on `staff?` alone — `admin?` is
+delegated but unused by those checks — and adds `staff_in_region?` (`staff? && in_region?`). The SDK
+policy concern supplies the per-action defaults the application-form controllers authorize against;
+the app extends them with role checks, region scoping, and ownership rules.
+
+`StaffPolicy::Scope` is the deliberately blunt fallback — `user.staff? ? scope.all : scope.none`,
+with a TODO and two open issues for restricting it by region. Task queries do not rely on it, since
+`Strata::TaskPolicy::Scope` overrides `resolve` with the region filter.
+
+The API surface authorizes against the same policies with a non-`User` principal: `ApiController`
+sets `pundit_user` to an `Api::Client` (`state_system?` true, `staff?`/`member?`/`admin?` false) —
+see [API authentication](./api-authentication.md).

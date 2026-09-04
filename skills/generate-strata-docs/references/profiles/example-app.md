@@ -19,3 +19,21 @@ Produce docs under `docs/sources/<source-id>/`, primarily `doc_type: example`:
 To find what to document, grep the app for SDK usage (`Strata::` symbols, `strata_attribute`
 declarations, subclasses of `Strata::*`). Document what the app actually does — do not
 generalize beyond the code present in the checked-out source.
+
+**Tag only feature keys whose SDK symbol you can grep in the app.** An app may legitimately use a
+tiny slice of the SDK; leave a key off rather than forcing a near-match. Two traps:
+
+- An `ApplicationFormFlow`'s `task` DSL (`task :name do … end` inside a flow) is part of
+  `application-form-flow`, **not** the `task` (`Strata::Task`) feature.
+- An app-local component with an SDK-sounding name is not the SDK feature. Model reasoning (from
+  `strata-paidleave`): *"the app's rules engine is an external HTTP service reached through
+  `RulesEngine::Adapter`; no code references `Strata::RulesEngine`"* — so `rules-engine` was
+  correctly left off.
+
+**Doc count follows the app's SDK surface, with no target number:** one example doc per feature key
+(or per coherent key cluster) the app demonstrates, so the graph has exactly one owner per key. A
+one-form starter app may yield 4 docs; a full-surface app with flows, a business process, a staff
+dashboard, and an API may yield 13.
+
+A **targeted, read-only** look outside the declared `subpaths` (a migration, an initializer, a
+config file) is allowed when it is needed to verify a claim about in-scope code; note it in the log.

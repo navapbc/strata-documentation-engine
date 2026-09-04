@@ -9,8 +9,8 @@ sources, producing a linked, agent-queryable knowledge base.
    the SDK, the Rails app template, SDK-consuming apps like OSCER, the `template-infra`
    infrastructure template, and the `platform-cli` (`nava-platform`) tool.
 2. The `generate-strata-docs` skill documents each source (one agent per source) using the
-   type's profile in `skills/generate-strata-docs/references/profiles/`. The `sdk`,
-   `infra-template`, and `platform-cli` documenters distill each source's own `docs/`
+   type's profile in `skills/generate-strata-docs/references/profiles/`. The `sdk` (Rails),
+   `sdk-typescript`, `infra-template`, and `platform-cli` documenters distill each source's own `docs/`
    (verifying against code); each doc is tagged with canonical `feature_keys`/`demonstrates`
    from `references/feature-keys.md` and `component_keys`/`manages`/`integrates_with` from
    `references/platform-components.md`.

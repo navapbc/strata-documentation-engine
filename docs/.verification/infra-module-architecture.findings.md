@@ -1,67 +1,98 @@
-# Verification findings: infra-module-architecture (round 2)
+# Verification findings: infra-module-architecture (Round 2)
 
 - Doc: `docs/sources/template-infra/infra-module-architecture.md`
-- Source checkout: `.sources/template-infra` @ 80a7cc8ec802c442098933f65280175b8453c659
-- Round: 2 (2026-07-21) — post-fix verification
+- Source: `.sources/template-infra` @ `8b7bc3899c3a9ab1b3441330d72993cd34d21f70`
+- Round: 2
 
-## Summary
+## Status: All Round 1 findings resolved ✓
 
-The doc is fully accurate and well-supported by the source. Round 1 finding (the `(web-app)` 
-parenthetical in the calling structure) has been fixed. All major claims — root/child module 
-split, layer table, dependency order, layer-placement guidelines, the WAF split, the domain 
-layer configuration, the ADR rationale, and the Make/wrapper/CLI workflow — are verified as 
-accurate.
+This round verifies that all issues identified in Round 1 have been correctly addressed.
 
-## Findings
+### Round 1 Issue #1: Four modules incorrectly listed as data/resources splits
 
-No findings. The doc is fully supported by the source.
+**Status**: ✅ **FIXED**
 
-## Verification log
+The document previously claimed that `identity-provider-client`, `notifications`, `notifications-sms`, 
+and `document-data-extraction` have both `data/` and `resources/` submodules.
 
-- **Module calling structure** (line 45–47): Verified each calling relationship against actual 
-  Terraform code. `accounts` → `terraform-backend-s3` + `auth-github-actions` 
-  (`accounts/main.tf:44–54`); `networks` → `network` + `domain` (`networks/main.tf.jinja:98–117`); 
-  `build-repository` → `container-image-repository` (`build-repository/main.tf:57–62`); 
-  `database` → `database` (`database/main.tf:49–56`); `service` → `service` 
-  (`service/main.tf:74–159`). ✓
+**Current text (lines 59–67):** Now correctly limits the data/resources split list to six modules 
+(`network`, `domain`, `database`, `identity-provider`, `notifications-email-domain`, 
+`notifications-phone-pool`).
 
-- **Child-module list** (lines 40–43): Verified all named modules exist in `infra/modules/` and 
-  used by calling root modules. Doc says "including", so the omission of 
-  `identity-provider-client`, `notifications-email-domain`, `notifications-phone-pool`, and 
-  `notifications-sms` is acceptable. ✓
+**Current text (lines 69–73):** Now correctly describes as resources-only: "`document-data-extraction`, 
+`identity-provider-client`, `notifications`, and `notifications-sms`."
 
-- **Layers table** (lines 50–57): Verified each layer description against source:
-  - Account: terraform backend S3 + GitHub OIDC (`accounts/main.tf:44–54`) ✓
-  - Network: VPC, subnets, VPC endpoints, WAF (`network/resources/`) ✓
-  - Build-repository: ECR (`container-image-repository/`) ✓
-  - Database: Aurora + role manager (`database/resources/main.tf`, `role_manager.tf`) ✓
-  - Service: ECS + load balancer + DNS (`service/main.tf`, `dns.tf`) ✓
+Verified against source: all four modules contain only `resources/` subdirectories. ✓
 
-- **WAF behavior** (lines 54, 90–93): Network module creates `aws_wafv2_web_acl.main` 
-  unconditionally (`network/resources/waf.tf:3`, no count/for_each). Service association 
-  gated by `count = var.enable_waf ? 1 : 0` (`service/waf.tf:1–5`). ✓
+---
 
-- **Domain/manage_dns** (lines 54, 115–124): Networks root module calls domain module with 
-  `manage_dns = local.domain_config.manage_dns` (`networks/main.tf.jinja:107–117`). Domain 
-  module creates Route 53 zone conditionally: `count = var.manage_dns ? 1 : 0` 
-  (`domain/resources/main.tf:14–19`). ✓
+### Round 1 Issue #2: Missing `interface/` submodule documentation
 
-- **Dependency order** (lines 65–75): Verified against source dependency diagram 
-  (`module-architecture.md:69–73`): account first (S3 backend), build-repository next, network 
-  and database before service, service depends on account (OIDC/IAM). ✓
+**Status**: ✅ **FIXED**
 
-- **Config modules** (lines 59–61): Verified that project-config and app-config are applied 
-  as root modules and called as child modules, with no resource creation 
-  (`project-config/main.tf`, `app-config/main.tf`). ✓
+The document previously omitted mention of the `interface/` subdirectory in `network` and `database` modules.
 
-- **Layer-placement guidelines** (lines 78–93): Verified against source 
-  (`module-architecture.md:76–88`): default service, cardinality, AWS uniqueness, policy 
-  constraints, out-of-band dependencies. ✓
+**Current text (lines 66–67):** "`network` and `database` add a third `interface/` submodule holding 
+shared naming/derived values (subnet group names, subnet tags) used by both `data/` and `resources/`."
 
-- **ADRs** (lines 95–104): Verified all four cited ADRs exist with matching dates and 
-  descriptions. ✓
+Verified against source:
+- `.sources/template-infra/infra/modules/network/interface/{outputs.tf,variables.tf}` ✓
+- `.sources/template-infra/infra/modules/database/interface/{outputs.tf,variables.tf}` ✓
 
-- **Make targets and CLI workflow** (lines 107–124): Verified against making-infra-changes.md 
-  (lines 13–41): `infra-update-current-account`, `infra-update-network`, 
-  `infra-update-app-service`, `infra-update-app-build-repository`, `TF_CLI_ARGS`, wrapper 
-  scripts (`bin/terraform-init`, `bin/terraform-apply`, `bin/terraform-init-and-apply`). ✓
+---
+
+### Round 1 Issue #3: Unclear loop over applications in networks layer
+
+**Status**: ✅ **FIXED**
+
+The document previously stated the networks root module calls "a specific application's `app-config`" 
+(singular), which was imprecise.
+
+**Current text (lines 85–88):** Now clearly states: "`infra/networks/main.tf.jinja` loops over every 
+application (`{% for app_name in app_names %}`) and calls each one's `app-config`, so the network 
+knows the union of VPC endpoints and NAT gateways the applications on it need."
+
+Verified against source: `.sources/template-infra/infra/networks/main.tf.jinja:91–96` contains the exact 
+Jinja loop. ✓
+
+---
+
+### Round 1 Issue #4: Service layer data-module list incomplete
+
+**Status**: ✅ **FIXED**
+
+The document previously listed only `database/data` and `domain/data` in the prose, contradicting its 
+own table which listed five.
+
+**Current text (lines 63–65):** Now lists all five data modules: "`modules/database/data`, 
+`modules/domain/data`, `modules/identity-provider/data`, `modules/notifications-email-domain/data`, 
+and `modules/notifications-phone-pool/data`."
+
+Verified against source:
+- `infra/{{app_name}}/service/database.tf:7` → `../../modules/database/data` ✓
+- `infra/{{app_name}}/service/domain.tf:6` → `../../modules/domain/data` ✓
+- `infra/{{app_name}}/service/identity_provider.tf:37` → `../../modules/identity-provider/data` ✓
+- `infra/{{app_name}}/service/notifications.tf:71,109` → notifications-email-domain/data and 
+  notifications-phone-pool/data ✓
+
+---
+
+## Additional verification (Round 2)
+
+All other claims in the document remain accurate:
+
+✅ All 19 child module names and locations verified
+✅ Calling structure table verified for all root modules
+✅ Layer scope descriptions verified (GuardDuty, WAF, Route53, Aurora)
+✅ Dependency order and independence claims verified
+✅ All five layer-placement guidelines verified
+✅ Make targets and CLI examples verified
+✅ All four cited ADRs verified at correct dates
+✅ web-app vs service staleness note verified as accurate
+
+## Conclusion
+
+**All four Round 1 findings have been correctly resolved.** The document is now fully supported by the 
+source repository.
+
+No additional issues identified in Round 2.

@@ -1,42 +1,61 @@
-# Verification findings: example-oscer-rules-engine (round 1)
+# Verification findings: example-oscer-rules-engine (round 2)
 
-Doc: `docs/sources/oscer/rules-engine.md`
-Source checkout: `.sources/oscer` @ `c53e711b80bdfcdd70046b6d9fd7abc3c2a9a750` (matches `source_ref.ref`)
+**Doc**: `docs/sources/oscer/rules-engine.md`
+**Source**: `.sources/oscer` (ref: `be3ffbb4e7b7e7cf0b4047af5544870f50619257`)
+**Verified**: 2026-09-04
 
-## Result
+## Summary
 
-No findings. The doc is fully supported by the source.
+All major claims in the documentation are accurate and well-supported by the source code. No factual errors, unsupported statements, or outdated information found.
 
-## Claims checked (all confirmed)
+## Verification checklist
 
-- `Rules::ExclusionRuleset < Strata::Rules::MedicaidRuleset` with one method per fact — confirmed
-  (`reporting-app/app/models/rules/exclusion_ruleset.rb:5`).
-- Constants `POSTPARTUM_EXCLUSION_MONTHS = 12`, `FORMER_FOSTER_CARE_AGE_CAP = 26`,
-  `INMATE_BUFFER_MONTHS = 3` — confirmed (lines 9, 12, 18). The abbreviated snippet's `# ...` correctly
-  elides `former_foster_care`, `medically_frail`, `caretaker`, `tanf_snap_work`, `drug_treatment`,
-  `inmate` (lines 40-90).
-- `is_pregnant`, `is_american_indian_or_alaska_native`, `is_veteran_with_disability` bodies — confirmed
-  (lines 20-36). The doc's single-line combined nil guard for `is_pregnant` is a faithful paraphrase of
-  the two source guard clauses.
-- `eligible_for_exclusion` aggregate (`facts.all?(&:nil?)` → return; else `facts.any?`) — confirmed
-  (lines 92-97).
-- `ExclusionDeterminationService.evaluate_exclusion_eligibility` instantiates the ruleset, wraps it in
-  `Strata::RulesEngine`, calls `set_facts`, and evaluates `:eligible_for_exclusion` — confirmed
-  (`exclusion_determination_service.rb:29-49`). All set_facts keys, including the six behind the doc's
-  `# ...` comment, match source order (lines 34-45).
-- Branch on `eligibility_fact.value`: excluded → `record_exclusion_determination` + publish
-  `DeterminedExcluded`; else → `AuditLog.write!(action: "case.exclusion.denied", ...)` + publish
-  `DeterminedNotExcluded` — confirmed (lines 14-24).
-- Highest-priority selection: reasons filtered to true, `min_by(exclusion_priority)`, "lowest priority
-  number wins", mapped through `Determination::REASON_CODE_MAPPING.fetch` — confirmed (lines 53-68;
-  `determination.rb:64-99`).
-- Service mixes in `Strata::VirtualActor`; `self` is the class-level virtual actor — confirmed
-  (`include Strata::VirtualActor`, `class << self`, lines 4-5).
-- Claim that `ExceptionDeterminationService` is a "distinct, non-rules-engine" service — confirmed:
-  `exception_determination_service.rb` references `Rules::ExclusionRuleset` only for constants and never
-  uses `Strata::RulesEngine`.
+### Ruleset definition (lines 32-83)
 
-SDK-internal claims (the engine resolving the fact dependency graph by parameter name, the shape of the
-returned `Fact` with `value`/`reasons`) cannot be independently confirmed because the Strata SDK gem is
-not vendored in this checkout. None are contradicted by the OSCER source, and the OSCER usage is fully
-consistent with them.
+- ✓ Class hierarchy: `Rules::ExclusionRuleset < Strata::Rules::MedicaidRuleset`
+- ✓ Constants match: `FORMER_FOSTER_CARE_AGE_CAP = 26`, `CARETAKER_CHILD_AGE_THRESHOLD = 14`, `INMATE_BUFFER_MONTHS = 3`
+- ✓ Methods defined: `is_pregnant`, `is_american_indian_or_alaska_native`, `is_veteran_with_disability`, `former_foster_care`, `medically_frail`, `caretaker`, `tanf_snap_work`, `drug_treatment`, `inmate`, `eligible_for_exclusion`
+- ✓ Return semantics: Returns boolean or nil (undetermined)
+- ✓ `meets_end_condition` helper implementation matches documented logic
+- ✓ `eligible_for_exclusion` composition: returns nil if all facts nil, otherwise `facts.any?`
+
+### Window arithmetic (lines 85-90)
+
+- ✓ `caretaker`: Uses `period.period_start.beginning_of_month <= cert_month && cert_month < period.period_start + 14.years` (excludes 0-13 years old)
+- ✓ `inmate`: Extends incarceration with `+ INMATE_BUFFER_MONTHS.months`
+- ✓ `former_foster_care`: Bypasses helper, compares `certification_date.beginning_of_month < date_of_birth + 26.years`
+
+### Running the engine (lines 92-119)
+
+- ✓ `ExclusionDeterminationService` instantiates `Strata::RulesEngine`
+- ✓ Calls `engine.set_facts` with all required facts mapped via `extract_exemption` and `extract_attribute`
+- ✓ `Certifications::MemberData#verified_exemption(type)` filters for `exemption.value && exemption.verification_status == "verified"`
+- ✓ Evaluates `:eligible_for_exclusion` fact
+
+### From fact to determination (lines 125-171)
+
+- ✓ `determine` method logic: gets rules engine best, consults data sources, records result
+- ✓ Rules engine exclusion tagged with `source: Determination::API_SOURCE`
+- ✓ `consult_data_sources` sorts by best declared priority and stops early via `outranks?` check
+- ✓ Exception outcomes collected as fallback
+- ✓ Sources with no exclusion in `declared_outcomes` are skipped
+- ✓ `exclusion_priority(fact_name)` raises `KeyError` for unconfigured facts
+- ✓ `exclusion_priority_or_nil` is non-raising sibling
+- ✓ Reason codes resolved via `Determination::REASON_CODE_MAPPING`
+
+### Cross-references
+
+- ✓ `./business-process.md` exists in docs/sources/oscer/
+- ✓ `./verification-data-sources.md` exists
+- ✓ `./determinations.md` exists
+- ✓ `./audit-log-and-actors.md` exists
+
+### Frontmatter validation
+
+- ✓ `source_ref.ref` matches source checkout SHA: `be3ffbb4e7b7e7cf0b4047af5544870f50619257`
+- ✓ All referenced source paths exist
+- ✓ `demonstrates: [rules-engine]` is a valid feature key
+
+## Findings
+
+**No issues found.** Documentation is accurate and fully supported by the source code.

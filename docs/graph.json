@@ -53,7 +53,7 @@
         "capability",
         "document-processing",
         "documentai",
-        "standalone-service"
+        "separately-deployable"
       ],
       "path": "sources/documentai-api/overview.md"
     },
@@ -249,6 +249,156 @@
       "path": "sources/oscer/value-objects.md"
     },
     {
+      "id": "example-oscer-verification-data-sources",
+      "title": "OSCER \u2014 verification data sources in a system_process",
+      "source": "oscer",
+      "doc_type": "example",
+      "tags": [
+        "adapters",
+        "determination",
+        "example-app",
+        "oscer",
+        "system-process",
+        "virtual-actor"
+      ],
+      "path": "sources/oscer/verification-data-sources.md"
+    },
+    {
+      "id": "example-strata-paidleave-application-forms",
+      "title": "Five Strata::ApplicationForm subclasses",
+      "source": "strata-paidleave",
+      "doc_type": "example",
+      "tags": [
+        "application-form",
+        "example-app",
+        "model",
+        "status",
+        "validations"
+      ],
+      "path": "sources/strata-paidleave/application-forms.md"
+    },
+    {
+      "id": "example-strata-paidleave-attributes",
+      "title": "Typed attributes (strata_attribute)",
+      "source": "strata-paidleave",
+      "doc_type": "example",
+      "tags": [
+        "attributes",
+        "example-app",
+        "schema",
+        "typed-attributes"
+      ],
+      "path": "sources/strata-paidleave/attributes.md"
+    },
+    {
+      "id": "example-strata-paidleave-business-process",
+      "title": "Leave application business process (Strata::BusinessProcess)",
+      "source": "strata-paidleave",
+      "doc_type": "example",
+      "tags": [
+        "business-process",
+        "events",
+        "example-app",
+        "workflow"
+      ],
+      "path": "sources/strata-paidleave/business-process.md"
+    },
+    {
+      "id": "example-strata-paidleave-cases-and-tasks",
+      "title": "Leave application cases and tasks (Strata::Case, Strata::Task)",
+      "source": "strata-paidleave",
+      "doc_type": "example",
+      "tags": [
+        "case",
+        "example-app",
+        "staff-dashboard",
+        "task"
+      ],
+      "path": "sources/strata-paidleave/cases-and-tasks.md"
+    },
+    {
+      "id": "example-strata-paidleave-components",
+      "title": "SDK ViewComponents in the paid leave UI",
+      "source": "strata-paidleave",
+      "doc_type": "example",
+      "tags": [
+        "components",
+        "example-app",
+        "uswds",
+        "view-components"
+      ],
+      "path": "sources/strata-paidleave/components.md"
+    },
+    {
+      "id": "example-strata-paidleave-determinations",
+      "title": "Determinations (Strata::Determination, Strata::Determinable)",
+      "source": "strata-paidleave",
+      "doc_type": "example",
+      "tags": [
+        "api",
+        "determinable",
+        "determination",
+        "example-app",
+        "staff-review"
+      ],
+      "path": "sources/strata-paidleave/determinations.md"
+    },
+    {
+      "id": "example-strata-paidleave-flows",
+      "title": "Multi-page flows (Strata::Flows::ApplicationFormFlow)",
+      "source": "strata-paidleave",
+      "doc_type": "example",
+      "tags": [
+        "branching",
+        "example-app",
+        "flow",
+        "loops",
+        "routing"
+      ],
+      "path": "sources/strata-paidleave/flows.md"
+    },
+    {
+      "id": "example-strata-paidleave-form-builder",
+      "title": "strata_form_with and the SDK field helpers",
+      "source": "strata-paidleave",
+      "doc_type": "example",
+      "tags": [
+        "errors",
+        "example-app",
+        "form-builder",
+        "uswds",
+        "views"
+      ],
+      "path": "sources/strata-paidleave/form-builder.md"
+    },
+    {
+      "id": "example-strata-paidleave-overview",
+      "title": "Strata Paid Leave \u2014 overview",
+      "source": "strata-paidleave",
+      "doc_type": "guide",
+      "tags": [
+        "example-app",
+        "overview",
+        "paid-leave",
+        "rails"
+      ],
+      "path": "sources/strata-paidleave/overview.md"
+    },
+    {
+      "id": "example-strata-paidleave-value-objects",
+      "title": "Money and YearQuarter value objects",
+      "source": "strata-paidleave",
+      "doc_type": "example",
+      "tags": [
+        "example-app",
+        "money",
+        "value-object",
+        "workaround",
+        "year-quarter"
+      ],
+      "path": "sources/strata-paidleave/value-objects.md"
+    },
+    {
       "id": "example-strata-unemployment-application-form",
       "title": "Unemployment benefits application form (Strata::ApplicationForm)",
       "source": "strata-unemployment",
@@ -338,6 +488,7 @@
         "infra",
         "operations",
         "security",
+        "teardown",
         "terraform",
         "workspaces"
       ],
@@ -349,6 +500,7 @@
       "source": "template-infra-azure",
       "doc_type": "guide",
       "tags": [
+        "application-gateway",
         "azure",
         "certificates",
         "dns",
@@ -362,6 +514,24 @@
       "path": "sources/template-infra-azure/infra-domains-and-https.md"
     },
     {
+      "id": "infra-azure-making-changes",
+      "title": "Making infra changes and shipping releases",
+      "source": "template-infra-azure",
+      "doc_type": "guide",
+      "tags": [
+        "azure",
+        "deploy",
+        "infra",
+        "makefile",
+        "migrations",
+        "releases",
+        "terraform",
+        "testing",
+        "workflow"
+      ],
+      "path": "sources/template-infra-azure/infra-making-changes.md"
+    },
+    {
       "id": "infra-azure-overview",
       "title": "Azure infra template overview",
       "source": "template-infra-azure",
@@ -369,6 +539,7 @@
       "tags": [
         "architecture",
         "azure",
+        "copier",
         "infra",
         "template",
         "terraform"
@@ -388,7 +559,9 @@
         "network",
         "oidc",
         "setup",
-        "terraform"
+        "subscription",
+        "terraform",
+        "vnet"
       ],
       "path": "sources/template-infra-azure/infra-set-up-account-and-network.md"
     },
@@ -406,6 +579,7 @@
         "postgres",
         "secrets",
         "service",
+        "storage",
         "terraform"
       ],
       "path": "sources/template-infra-azure/infra-set-up-database-and-service.md"
@@ -420,6 +594,7 @@
         "bedrock",
         "cognito",
         "ecs-exec",
+        "feature-flags",
         "identity-provider",
         "infra",
         "monitoring",
@@ -532,12 +707,30 @@
         "https",
         "iam",
         "infra",
+        "nat-gateway",
         "oidc",
         "route53",
         "security",
         "waf"
       ],
       "path": "sources/template-infra/infra-security-and-access.md"
+    },
+    {
+      "id": "infra-security-monitoring",
+      "title": "Security Monitoring \u2014 GuardDuty Threat Detection, S3 Malware Scanning, and Image Vulnerability Scans",
+      "source": "template-infra",
+      "doc_type": "guide",
+      "tags": [
+        "compliance",
+        "guardduty",
+        "infra",
+        "malware",
+        "s3",
+        "security",
+        "threat-detection",
+        "vulnerability-scanning"
+      ],
+      "path": "sources/template-infra/infra-security-monitoring.md"
     },
     {
       "id": "platform-cli-app-commands",
@@ -568,6 +761,20 @@
       "path": "sources/platform-cli/platform-cli-infra-commands.md"
     },
     {
+      "id": "platform-cli-legacy-migration",
+      "title": "Migrating a legacy-template project to the CLI",
+      "source": "platform-cli",
+      "doc_type": "guide",
+      "tags": [
+        "application-template",
+        "legacy-template",
+        "migration",
+        "platform-cli",
+        "template-infra"
+      ],
+      "path": "sources/platform-cli/platform-cli-legacy-migration.md"
+    },
+    {
       "id": "platform-cli-mechanism",
       "title": "How install and update work (Copier wrapper)",
       "source": "platform-cli",
@@ -594,6 +801,20 @@
         "strata"
       ],
       "path": "sources/platform-cli/platform-cli-overview.md"
+    },
+    {
+      "id": "platform-cli-updating-projects",
+      "title": "Updating a project and avoiding conflicts",
+      "source": "platform-cli",
+      "doc_type": "guide",
+      "tags": [
+        "application-template",
+        "merge-conflicts",
+        "platform-cli",
+        "template-infra",
+        "update"
+      ],
+      "path": "sources/platform-cli/platform-cli-updating-projects.md"
     },
     {
       "id": "rules-engine-catala-new-project-example",
@@ -675,9 +896,25 @@
       "path": null
     },
     {
+      "id": "source:strata-paidleave",
+      "title": "strata-paidleave",
+      "source": "strata-paidleave",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
       "id": "source:strata-sdk",
       "title": "strata-sdk",
       "source": "strata-sdk",
+      "doc_type": "source",
+      "tags": [],
+      "path": null
+    },
+    {
+      "id": "source:strata-sdk-case-management",
+      "title": "strata-sdk-case-management",
+      "source": "strata-sdk-case-management",
       "doc_type": "source",
       "tags": [],
       "path": null
@@ -807,6 +1044,150 @@
       "path": "sources/strata-sdk/strata-sdk-case.md"
     },
     {
+      "id": "strata-sdk-cm-blueprints",
+      "title": "Case management blueprints (decision criteria and program types)",
+      "source": "strata-sdk-case-management",
+      "doc_type": "feature",
+      "tags": [
+        "blueprints",
+        "decision-criteria",
+        "pfml",
+        "program-types",
+        "snap",
+        "strata-sdk-case-management"
+      ],
+      "path": "sources/strata-sdk-case-management/strata-sdk-cm-blueprints.md"
+    },
+    {
+      "id": "strata-sdk-cm-case-lifecycle",
+      "title": "The case record and case lifecycle operations",
+      "source": "strata-sdk-case-management",
+      "doc_type": "feature",
+      "tags": [
+        "case-record",
+        "concurrency",
+        "human-id",
+        "metadata",
+        "strata-sdk-case-management"
+      ],
+      "path": "sources/strata-sdk-case-management/strata-sdk-cm-case-lifecycle.md"
+    },
+    {
+      "id": "strata-sdk-cm-case-type-config",
+      "title": "Case type configuration and validation",
+      "source": "strata-sdk-case-management",
+      "doc_type": "feature",
+      "tags": [
+        "configuration",
+        "schema-version",
+        "strata-sdk-case-management",
+        "validation",
+        "zod"
+      ],
+      "path": "sources/strata-sdk-case-management/strata-sdk-cm-case-type-config.md"
+    },
+    {
+      "id": "strata-sdk-cm-events-and-hooks",
+      "title": "Domain events, message buses, and lifecycle hooks",
+      "source": "strata-sdk-case-management",
+      "doc_type": "feature",
+      "tags": [
+        "audit-trail",
+        "events",
+        "hooks",
+        "serialization",
+        "strata-sdk-case-management",
+        "webhooks"
+      ],
+      "path": "sources/strata-sdk-case-management/strata-sdk-cm-events-and-hooks.md"
+    },
+    {
+      "id": "strata-sdk-cm-evidence-signals-criteria",
+      "title": "Evidence, signals, and decision criteria",
+      "source": "strata-sdk-case-management",
+      "doc_type": "feature",
+      "tags": [
+        "criteria",
+        "dag",
+        "evaluation",
+        "evidence",
+        "signals",
+        "strata-sdk-case-management"
+      ],
+      "path": "sources/strata-sdk-case-management/strata-sdk-cm-evidence-signals-criteria.md"
+    },
+    {
+      "id": "strata-sdk-cm-getting-started",
+      "title": "Getting started with the Strata Case Management SDK",
+      "source": "strata-sdk-case-management",
+      "doc_type": "guide",
+      "tags": [
+        "getting-started",
+        "monorepo",
+        "pnpm",
+        "strata-sdk-case-management",
+        "typescript"
+      ],
+      "path": "sources/strata-sdk-case-management/strata-sdk-cm-getting-started.md"
+    },
+    {
+      "id": "strata-sdk-cm-maturity",
+      "title": "SDK maturity, gaps, and host-app workarounds",
+      "source": "strata-sdk-case-management",
+      "doc_type": "guide",
+      "tags": [
+        "alpha",
+        "discovery-mode",
+        "governance",
+        "strata-sdk-case-management",
+        "workarounds"
+      ],
+      "path": "sources/strata-sdk-case-management/strata-sdk-cm-maturity.md"
+    },
+    {
+      "id": "strata-sdk-cm-stores",
+      "title": "Persistence ports and store adapters",
+      "source": "strata-sdk-case-management",
+      "doc_type": "feature",
+      "tags": [
+        "casestore",
+        "optimistic-concurrency",
+        "persistence",
+        "postgres",
+        "sqlite",
+        "strata-sdk-case-management"
+      ],
+      "path": "sources/strata-sdk-case-management/strata-sdk-cm-stores.md"
+    },
+    {
+      "id": "strata-sdk-cm-tasks",
+      "title": "Tasks and structured task outcomes",
+      "source": "strata-sdk-case-management",
+      "doc_type": "feature",
+      "tags": [
+        "outcomes",
+        "result-schema",
+        "strata-sdk-case-management",
+        "task-triggers",
+        "tasks"
+      ],
+      "path": "sources/strata-sdk-case-management/strata-sdk-cm-tasks.md"
+    },
+    {
+      "id": "strata-sdk-cm-workflow",
+      "title": "Workflow, transitions, and guards",
+      "source": "strata-sdk-case-management",
+      "doc_type": "feature",
+      "tags": [
+        "guards",
+        "state-machine",
+        "strata-sdk-case-management",
+        "transitions",
+        "workflow"
+      ],
+      "path": "sources/strata-sdk-case-management/strata-sdk-cm-workflow.md"
+    },
+    {
       "id": "strata-sdk-determination",
       "title": "Determinations",
       "source": "strata-sdk",
@@ -928,6 +1309,11 @@
     },
     {
       "from": "documentai-api-new-project-example",
+      "to": "documentai-api-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "documentai-api-new-project-example",
       "to": "documentai-api-using-the-template",
       "rel": "related-to"
     },
@@ -1038,8 +1424,18 @@
     },
     {
       "from": "example-oscer-audit-log-and-actors",
+      "to": "example-oscer-verification-data-sources",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-audit-log-and-actors",
       "to": "strata-sdk-audit-log",
       "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-authorization",
+      "to": "example-oscer-api-authentication",
+      "rel": "related-to"
     },
     {
       "from": "example-oscer-authorization",
@@ -1074,6 +1470,11 @@
     {
       "from": "example-oscer-business-process",
       "to": "example-oscer-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-business-process",
+      "to": "example-oscer-verification-data-sources",
       "rel": "related-to"
     },
     {
@@ -1128,12 +1529,17 @@
     },
     {
       "from": "example-oscer-determinations",
+      "to": "example-oscer-verification-data-sources",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-determinations",
       "to": "strata-sdk-determination",
       "rel": "example-of"
     },
     {
       "from": "example-oscer-overview",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -1197,6 +1603,11 @@
       "rel": "related-to"
     },
     {
+      "from": "example-oscer-overview",
+      "to": "example-oscer-verification-data-sources",
+      "rel": "related-to"
+    },
+    {
       "from": "example-oscer-rules-engine",
       "to": "example-oscer-audit-log-and-actors",
       "rel": "related-to"
@@ -1213,6 +1624,11 @@
     },
     {
       "from": "example-oscer-rules-engine",
+      "to": "example-oscer-verification-data-sources",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-rules-engine",
       "to": "strata-sdk-rules-engine",
       "rel": "example-of"
     },
@@ -1224,6 +1640,11 @@
     {
       "from": "example-oscer-tasks",
       "to": "example-oscer-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-tasks",
+      "to": "example-oscer-components",
       "rel": "related-to"
     },
     {
@@ -1259,6 +1680,346 @@
     {
       "from": "example-oscer-value-objects",
       "to": "strata-sdk-application-form",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-verification-data-sources",
+      "to": "example-oscer-audit-log-and-actors",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-verification-data-sources",
+      "to": "example-oscer-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-verification-data-sources",
+      "to": "example-oscer-determinations",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-verification-data-sources",
+      "to": "example-oscer-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-verification-data-sources",
+      "to": "example-oscer-rules-engine",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-oscer-verification-data-sources",
+      "to": "strata-sdk-audit-log",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-verification-data-sources",
+      "to": "strata-sdk-determination",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-oscer-verification-data-sources",
+      "to": "strata-sdk-tasks",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-application-forms",
+      "to": "example-strata-paidleave-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-application-forms",
+      "to": "example-strata-paidleave-flows",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-application-forms",
+      "to": "example-strata-paidleave-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-application-forms",
+      "to": "example-strata-paidleave-value-objects",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-application-forms",
+      "to": "strata-sdk-application-form",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-attributes",
+      "to": "example-strata-paidleave-application-forms",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-attributes",
+      "to": "example-strata-paidleave-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-attributes",
+      "to": "example-strata-paidleave-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-attributes",
+      "to": "example-strata-paidleave-value-objects",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-attributes",
+      "to": "strata-sdk-attributes",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-business-process",
+      "to": "example-strata-paidleave-cases-and-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-business-process",
+      "to": "example-strata-paidleave-determinations",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-business-process",
+      "to": "example-strata-paidleave-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-business-process",
+      "to": "strata-sdk-business-process",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-business-process",
+      "to": "strata-sdk-tasks",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-cases-and-tasks",
+      "to": "example-strata-paidleave-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-cases-and-tasks",
+      "to": "example-strata-paidleave-components",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-cases-and-tasks",
+      "to": "example-strata-paidleave-determinations",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-cases-and-tasks",
+      "to": "example-strata-paidleave-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-cases-and-tasks",
+      "to": "strata-sdk-case",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-cases-and-tasks",
+      "to": "strata-sdk-tasks",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-components",
+      "to": "example-strata-paidleave-cases-and-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-components",
+      "to": "example-strata-paidleave-flows",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-components",
+      "to": "example-strata-paidleave-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-components",
+      "to": "example-strata-paidleave-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-components",
+      "to": "strata-sdk-form-builder",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-determinations",
+      "to": "example-strata-paidleave-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-determinations",
+      "to": "example-strata-paidleave-cases-and-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-determinations",
+      "to": "example-strata-paidleave-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-determinations",
+      "to": "example-strata-paidleave-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-determinations",
+      "to": "strata-sdk-determination",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-flows",
+      "to": "example-strata-paidleave-application-forms",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-flows",
+      "to": "example-strata-paidleave-components",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-flows",
+      "to": "example-strata-paidleave-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-flows",
+      "to": "example-strata-paidleave-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-flows",
+      "to": "strata-sdk-form-flows",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-form-builder",
+      "to": "example-strata-paidleave-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-form-builder",
+      "to": "example-strata-paidleave-components",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-form-builder",
+      "to": "example-strata-paidleave-flows",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-form-builder",
+      "to": "example-strata-paidleave-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-form-builder",
+      "to": "example-strata-paidleave-value-objects",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-form-builder",
+      "to": "strata-sdk-form-builder",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "app-template-using-the-rails-template",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "example-strata-paidleave-application-forms",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "example-strata-paidleave-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "example-strata-paidleave-business-process",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "example-strata-paidleave-cases-and-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "example-strata-paidleave-components",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "example-strata-paidleave-determinations",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "example-strata-paidleave-flows",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "example-strata-paidleave-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "example-strata-paidleave-value-objects",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "infra-overview",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "example-strata-paidleave-overview",
+      "to": "rules-engine-catala-overview",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "example-strata-paidleave-value-objects",
+      "to": "example-strata-paidleave-application-forms",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-value-objects",
+      "to": "example-strata-paidleave-attributes",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-value-objects",
+      "to": "example-strata-paidleave-form-builder",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-value-objects",
+      "to": "example-strata-paidleave-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "example-strata-paidleave-value-objects",
+      "to": "strata-sdk-application-form",
+      "rel": "example-of"
+    },
+    {
+      "from": "example-strata-paidleave-value-objects",
+      "to": "strata-sdk-attributes",
       "rel": "example-of"
     },
     {
@@ -1363,7 +2124,7 @@
     },
     {
       "from": "example-strata-unemployment-overview",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -1393,6 +2154,11 @@
     },
     {
       "from": "infra-azure-access-control-and-operations",
+      "to": "infra-azure-making-changes",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-access-control-and-operations",
       "to": "infra-azure-overview",
       "rel": "related-to"
     },
@@ -1408,6 +2174,11 @@
     },
     {
       "from": "infra-azure-domains-and-https",
+      "to": "infra-azure-access-control-and-operations",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-domains-and-https",
       "to": "infra-azure-overview",
       "rel": "related-to"
     },
@@ -1422,8 +2193,33 @@
       "rel": "related-to"
     },
     {
+      "from": "infra-azure-making-changes",
+      "to": "app-template-using-the-rails-template",
+      "rel": "integrates-with"
+    },
+    {
+      "from": "infra-azure-making-changes",
+      "to": "infra-azure-access-control-and-operations",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-making-changes",
+      "to": "infra-azure-domains-and-https",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-making-changes",
+      "to": "infra-azure-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-making-changes",
+      "to": "infra-azure-set-up-database-and-service",
+      "rel": "related-to"
+    },
+    {
       "from": "infra-azure-overview",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -1434,6 +2230,11 @@
     {
       "from": "infra-azure-overview",
       "to": "infra-azure-domains-and-https",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-overview",
+      "to": "infra-azure-making-changes",
       "rel": "related-to"
     },
     {
@@ -1448,7 +2249,7 @@
     },
     {
       "from": "infra-azure-set-up-account-and-network",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -1459,6 +2260,11 @@
     {
       "from": "infra-azure-set-up-account-and-network",
       "to": "infra-azure-domains-and-https",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-set-up-account-and-network",
+      "to": "infra-azure-making-changes",
       "rel": "related-to"
     },
     {
@@ -1473,7 +2279,7 @@
     },
     {
       "from": "infra-azure-set-up-database-and-service",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -1484,6 +2290,11 @@
     {
       "from": "infra-azure-set-up-database-and-service",
       "to": "infra-azure-domains-and-https",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-azure-set-up-database-and-service",
+      "to": "infra-azure-making-changes",
       "rel": "related-to"
     },
     {
@@ -1522,6 +2333,11 @@
       "rel": "related-to"
     },
     {
+      "from": "infra-capabilities",
+      "to": "infra-security-monitoring",
+      "rel": "related-to"
+    },
+    {
       "from": "infra-configuration",
       "to": "infra-database",
       "rel": "related-to"
@@ -1539,6 +2355,11 @@
     {
       "from": "infra-configuration",
       "to": "infra-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-configuration",
+      "to": "infra-security-monitoring",
       "rel": "related-to"
     },
     {
@@ -1568,7 +2389,7 @@
     },
     {
       "from": "infra-environments-and-workspaces",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -1592,8 +2413,13 @@
       "rel": "related-to"
     },
     {
+      "from": "infra-environments-and-workspaces",
+      "to": "infra-security-monitoring",
+      "rel": "related-to"
+    },
+    {
       "from": "infra-getting-started",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -1622,6 +2448,11 @@
       "rel": "related-to"
     },
     {
+      "from": "infra-getting-started",
+      "to": "infra-security-monitoring",
+      "rel": "related-to"
+    },
+    {
       "from": "infra-module-architecture",
       "to": "infra-configuration",
       "rel": "related-to"
@@ -1642,8 +2473,13 @@
       "rel": "related-to"
     },
     {
+      "from": "infra-module-architecture",
+      "to": "infra-security-monitoring",
+      "rel": "related-to"
+    },
+    {
       "from": "infra-overview",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "integrates-with"
     },
     {
@@ -1682,6 +2518,11 @@
       "rel": "related-to"
     },
     {
+      "from": "infra-overview",
+      "to": "infra-security-monitoring",
+      "rel": "related-to"
+    },
+    {
       "from": "infra-security-and-access",
       "to": "infra-capabilities",
       "rel": "related-to"
@@ -1698,6 +2539,11 @@
     },
     {
       "from": "infra-security-and-access",
+      "to": "infra-environments-and-workspaces",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-and-access",
       "to": "infra-getting-started",
       "rel": "related-to"
     },
@@ -1707,13 +2553,48 @@
       "rel": "related-to"
     },
     {
+      "from": "infra-security-and-access",
+      "to": "infra-security-monitoring",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-monitoring",
+      "to": "infra-capabilities",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-monitoring",
+      "to": "infra-configuration",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-monitoring",
+      "to": "infra-module-architecture",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-monitoring",
+      "to": "infra-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "infra-security-monitoring",
+      "to": "infra-security-and-access",
+      "rel": "related-to"
+    },
+    {
       "from": "platform-cli-app-commands",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "manages"
     },
     {
       "from": "platform-cli-app-commands",
       "to": "platform-cli-infra-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-app-commands",
+      "to": "platform-cli-legacy-migration",
       "rel": "related-to"
     },
     {
@@ -1724,6 +2605,11 @@
     {
       "from": "platform-cli-app-commands",
       "to": "platform-cli-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-app-commands",
+      "to": "platform-cli-updating-projects",
       "rel": "related-to"
     },
     {
@@ -1738,6 +2624,11 @@
     },
     {
       "from": "platform-cli-infra-commands",
+      "to": "platform-cli-legacy-migration",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-infra-commands",
       "to": "platform-cli-mechanism",
       "rel": "related-to"
     },
@@ -1747,8 +2638,48 @@
       "rel": "related-to"
     },
     {
+      "from": "platform-cli-infra-commands",
+      "to": "platform-cli-updating-projects",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-legacy-migration",
+      "to": "app-template-using-the-rails-template",
+      "rel": "manages"
+    },
+    {
+      "from": "platform-cli-legacy-migration",
+      "to": "infra-overview",
+      "rel": "manages"
+    },
+    {
+      "from": "platform-cli-legacy-migration",
+      "to": "platform-cli-app-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-legacy-migration",
+      "to": "platform-cli-infra-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-legacy-migration",
+      "to": "platform-cli-mechanism",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-legacy-migration",
+      "to": "platform-cli-overview",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-legacy-migration",
+      "to": "platform-cli-updating-projects",
+      "rel": "related-to"
+    },
+    {
       "from": "platform-cli-mechanism",
-      "to": "app-template-setting-up-a-new-rails-project",
+      "to": "app-template-using-the-rails-template",
       "rel": "manages"
     },
     {
@@ -1772,6 +2703,11 @@
       "rel": "related-to"
     },
     {
+      "from": "platform-cli-mechanism",
+      "to": "platform-cli-updating-projects",
+      "rel": "related-to"
+    },
+    {
       "from": "platform-cli-overview",
       "to": "platform-cli-app-commands",
       "rel": "related-to"
@@ -1783,7 +2719,52 @@
     },
     {
       "from": "platform-cli-overview",
+      "to": "platform-cli-legacy-migration",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-overview",
       "to": "platform-cli-mechanism",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-overview",
+      "to": "platform-cli-updating-projects",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-updating-projects",
+      "to": "app-template-using-the-rails-template",
+      "rel": "manages"
+    },
+    {
+      "from": "platform-cli-updating-projects",
+      "to": "infra-overview",
+      "rel": "manages"
+    },
+    {
+      "from": "platform-cli-updating-projects",
+      "to": "platform-cli-app-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-updating-projects",
+      "to": "platform-cli-infra-commands",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-updating-projects",
+      "to": "platform-cli-legacy-migration",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-updating-projects",
+      "to": "platform-cli-mechanism",
+      "rel": "related-to"
+    },
+    {
+      "from": "platform-cli-updating-projects",
+      "to": "platform-cli-overview",
       "rel": "related-to"
     },
     {
@@ -1912,6 +2893,11 @@
       "rel": "documents"
     },
     {
+      "from": "source:oscer",
+      "to": "example-oscer-verification-data-sources",
+      "rel": "documents"
+    },
+    {
       "from": "source:platform-cli",
       "to": "platform-cli-app-commands",
       "rel": "documents"
@@ -1923,12 +2909,72 @@
     },
     {
       "from": "source:platform-cli",
+      "to": "platform-cli-legacy-migration",
+      "rel": "documents"
+    },
+    {
+      "from": "source:platform-cli",
       "to": "platform-cli-mechanism",
       "rel": "documents"
     },
     {
       "from": "source:platform-cli",
       "to": "platform-cli-overview",
+      "rel": "documents"
+    },
+    {
+      "from": "source:platform-cli",
+      "to": "platform-cli-updating-projects",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-paidleave",
+      "to": "example-strata-paidleave-application-forms",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-paidleave",
+      "to": "example-strata-paidleave-attributes",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-paidleave",
+      "to": "example-strata-paidleave-business-process",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-paidleave",
+      "to": "example-strata-paidleave-cases-and-tasks",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-paidleave",
+      "to": "example-strata-paidleave-components",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-paidleave",
+      "to": "example-strata-paidleave-determinations",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-paidleave",
+      "to": "example-strata-paidleave-flows",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-paidleave",
+      "to": "example-strata-paidleave-form-builder",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-paidleave",
+      "to": "example-strata-paidleave-overview",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-paidleave",
+      "to": "example-strata-paidleave-value-objects",
       "rel": "documents"
     },
     {
@@ -1999,6 +3045,56 @@
     {
       "from": "source:strata-sdk",
       "to": "strata-sdk-tasks",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk-case-management",
+      "to": "strata-sdk-cm-blueprints",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk-case-management",
+      "to": "strata-sdk-cm-case-lifecycle",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk-case-management",
+      "to": "strata-sdk-cm-case-type-config",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk-case-management",
+      "to": "strata-sdk-cm-events-and-hooks",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk-case-management",
+      "to": "strata-sdk-cm-evidence-signals-criteria",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk-case-management",
+      "to": "strata-sdk-cm-getting-started",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk-case-management",
+      "to": "strata-sdk-cm-maturity",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk-case-management",
+      "to": "strata-sdk-cm-stores",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk-case-management",
+      "to": "strata-sdk-cm-tasks",
+      "rel": "documents"
+    },
+    {
+      "from": "source:strata-sdk-case-management",
+      "to": "strata-sdk-cm-workflow",
       "rel": "documents"
     },
     {
@@ -2087,6 +3183,11 @@
       "rel": "documents"
     },
     {
+      "from": "source:template-infra",
+      "to": "infra-security-monitoring",
+      "rel": "documents"
+    },
+    {
       "from": "source:template-infra-azure",
       "to": "infra-azure-access-control-and-operations",
       "rel": "documents"
@@ -2094,6 +3195,11 @@
     {
       "from": "source:template-infra-azure",
       "to": "infra-azure-domains-and-https",
+      "rel": "documents"
+    },
+    {
+      "from": "source:template-infra-azure",
+      "to": "infra-azure-making-changes",
       "rel": "documents"
     },
     {
@@ -2219,6 +3325,226 @@
     {
       "from": "strata-sdk-case",
       "to": "strata-sdk-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-blueprints",
+      "to": "strata-sdk-cm-case-type-config",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-blueprints",
+      "to": "strata-sdk-cm-evidence-signals-criteria",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-blueprints",
+      "to": "strata-sdk-cm-maturity",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-blueprints",
+      "to": "strata-sdk-cm-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-blueprints",
+      "to": "strata-sdk-cm-workflow",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-case-lifecycle",
+      "to": "strata-sdk-cm-case-type-config",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-case-lifecycle",
+      "to": "strata-sdk-cm-events-and-hooks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-case-lifecycle",
+      "to": "strata-sdk-cm-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-case-lifecycle",
+      "to": "strata-sdk-cm-stores",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-case-lifecycle",
+      "to": "strata-sdk-cm-workflow",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-case-type-config",
+      "to": "strata-sdk-cm-blueprints",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-case-type-config",
+      "to": "strata-sdk-cm-evidence-signals-criteria",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-case-type-config",
+      "to": "strata-sdk-cm-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-case-type-config",
+      "to": "strata-sdk-cm-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-case-type-config",
+      "to": "strata-sdk-cm-workflow",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-events-and-hooks",
+      "to": "strata-sdk-cm-case-lifecycle",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-events-and-hooks",
+      "to": "strata-sdk-cm-evidence-signals-criteria",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-events-and-hooks",
+      "to": "strata-sdk-cm-stores",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-events-and-hooks",
+      "to": "strata-sdk-cm-tasks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-events-and-hooks",
+      "to": "strata-sdk-cm-workflow",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-evidence-signals-criteria",
+      "to": "strata-sdk-cm-blueprints",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-evidence-signals-criteria",
+      "to": "strata-sdk-cm-case-lifecycle",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-evidence-signals-criteria",
+      "to": "strata-sdk-cm-case-type-config",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-evidence-signals-criteria",
+      "to": "strata-sdk-cm-events-and-hooks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-evidence-signals-criteria",
+      "to": "strata-sdk-cm-workflow",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-getting-started",
+      "to": "strata-sdk-cm-blueprints",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-getting-started",
+      "to": "strata-sdk-cm-case-lifecycle",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-getting-started",
+      "to": "strata-sdk-cm-case-type-config",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-getting-started",
+      "to": "strata-sdk-cm-maturity",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-maturity",
+      "to": "strata-sdk-cm-blueprints",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-maturity",
+      "to": "strata-sdk-cm-case-type-config",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-maturity",
+      "to": "strata-sdk-cm-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-stores",
+      "to": "strata-sdk-cm-case-lifecycle",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-stores",
+      "to": "strata-sdk-cm-events-and-hooks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-stores",
+      "to": "strata-sdk-cm-getting-started",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-tasks",
+      "to": "strata-sdk-cm-case-type-config",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-tasks",
+      "to": "strata-sdk-cm-events-and-hooks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-tasks",
+      "to": "strata-sdk-cm-evidence-signals-criteria",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-tasks",
+      "to": "strata-sdk-cm-workflow",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-workflow",
+      "to": "strata-sdk-cm-case-lifecycle",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-workflow",
+      "to": "strata-sdk-cm-case-type-config",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-workflow",
+      "to": "strata-sdk-cm-events-and-hooks",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-workflow",
+      "to": "strata-sdk-cm-evidence-signals-criteria",
+      "rel": "related-to"
+    },
+    {
+      "from": "strata-sdk-cm-workflow",
+      "to": "strata-sdk-cm-tasks",
       "rel": "related-to"
     },
     {
