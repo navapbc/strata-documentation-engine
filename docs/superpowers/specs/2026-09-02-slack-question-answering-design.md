@@ -31,6 +31,10 @@ protection on `main` and the single GitHub identity Claude Tag writes with.
 1. **Zero code.** The skill is prose. Retrieval is Claude reading `docs/INDEX.md` and choosing docs
    by judgment. The graph is small enough (roughly sixty docs) to fit in context whole; a
    deterministic retriever in `scripts/` is deferred until the doc set grows past a few hundred.
+   *Change note, 2026-10-06:* retrieval now also maps the question to SDK identifiers, greps
+   `docs/sources/` for them and for the question's own words, and follows every `example-of`
+   in-edge to any Rails SDK feature doc it reads. Choosing by index summaries alone missed OSCER on
+   a field-type question, because the run stopped at the first example app that looked complete.
 2. **Docs, then code, then "not covered."** Every answer traces to a verified doc or, failing
    that, to a labeled source file. The skill never answers about Strata from general knowledge.
 3. **A question is never met with an interrogation.** The kit's requirements interrogation exists
@@ -84,6 +88,9 @@ channel instruction:
 2. **Pick candidate docs.** Read `docs/INDEX.md` whole and choose up to five docs by judgment. Then
    read `docs/graph.json` and add any doc one edge away from a chosen doc whose title looks
    relevant. Cap the reading set at about eight docs.
+   *Change note, 2026-10-06:* superseded by the grep and every-example-app steps under design
+   rule 1; the reading set now has no cap on example apps, one or two docs per app, and a ceiling of
+   about 15 docs. `skills/answer-strata-question/SKILL.md` is authoritative for the steps.
 3. **Read the chosen docs** from the clone.
 4. **Decide coverage.** If the docs answer the question, go to step 6. If they answer part of it,
    answer the covered part and mark the rest as uncovered before falling back.
