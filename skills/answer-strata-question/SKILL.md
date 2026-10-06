@@ -186,6 +186,10 @@ with its SDK doc link, then "used in" and a link to each example-app doc that us
 `:<type>` (`Strata::<Class>`): <SDK doc link>. Used in <app> <app doc link>, <app> <app doc link>.
 ```
 
+Answer every part of the question. When it asks what is built in and what the team writes, give
+each type or feature a short second clause or sub-line saying what the docs show the app still
+writes, such as its own validations or rules, with that doc's link, or that the docs do not say.
+
 - List only apps whose doc names that type or feature. If none does, leave "used in" off.
 - Name an app the ceiling kept you from reading as "also used in <app>", with its link.
 - Code an app wrote for itself, such as its own workaround or its own type, is the app's own.
