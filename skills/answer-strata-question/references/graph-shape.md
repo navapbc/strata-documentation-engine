@@ -11,16 +11,22 @@ file describes it so you can walk it without reading the builder.
 
 ## Nodes
 
-One node per doc under `docs/sources/`.
+Two kinds of node share the `nodes` list:
+
+- **Doc nodes**, one per doc under `docs/sources/`. `doc_type` is `feature`, `guide`, or `example`,
+  and `path` is set.
+- **Source nodes**, one per source that has docs. `id` is `source:<source>`, for example
+  `source:oscer`; `title` and `source` are the source id, `doc_type` is `source`, `tags` is empty,
+  and `path` is `null`. A source node is not a doc: never read or cite it.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `id` | string | Unique. `<source>-<doc-slug>`, for example `app-template-setting-up-a-new-rails-project` |
-| `title` | string | The doc's title, the same text `docs/INDEX.md` shows as the link |
+| `id` | string | Unique. For a doc node, the `id` line of the doc's frontmatter. It is not derived from the path and its prefix varies by source: `sources/oscer/attributes.md` is `example-oscer-attributes`, `sources/strata-sdk/strata-sdk-attributes.md` is `strata-sdk-attributes`. For a source node, `source:<source>` |
+| `title` | string | The doc's title, the same text `docs/INDEX.md` shows as the link; for a source node, the source id |
 | `source` | string | The `id` column of the matching row in `sources.md`, for example `strata-sdk` |
-| `doc_type` | string | One of `feature`, `guide`, `example`, `source` |
-| `tags` | string[] | Free-form kebab-case topics from the frontmatter |
-| `path` | string | Relative to `docs/`, for example `sources/app-template/setting-up-a-new-rails-project.md` |
+| `doc_type` | string | One of `feature`, `guide`, `example` for a doc node; `source` for a source node |
+| `tags` | string[] | Free-form kebab-case topics from the frontmatter; empty for a source node |
+| `path` | string or null | Relative to `docs/`, for example `sources/app-template/setting-up-a-new-rails-project.md`; `null` for a source node |
 
 ## Edges
 
@@ -30,17 +36,34 @@ One node per doc under `docs/sources/`.
 
 | `rel` | Meaning |
 |---|---|
-| `documents` | A `source` node documents a `feature`, `guide`, or `example` node |
-| `example-of` | An `example` doc demonstrates the feature the target doc owns |
+| `documents` | A source node (`source:<source>`) documents each doc node of that source |
+| `example-of` | An example-app doc demonstrates a feature that the target Rails SDK (`strata-sdk`) feature doc owns. The edge does not say which feature |
 | `manages` | A `platform-cli` doc manages the platform component the target doc owns |
-| `integrates-with` | An app or infra doc integrates with the component the target doc owns |
+| `integrates-with` | An app, application-template, or infra doc integrates with the component the target doc owns |
 | `related-to` | Frontmatter cross-reference with no more specific relation |
 
 ## Walking one edge out
 
 Given a chosen node id `X`, its neighbors are every `to` of an edge whose `from` is `X` and every
 `from` of an edge whose `to` is `X`. Look each neighbor id up in `nodes` to get its `title` and
-`path`. Add a neighbor to your reading set only if its title looks relevant to the question.
+`path`, and skip any source node (`path` is `null`). Add a neighbor to your reading set only if
+its title looks relevant to the question.
+
+## Finding the example docs for an SDK doc
+
+The `example-of` in-edges of an SDK doc are the edges whose `to` is that doc's id and whose `rel` is
+`example-of`; each edge's `from` is an example doc that uses something the SDK doc owns. For
+example, the in-edges of `strata-sdk-attributes` come from `example-oscer-attributes`,
+`example-strata-paidleave-attributes`, `example-strata-paidleave-value-objects`, and
+`example-strata-unemployment-attributes`. To list them with paths, from the clone root:
+
+```bash
+python3 -c "import json,sys; g=json.load(open('docs/graph.json')); p={n['id']:n['path'] for n in g['nodes']}; [print(e['from'], p[e['from']]) for e in g['edges'] if e['to']==sys.argv[1] and e['rel']=='example-of']" strata-sdk-attributes
+```
+
+The edge carries no feature key. To learn which types or features an example doc uses, read its
+frontmatter `demonstrates:` list or its body. Only Rails SDK feature docs receive `example-of`
+edges; the TypeScript case-management SDK claims no feature keys.
 
 ## From a node to a citation link
 
