@@ -90,7 +90,7 @@ Example apps are the sources whose `type` is `example-app` in `sources.md`, curr
 `strata-unemployment`, and `strata-paidleave`. Their docs are under `docs/sources/<id>/`.
 
 Whenever you read a Rails SDK feature doc (under `docs/sources/strata-sdk/`) in step 2, or step 3
-ranks one high enough to read, do this for each such doc, however the question is worded: find
+gives one a body hit, do this for each such doc, however the question is worded: find
 every doc with an `example-of` edge into it. The SDK doc's id is the `id:` line of its
 frontmatter, for example `strata-sdk-attributes`:
 
@@ -98,11 +98,12 @@ frontmatter, for example `strata-sdk-attributes`:
 python3 -c "import json,sys; g=json.load(open('docs/graph.json')); p={n['id']:n['path'] for n in g['nodes']}; [print(e['from'], p[e['from']]) for e in g['edges'] if e['to']==sys.argv[1] and e['rel']=='example-of']" <sdk-doc-id>
 ```
 
-It prints each example doc's id and its path relative to `docs/`. If `python3` is unavailable, read
-`docs/graph.json` and take every edge whose `to` is the SDK doc's id and whose `rel` is
-`example-of`; its shape is in `skills/answer-strata-question/references/graph-shape.md`. Follow
-every one of these edges. Do not choose among them, and do not stop at the first app that looks
-complete.
+It prints each example doc's id and its path relative to `docs/`. Empty output for a Rails SDK
+feature doc means the id is wrong; recheck the frontmatter `id:` line. If `python3` is
+unavailable, read `docs/graph.json` and take every edge whose `to` is the SDK doc's id and whose
+`rel` is `example-of`; its shape is in `skills/answer-strata-question/references/graph-shape.md`.
+Follow every one of these edges. Do not choose among them, and do not stop at the first app that
+looks complete.
 
 An `example-of` edge says only that the app uses something from that SDK doc, not which type or
 feature. Before you credit an app with a specific type or feature, confirm that the app's doc names
@@ -110,13 +111,18 @@ it, either in its frontmatter `demonstrates:` list (keys look like `attribute-ty
 its body (a step 3 body hit, or a search of that one file). Never credit an app with a type or
 feature its doc does not name.
 
+If only the body names it, not `demonstrates:`, the answer says how that doc says the app uses it.
+A non-standard use, such as a value class used as a JSON serialization type on a plain attribute
+rather than through `strata_attribute`, is the app's own: label it as that app's, never as "used
+in" for that attribute type.
+
 Edges and step 3 hits add together; neither replaces the other. An example-app doc with a step 3
 body hit counts even if no edge points from it, because a doc without a `demonstrates:` list has no
-edges.
+`example-of` edges.
 
 This rule covers the Rails SDK only. The TypeScript case-management SDK
 (`strata-sdk-case-management`) claims no feature keys, so no `example-of` edge points at its docs;
-for it, rely on step 3 and step 5.
+for it, rely on step 3 hits, step 5's reading set, and the step 7 fallback.
 
 ### 5. Choose and read the reading set
 
@@ -128,6 +134,8 @@ Build the reading set:
   whole; use step 3 excerpts for the second. There is no cap on the number of apps.
 - Any other SDK feature or guide doc, or other candidate, that ranked well in step 3: use its step
   3 excerpts.
+- If step 3 ran but no Rails SDK doc applies, as with a `platform-cli`, infra, or app template
+  question: the one or two best step 2 candidates or top step 3 docs, read whole.
 - If you skipped step 3: your step 2 candidates, read whole, plus any doc one edge away from them
   in `docs/graph.json` whose title looks relevant (see "Walking one edge out" in the graph-shape
   reference).
@@ -136,9 +144,9 @@ Stop at about 15 docs in total. If that ceiling keeps you from reading an app's 
 app in the answer as "also used in <app>", linked to the doc that confirmed it in step 4. Never
 drop an example app whose doc you confirmed names the type or feature.
 
-Read each file under `docs/` at its path. Note which doc supports which claim as you go; every
-claim in the answer needs a link. A doc whose frontmatter says `verified: needs-review` may still
-be cited, marked as unverified in the answer.
+Read each doc in the reading set at its path under `docs/`, whole or as excerpts as above. Note
+which doc supports which claim as you go; every claim in the answer needs a link. A doc whose
+frontmatter says `verified: needs-review` may still be cited, marked as unverified in the answer.
 
 ### 6. Decide coverage
 
@@ -150,6 +158,9 @@ be cited, marked as unverified in the answer.
 For a question about what the SDK provides, the Rails SDK doc decides coverage: a type or feature
 is uncovered only when the SDK doc lacks it. A search term that found nothing, or an app that does
 not use a type, is not a gap.
+
+What an app writes for itself, when the docs do not say, is answered as "the docs do not say" and
+does not go to step 7.
 
 ### 7. Fall back to source
 
@@ -179,11 +190,13 @@ Direct and Slack-length. Follow each factual claim with a link to the doc on `ma
 https://github.com/navapbc/strata-documentation-engine/blob/main/docs/<path from the index>
 ```
 
-When the answer is about SDK types or features, put the SDK first: one line per type or feature,
-with its SDK doc link, then "used in" and a link to each example-app doc that uses it. For example:
+When the answer is about SDK types or features, put the SDK first: one entry per type or feature,
+with its SDK doc link, then "used in" and a link to each example-app doc that uses it. For example,
+with the optional app-side sub-line described below:
 
 ```text
 `:<type>` (`Strata::<Class>`): <SDK doc link>. Used in <app> <app doc link>, <app> <app doc link>.
+  App writes: <what> <app doc link>.
 ```
 
 Answer every part of the question. When it asks what is built in and what the team writes, give

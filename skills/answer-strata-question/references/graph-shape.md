@@ -39,7 +39,7 @@ Two kinds of node share the `nodes` list:
 | `documents` | A source node (`source:<source>`) documents each doc node of that source |
 | `example-of` | An example-app doc demonstrates a feature that the target Rails SDK (`strata-sdk`) feature doc owns. The edge does not say which feature |
 | `manages` | A `platform-cli` doc manages the platform component the target doc owns |
-| `integrates-with` | An app, application-template, or infra doc integrates with the component the target doc owns |
+| `integrates-with` | An app, app-template, application-template, or infra doc integrates with the component the target doc owns |
 | `related-to` | Frontmatter cross-reference with no more specific relation |
 
 ## Walking one edge out
@@ -60,6 +60,8 @@ example, the in-edges of `strata-sdk-attributes` come from `example-oscer-attrib
 ```bash
 python3 -c "import json,sys; g=json.load(open('docs/graph.json')); p={n['id']:n['path'] for n in g['nodes']}; [print(e['from'], p[e['from']]) for e in g['edges'] if e['to']==sys.argv[1] and e['rel']=='example-of']" strata-sdk-attributes
 ```
+
+Empty output for a Rails SDK feature doc means the id is wrong; recheck the frontmatter `id:` line.
 
 The edge carries no feature key. To learn which types or features an example doc uses, read its
 frontmatter `demonstrates:` list or its body. Only Rails SDK feature docs receive `example-of`
